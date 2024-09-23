@@ -1,0 +1,62 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <div class="row">
+
+        <div class="title-lcl">Giao hàng nhập LCL</div>
+
+        <div class="command">
+            <a href="@Url.Action("Create","LenhOnline")" class="cmd-add">Tạo lệnh mới</a>
+
+        </div>
+
+        <table class="table table-striped  table-bordered dataTable">
+            <thead>
+                <tr>
+                    <th class="sorting">Số lệnh</th>
+                    <th class="sorting">In lệnh / Hóa đơn</th>
+                    <th class="sorting">Thanh toán</th>
+                    <th class="sorting">Tổng tiền</th>
+                    <th class="sorting">Ngày làm lệnh</th>
+                    <th class="sorting">Số House Bill</th>
+                    <th class="sorting">Số Cont</th>
+                    <th class="sorting">Forwarder</th>
+                    <th class="sorting">Số lượng carton</th>
+                    <th class="sorting">Ngày dự kiến lấy</th>
+                    <th class="sorting">Xóa</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td><a href="@Url.Action("Edit","LenhOnline", new { id = "123" })">GLCWH0000000102</a></td>
+
+                    <td>
+                    </td>
+                    <td>
+
+                        <a href="https://ewarehouse.glc.com.vn/lenh-online/GLCWH0000000102.html" class="remove"><i class="fa fa-credit-card"><span class="gray"></span></i></a>
+
+                    </td>
+                    <td>1.291.510</td>
+                    <td>30/07/2021</td>
+                    <td>GL21070254</td>
+                    <td>FSCU8196310</td>
+                    <td>AT ASIA (KHAI MINH)</td>
+                    <td>64</td>
+                    <td>30/07/2021</td>
+                    <td class="text-center">
+                        <a href="javascript:void(0)" class="remove" ><i class="fa fa-remove"><span class="gray"></span></i></a>
+                    </td>
+                </tr>
+
+
+            </tbody>
+        </table>
+    </div>
+</div>
+

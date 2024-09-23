@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34902.65
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webGLC", "webGLC.csproj", "{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2CDD9932-5955-4B4F-B8BD-01B6E723DA2A}
+	EndGlobalSection
+EndGlobal

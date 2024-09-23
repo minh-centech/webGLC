@@ -1,0 +1,65 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+<div class="container">
+<div class="row">
+
+
+    <div class="title-lcl">Thông tin hàng nhập CFS tại kho</div>
+
+    <div class="panel form-cont">
+        <div class="panel-body">
+            <h3 class="title-hero">Thông tin tìm kiếm</h3>
+            <form method="post" name="query_form" id="query_form">
+                <div class="row">
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                        <div class="form-group clear">
+                            <label class="col-md-4 col-sm-4 control-label">House Bill<span class="required">(*)</span></label>
+                            <div class="col-md-8 col-sm-8">
+                                <input type="text" class="form-control" id="housebill" name="housebill" value="" placeholder="Nhập House Bill" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-6 col-xs-12">
+                        <div class="form-group clear">
+                            <label class="col-md-4 col-sm-4 control-label">Số Cont<span class="required">(*)</span></label>
+                            <div class="col-md-8 col-sm-8">
+                                <input type="text" class="form-control" id="contnum" name="contnum" value="" placeholder="Nhập Số Cont" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="command text-center">
+                    <a href="javascript:void(0)" onclick="location.href='/kiem-tra-hang-nhap.html?housebill=' + $('#housebill').val() + '&contnum=' + $('#contnum').val()" class="cmd-add">Tìm kiếm</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <table class="table table-striped  table-bordered dataTable">
+        <thead>
+            <tr>
+                <th class="sorting">#</th>
+                <th class="sorting">Ngày nhận</th>
+                <th class="sorting">Số MasterBill</th>
+                <th class="sorting">Số HouseBill</th>
+                <th class="sorting">Số lượng</th>
+                <th class="sorting">Số khối</th>
+                <th class="sorting">Trọng lượng</th>
+                <th class="sorting">Số Container</th>
+                <th class="sorting">Forwarder</th>
+                <th class="sorting">Status</th>
+                <th class="sorting">TK Hải quan</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+                </div>
+

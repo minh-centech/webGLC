@@ -1,0 +1,290 @@
+﻿
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <div class="row">
+
+
+        <div class="title-lcl">Thông tin chi tiết lệnh<a href="@Url.Action("Index","LenhOnline")" style="float: right;font-size:15px;font-weight:normal;text-transform:none;">Quay lại</a></div>
+
+        <div class="panel form-cont">
+            <div class="panel-body">
+                <h3 class="title-hero">Thông tin từ khách hàng</h3>
+                <form method="post" name="query_form" id="query_form">
+                    <div class="row">
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">House Bill<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="HouseBill" value="GL21070254" placeholder="Nhập House Bill" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số lệnh<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="Code" readonly="readonly" value="GLCWH0000000102" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Ngày làm lệnh<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="NgayLamLenh" readonly="readonly" value="30/07/2021" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Nhập số Cont<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="SoCont" value="FSCU8196310" placeholder="Nhập số cont" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Ngày lấy hàng<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="NgayDuKienLayHang" data-toggle="datepicker" value="30/07/2021" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số tờ khai<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="SoToKhai" value="104176246050" placeholder="Nhập số tờ khai" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Họ và tên<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="Name" value="TUAN TEST" placeholder="Nhập họ và tên" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số điện thoại<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="SoDienThoai" value="1111" placeholder="Nhập Số điện thoại" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số xe<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="SoXe" value="" placeholder="Nhập Số xe" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số CMND<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="SoCMND" value="111" placeholder="Nhập Số CMND" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Mã số thuế<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="MST" value="0201263312" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Email<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" name="Email" value="acc@glc.com.vn;tuan.it@viconship.com" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-2 col-sm-2 control-label" style="width:10.5%">Tên công ty<span class="required">(*)</span></label>
+                                <div class="col-md-10 col-sm-10" style="width:89.5%">
+                                    <input type="text" class="form-control" name="TenKH" value="Công ty TNHH Một Thành Viên Trung tâm Logistics Xanh." />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-2 col-sm-2 control-label" style="width:10.5%">Địa chỉ<span class="required">(*)</span></label>
+                                <div class="col-md-10 col-sm-10" style="width:89.5%">
+                                    <input type="text" class="form-control" name="DiaChiKH" value="CN3.2G KCN Đình Vũ, Phường Đông Hải 2, Quận Hải An, Hải Phòng" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Phí lưu kho : 9 ngày<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" readonly="readonly" value="151.600 VND" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Phí giao nhận <span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" readonly="readonly" value="75.000 VND" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Phí bốc xếp, BL: GL21070254<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" readonly="readonly" value="947.500 VND" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Tổng tiền<span class="required">(*)</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" class="form-control" readonly="readonly" value="1.174.100 VND + 117.410 VND (Thuế VAT) = 1.291.510 VND" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="command text-center">
+                        <a href="javascript:void(0)" onclick="document.query_form.submit(); return false;" class="cmd-add">Cập nhật</a>
+                        <input type="hidden" name="_net_action[UpdateSCFPOST]" />
+                        <input type="submit" name="_net_action[UpdateSCFPOST]" style="display: none" />
+                    </div>
+
+                </form>
+
+                <h3 class="title-hero">Thông tin truy vấn</h3>
+                <form method="post" name="add_form" id="add_form">
+                    <div class="row">
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Thủ kho</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Forwarder</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">AT ASIA (KHAI MINH)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Tên tàu</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">MARCONNECTICUT</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Chủ hàng</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input" title=""></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số kiện</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">64</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số chuyến</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">21013S</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số House Bill</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">GL21070254</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Trọng lượng</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">1593</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Ngày tàu cập</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">26/07/2021</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số cont</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">FSCU8196310</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-12">
+                            <div class="form-group clear">
+                                <label class="col-md-4 col-sm-4 control-label">Số khối</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <span class="fake-input">3.79200</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="command">
+
+                        <a href="https://ewarehouse.glc.com.vn/lenh-online/GLCWH0000000102.html?cmd=order" class="cmd-add">Thanh toán</a>
+
+
+                        <a href="https://ewarehouse.glc.com.vn/lenh-online.html" class="cmd-add">Trở về danh sách lệnh</a>
+
+
+                    </div>
+
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+

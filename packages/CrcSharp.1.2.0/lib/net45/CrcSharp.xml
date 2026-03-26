@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CrcSharp</name>
+    </assembly>
+    <members>
+        <member name="T:CrcSharp.Crc">
+            <summary>
+            Computes the CRC check value for the input data.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.Crc.Parameters">
+            <summary>
+            The CRC algorithm parameters.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.Crc.LookupTable">
+            <summary>
+            The lookup table used in calculating check values.
+            </summary>
+        </member>
+        <member name="M:CrcSharp.Crc.#ctor(CrcSharp.CrcParameters)">
+            <summary>
+            Initializes a new instance of the <see cref="T:CrcSharp.Crc"/> class.
+            </summary>
+        </member>
+        <member name="M:CrcSharp.Crc.CalculateAsNumeric(System.Byte[])">
+            <summary>
+            Calculates the CRC check value as a numeric value.
+            </summary>
+            <param name="data">Data to compute the check value for.</param>
+            <returns>The CRC check value as a numeric value.</returns>
+        </member>
+        <member name="M:CrcSharp.Crc.CalculateCheckValue(System.Byte[])">
+            <summary>
+            Calculates the CRC check value as a byte array.
+            </summary>
+            <param name="data">Data to compute the check value for.</param>
+            <returns>The CRC check value as a byte array.</returns>
+        </member>
+        <member name="T:CrcSharp.CrcParameters">
+            <summary>
+            CRC algorithm parameters.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.CrcParameters.Width">
+            <summary>
+            The width of the CRC algorithm in bits.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.CrcParameters.Polynomial">
+            <summary>
+            The polynomial of the CRC algorithm.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.CrcParameters.InitialValue">
+            <summary>
+            The initial value used in the computation of the CRC check value.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.CrcParameters.XorOutValue">
+            <summary>
+            The value which is XORed to the final computed value before returning the check value.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.CrcParameters.ReflectIn">
+            <summary>
+            Indicates whether bytes are reflected before being processed.
+            </summary>
+        </member>
+        <member name="P:CrcSharp.CrcParameters.ReflectOut">
+            <summary>
+            Indicates whether the final computed value is reflected before the XOR stage.
+            </summary>
+        </member>
+        <member name="M:CrcSharp.CrcParameters.#ctor(System.Int32,System.UInt64,System.UInt64,System.UInt64,System.Boolean,System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:CrcSharp.CrcParameters"/> class.
+            </summary>
+            <param name="width">Width of the CRC algorithm in bits.</param>
+            <param name="polynomial">Polynomial of the CRC algorithm.</param>
+            <param name="initialValue">Initial value used in the computation of the CRC check value.</param>
+            <param name="xorOutValue">The value which is XORed to the final computed value before returning the check value.</param>
+            <param name="reflectIn">If set to <c>true</c> each byte is to be reflected before being processed.</param>
+            <param name="reflectOut">If set to <c>true</c> the final computed value is reflected before the XOR stage.</param>
+        </member>
+    </members>
+</doc>

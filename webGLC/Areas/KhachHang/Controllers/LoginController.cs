@@ -16,6 +16,7 @@ using System.Web.Helpers;
 using System.Web.Mvc;
 using System.Web.Security;
 using webGLC.Areas.Admin.Models;
+using webGLC.Areas.KhachHang.Models;
 
 namespace webGLC.Areas.KhachHang.Controllers
 {
@@ -36,6 +37,11 @@ namespace webGLC.Areas.KhachHang.Controllers
 
     public class LoginController : Controller
     {
+        private const string SessionUserKey = "KhachHangUser";
+        private const string SessionUserEmailKey = "KhachHangEmail";
+        private const string SessionUserIdKey = "KhachHangId";
+        private const string SessionUserDisplayNameKey = "KhachHangDisplayName";
+
         private static string GetApiUrl(string action)
         {
             var baseUrl = ConfigurationManager.AppSettings["ApiBaseUrl"];
@@ -50,20 +56,136 @@ namespace webGLC.Areas.KhachHang.Controllers
                 action.TrimStart('/'));
         }
 
+        private void StoreAuthenticatedUserSession(string email, string id = null, string rawData = null)
+        {
+            var displayName = TryExtractDisplayNameFromApiData(rawData, email);
+            Session[SessionUserKey] = new
+            {
+                Email = email,
+                ID = id,
+                DisplayName = displayName,
+                Data = rawData
+            };
+            Session[SessionUserEmailKey] = email;
+            Session[SessionUserIdKey] = id;
+            Session[SessionUserDisplayNameKey] = displayName;
+        }
+
+        private void ClearAuthenticatedUserSession()
+        {
+            Session.Remove(SessionUserKey);
+            Session.Remove(SessionUserEmailKey);
+            Session.Remove(SessionUserIdKey);
+            Session.Remove(SessionUserDisplayNameKey);
+        }
+
+        private string TryExtractIdFromApiData(string rawData)
+        {
+            if (string.IsNullOrWhiteSpace(rawData))
+            {
+                return null;
+            }
+
+            try
+            {
+                var jsonObject = JObject.Parse(rawData);
+                return jsonObject["ID"]?.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private string TryExtractDisplayNameFromApiData(string rawData, string email)
+        {
+            var fallbackName = !string.IsNullOrWhiteSpace(email) && email.Contains("@")
+                ? email.Split('@')[0]
+                : email;
+
+            if (string.IsNullOrWhiteSpace(rawData))
+            {
+                return fallbackName;
+            }
+
+            try
+            {
+                var jsonObject = JObject.Parse(rawData);
+                var candidateKeys = new[] { "Name", "HoTen", "FullName", "TenNguoiDung", "TenKH", "DisplayName" };
+                foreach (var key in candidateKeys)
+                {
+                    var value = jsonObject[key]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value;
+                    }
+                }
+            }
+            catch
+            {
+                return fallbackName;
+            }
+
+            return fallbackName;
+        }
+
+        private ActionResult SignOutAndRedirectToLogin()
+        {
+            FormsAuthentication.SignOut();
+            ClearAuthenticatedUserSession();
+
+            Session.Clear();
+            Session.Abandon();
+
+            var authCookie = Request.Cookies[FormsAuthentication.FormsCookieName];
+            if (authCookie != null)
+            {
+                authCookie.Expires = DateTime.Now.AddDays(-1);
+                authCookie.Value = string.Empty;
+                Response.Cookies.Add(authCookie);
+            }
+
+            return RedirectToAction("Index", "Login");
+        }
+
         // GET: Admin/Login
         public ActionResult Index()
         {
-            return View();
+            if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Index", "Home", new { area = "KhachHang" });
+            }
+            return View(new KhachHangLoginViewModel());
         }
 
-        public async Task<ActionResult> Login(DanhMucKhachHangDoiLenhLoginRequest model)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Index(KhachHangLoginViewModel model)
+        {
+            return await ExecuteLogin(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Login(KhachHangLoginViewModel model)
+        {
+            return await ExecuteLogin(model);
+        }
+
+        private async Task<ActionResult> ExecuteLogin(KhachHangLoginViewModel model)
         {
             if (ModelState.IsValid)
             {
+                var loginRequest = new DanhMucKhachHangDoiLenhLoginRequest
+                {
+                    Email = model.Email,
+                    Password = model.Password
+                };
+
                 using (var client = new HttpClient())
                 {
                     client.BaseAddress = new Uri(GetApiUrl("Login"));
-                    var response = await client.PostAsJsonAsync(client.BaseAddress, model);
+                    var response = await client.PostAsJsonAsync(client.BaseAddress, loginRequest);
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -72,7 +194,9 @@ namespace webGLC.Areas.KhachHang.Controllers
                         {
                             Console.WriteLine(result.ToString());
                             FormsAuthentication.SetAuthCookie(model.Email, false);
-                            return RedirectToAction("Index", "Home");
+                            var userId = TryExtractIdFromApiData(result.Data);
+                            StoreAuthenticatedUserSession(model.Email, userId, result.Data);
+                            return RedirectToAction("Index", "Home", new { area = "KhachHang" });
                         }
                         else if (result.Status == 1)
                         {
@@ -88,7 +212,7 @@ namespace webGLC.Areas.KhachHang.Controllers
                     }
                 }
             }
-            return View("Index");
+            return View("Index", model);
         }
         // GET: Admin/Register
         public ActionResult Register()
@@ -477,26 +601,16 @@ namespace webGLC.Areas.KhachHang.Controllers
             return View(model);
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public ActionResult Logout()
         {
+            return SignOutAndRedirectToLogin();
+        }
 
-            FormsAuthentication.SignOut();
-
-            // Clear the session
-            Session.Clear();
-            Session.Abandon();
-
-            // Clear the authentication cookie
-            var authCookie = Request.Cookies[FormsAuthentication.FormsCookieName];
-            if (authCookie != null)
-            {
-                authCookie.Expires = DateTime.Now.AddDays(-1);
-                Response.Cookies.Add(authCookie);
-            }
-
-
-            // Redirect to the login page
-            return RedirectToAction("Index", "Login");
+        [HttpGet]
+        public ActionResult Logout(string returnUrl = null)
+        {
+            return SignOutAndRedirectToLogin();
         }
     }
 }

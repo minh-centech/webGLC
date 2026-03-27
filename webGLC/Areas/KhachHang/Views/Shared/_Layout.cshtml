@@ -1,6 +1,12 @@
 ﻿
 
 
+@{
+    var khachHangDisplayName = Session["KhachHangDisplayName"] as string;
+    var khachHangEmail = Session["KhachHangEmail"] as string;
+    var khachHangHeaderName = !string.IsNullOrWhiteSpace(khachHangDisplayName) ? khachHangDisplayName : "Khách hàng";
+}
+
 <!DOCTYPE html>
 <html lang="vi" xml:lang="vi">
 
@@ -67,6 +73,7 @@
     <link type="text/css" href="~/Areas/Content/utils/menulink/jquery.mmenu.all.css" rel="stylesheet" />
     <link type="text/css" href="~/Areas/Content/utils/datepicker/datetimepicker.css" rel="stylesheet" />
     <link type="text/css" href="~/Areas/Content/pc/style.css" rel="stylesheet" />
+    <link type="text/css" href="~/Areas/Content/pc/mobile-enhancements.css" rel="stylesheet" />
     <style>
         .flexContent {
             min-height: 100vh;
@@ -76,15 +83,21 @@
         }
     </style>
 </head>
-<body id="body">
+<body id="body" class="kh-mobile-shell">
 
     <div class="Wrapper flexContent">
         <header id="header">
             <section class="hea-banner">
                 <div class="container">
-                    <div class="row">
-                        <div class="nav-btn-show fl hidden-lg hidden-md ">
-                            <a href="#my-mobile-menu" class="sidebar-toggle"><i class="fa fa-bars" aria-hidden="true"></i></a>
+                    <div class="row kh-header-row">
+                        <div class="nav-btn-show fl hidden-lg hidden-md">
+                            <button type="button"
+                                    class="sidebar-toggle mobile-nav-toggle"
+                                    aria-label="Mở menu điều hướng"
+                                    aria-controls="mainMenu"
+                                    aria-expanded="false">
+                                <i class="fa fa-bars" aria-hidden="true"></i>
+                            </button>
                         </div>
                         <div class="logo">
                             <h1 class="logo-text"></h1><a href="@Url.Action("Index","Home")" target="" rel="nofollow"><img src="~/Areas/Data/upload/files/imageedit_1_5875786148.png" alt="logo" width="100%" height="auto" /></a>
@@ -93,10 +106,20 @@
 
                             <div class="clear"></div>
                             <p class="btn btn-tc mt5"></p>
-                            <p class="acc-box btn btn-tc mt5">
-                                <a href="#"></a>
-                                <a href="@Url.Action("Logout","Login")">Đăng xuất</a>
-                            </p>
+                            <div class="account-pill mt5">
+                                <div class="account-pill-copy">
+                                    <strong>@khachHangHeaderName</strong>
+                                    @if (!string.IsNullOrWhiteSpace(khachHangEmail))
+                                    {
+                                        <span>@khachHangEmail</span>
+                                    }
+                                </div>
+                                @using (Html.BeginForm("Logout", "Login", FormMethod.Post, new { @class = "account-pill-form" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="account-pill-logout">Đăng xuất</button>
+                                }
+                            </div>
 
 
                         </div>
@@ -106,7 +129,7 @@
 
             <nav class="wh-menu">
                 <div class="container">
-                    <div id="mainMenu">
+                    <div id="mainMenu" class="kh-main-menu">
                         <ul class="navmenu">
 
                             <li><a href="@Url.Action("Index","Home")">Trang chủ</a></li>
@@ -197,6 +220,28 @@
                     window.history.pushState('forward', null, '');
                 };
             }
+        })();
+    </script>
+    <script type="text/javascript">
+        (function () {
+            var toggleButton = document.querySelector('.mobile-nav-toggle');
+            var body = document.body;
+
+            if (!toggleButton) {
+                return;
+            }
+
+            toggleButton.addEventListener('click', function () {
+                var isOpen = body.classList.toggle('menu-open');
+                toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth >= 992) {
+                    body.classList.remove('menu-open');
+                    toggleButton.setAttribute('aria-expanded', 'false');
+                }
+            });
         })();
     </script>
 

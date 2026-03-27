@@ -6,6 +6,7 @@ using System.Web.Mvc;
 
 namespace webGLC.Areas.KhachHang.Controllers
 {
+    [KhachHangAuthorize]
     public class NguoiDungController : Controller
     {
         // GET: Admin/NguoiDung

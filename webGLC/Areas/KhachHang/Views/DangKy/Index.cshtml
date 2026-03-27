@@ -1,20 +1,137 @@
-﻿
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Đăng ký";
     Layout = "~/Areas/KhachHang/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container">
+<div class="container register-page">
     <div class="row">
-
-
-        <section class="home-box">
+        <section class="home-box register-section">
             <div class="container">
                 <div class="row">
-                    <div class="main-title">Đăng ký</div>
-                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                        <div class="postentry">
+                    <div class="col-xs-12">
+                        <div class="register-hero">
+                            <div class="register-hero-copy">
+                                <div class="register-eyebrow">Khách hàng eWarehouse GLC</div>
+                                <h1 class="main-title register-title">Đăng ký tài khoản nhanh, rõ ràng và đúng quy trình</h1>
+                                <p class="register-summary">
+                                    Tải biểu mẫu phù hợp, hoàn thiện thông tin doanh nghiệp hoặc cá nhân, sau đó gửi hồ sơ để bộ phận GLC kích hoạt tài khoản và hỗ trợ sử dụng dịch vụ.
+                                </p>
+                                <div class="register-hero-actions">
+                                    <a href="#register-downloads" class="cmd-add">Tải biểu mẫu</a>
+                                    <a href="@Url.Action("Index", "Login")" class="cmd-print">Đăng nhập hệ thống</a>
+                                </div>
+                            </div>
+                            <div class="register-highlight">
+                                <div class="register-highlight-card">
+                                    <div class="register-highlight-label">Hỗ trợ hồ sơ</div>
+                                    <div class="register-highlight-value">Trong giờ hành chính</div>
+                                    <ul class="register-highlight-list">
+                                        <li>Kiểm tra biểu mẫu trước khi gửi</li>
+                                        <li>Hướng dẫn kích hoạt tài khoản</li>
+                                        <li>Hỗ trợ đăng nhập và thao tác ban đầu</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="col-xs-12">
+                        <div class="register-process panel">
+                            <div class="panel-body">
+                                <h2 class="title-hero">Quy trình đăng ký</h2>
+                                <div class="register-steps">
+                                    <div class="register-step-card">
+                                        <span class="register-step-number">1</span>
+                                        <h3>Chọn đúng biểu mẫu</h3>
+                                        <p>Tải biểu mẫu dành cho cá nhân hoặc doanh nghiệp để điền đúng thông tin ngay từ đầu.</p>
+                                    </div>
+                                    <div class="register-step-card">
+                                        <span class="register-step-number">2</span>
+                                        <h3>Hoàn thiện hồ sơ</h3>
+                                        <p>Kiểm tra mã số thuế, thông tin liên hệ và người đại diện nhận lệnh trước khi gửi.</p>
+                                    </div>
+                                    <div class="register-step-card">
+                                        <span class="register-step-number">3</span>
+                                        <h3>Kích hoạt và sử dụng</h3>
+                                        <p>Sau khi được xác nhận, bạn đăng nhập hệ thống để tạo lệnh online và tra cứu thông tin hàng.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12" id="register-downloads">
+                        <div class="register-downloads panel">
+                            <div class="panel-body">
+                                <h2 class="title-hero">Biểu mẫu đăng ký</h2>
+                                <div class="row register-download-grid">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <article class="register-download-card">
+                                            <div class="register-card-tag">Mẫu hồ sơ</div>
+                                            <h3>Khách hàng cá nhân</h3>
+                                            <p>Dành cho cá nhân trực tiếp đăng ký sử dụng dịch vụ và nhận thông tin giao hàng.</p>
+                                            <ul class="register-card-list">
+                                                <li>Thông tin người đăng ký</li>
+                                                <li>Số điện thoại và email nhận thông báo</li>
+                                                <li>Hồ sơ dễ điền, dễ đối chiếu</li>
+                                            </ul>
+                                            <a href="~/Areas/Data/upload/files/Mau-dang-ky-dich-vu-%20E-%20Warehouse-GLC-doanh-nghiep.doc" target="_blank" rel="nofollow" class="cmd-add register-download-button">Tải biểu mẫu cá nhân</a>
+                                        </article>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <article class="register-download-card register-download-card-alt">
+                                            <div class="register-card-tag">Mẫu hồ sơ</div>
+                                            <h3>Khách hàng doanh nghiệp</h3>
+                                            <p>Phù hợp với doanh nghiệp cần quản lý tài khoản giao nhận, thông tin công ty và bộ phận phụ trách.</p>
+                                            <ul class="register-card-list">
+                                                <li>Mã số thuế và thông tin pháp lý</li>
+                                                <li>Người liên hệ thực hiện giao dịch</li>
+                                                <li>Thuận tiện cho vận hành lâu dài</li>
+                                            </ul>
+                                            <a href="~/Areas/Data/upload/files/Mau-dang-ky-dich-vu-%20E-%20Warehouse-GLC-doanh-nghiep.doc" target="_blank" rel="nofollow" class="cmd-add register-download-button">Tải biểu mẫu doanh nghiệp</a>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-sm-12 col-md-7">
+                        <div class="panel register-guidance">
+                            <div class="panel-body">
+                                <h2 class="title-hero">Lưu ý trước khi gửi hồ sơ</h2>
+                                <ul class="register-checklist">
+                                    <li>Điền đúng họ tên, số điện thoại và email để nhận thông báo kích hoạt.</li>
+                                    <li>Với doanh nghiệp, cần kiểm tra chính xác mã số thuế, tên công ty và địa chỉ xuất hóa đơn.</li>
+                                    <li>Hồ sơ nên được rà soát kỹ trước khi gửi để tránh phải chỉnh sửa nhiều lần.</li>
+                                    <li>Sau khi được cấp tài khoản, bạn có thể đăng nhập để tạo lệnh online và tra cứu hàng nhập.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 col-sm-12 col-md-5">
+                        <div class="panel register-support">
+                            <div class="panel-body">
+                                <h2 class="title-hero">Cần hỗ trợ thêm?</h2>
+                                <div class="register-support-box">
+                                    <div class="register-support-item">
+                                        <span class="register-support-label">Điện thoại</span>
+                                        <strong>(84-225) 3979 550 - (84-225) 3262 156</strong>
+                                    </div>
+                                    <div class="register-support-item">
+                                        <span class="register-support-label">Email</span>
+                                        <strong>info@glc.com.vn</strong>
+                                    </div>
+                                    <div class="register-support-item">
+                                        <span class="register-support-label">Địa chỉ</span>
+                                        <strong>Lô đất CN3.2G KCN Đình Vũ, Đông Hải 2, Hải An, Hải Phòng</strong>
+                                    </div>
+                                </div>
+                                <div class="register-support-actions">
+                                    <a href="@Url.Action("Index", "HuongDan")" class="cmd-print">Xem hướng dẫn sử dụng</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -22,4 +139,3 @@
         </section>
     </div>
 </div>
-

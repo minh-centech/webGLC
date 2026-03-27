@@ -7,234 +7,470 @@
 <div class="container">
     <div class="row">
 
-
-        <div class="title-lcl">Thêm mới lệnh<a href="/lenh-online.html" style="float: right;font-size:15px;font-weight:normal;text-transform:none;">Quay lại</a></div>
+        <div class="title-lcl">Thêm mới lệnh<a href="/lenh-online.html" class="title-action-back">Quay lại</a></div>
 
         <div class="panel form-cont">
             <div class="panel-body">
-                <h3 class="title-hero">Nhập thông tin từ khách hàng</h3>
+                <h3 class="title-hero">Nhập thông tin theo từng bước</h3>
                 <form method="post" name="query_form" id="query_form">
-                    <div class="row">
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">House Bill<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="HouseBill" value="" placeholder="Nhập House Bill" />
-                                </div>
-                            </div>
+                    <div class="form-wizard" data-wizard>
+                        <div class="wizard-steps" aria-label="Các bước nhập thông tin">
+                            <button type="button" class="wizard-step is-active" data-step-trigger="1">
+                                <span class="wizard-step-number">1</span>
+                                <span class="wizard-step-text">Thông tin khách hàng</span>
+                            </button>
+                            <button type="button" class="wizard-step" data-step-trigger="2">
+                                <span class="wizard-step-number">2</span>
+                                <span class="wizard-step-text">Thông tin công ty</span>
+                            </button>
+                            <button type="button" class="wizard-step" data-step-trigger="3">
+                                <span class="wizard-step-number">3</span>
+                                <span class="wizard-step-text">Thông tin lệnh</span>
+                            </button>
                         </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số lệnh<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="Code"  />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Ngày làm lệnh<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="NgayLamLenh" readonly="readonly" value="08/08/2024" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Nhập số Cont<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="SoCont" value="" placeholder="Nhập số cont" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Ngày lấy hàng<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="NgayDuKienLayHang" data-toggle="datepicker" value="08/08/2024" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số tờ khai<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="SoToKhai" value="" placeholder="Nhập số tờ khai" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Họ và tên<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="Name" value="" placeholder="Nhập họ và tên" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số điện thoại<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="SoDienThoai" value="" placeholder="Nhập Số điện thoại" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số xe<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="SoXe" value="" placeholder="Nhập Số xe" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số CMND<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="SoCMND" value="" placeholder="Nhập Số CMND" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-12 col-sm-12 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Nhập mã số thuế<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="MST" value="" placeholder="Nhập mã số thuế" />
-                                </div>
-                            </div>
+                        <div class="wizard-note">
+                            Điền lần lượt từng bước để hệ thống dễ kiểm tra hơn trước khi truy vấn.
                         </div>
-                        <div class="col-md-12 col-sm-12 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Tên công ty<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="TenKH" value="" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-12 col-sm-12 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Địa chỉ<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="DiaChiKH" value="" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-12 col-sm-12 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Email<span class="required">(*)</span></label>
-                                <div class="col-md-8 col-sm-8">
-                                    <input type="text" class="form-control" name="Email" value="" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="command text-center">
-                        <a href="javascript:void(0)" onclick="document.query_form.submit(); return false;" class="cmd-add">Truy vấn</a>
+                        <div class="wizard-error" data-step-error hidden></div>
+
+                        <section class="wizard-panel is-active" data-step-panel="1">
+                            <div class="row">
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Họ và tên<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="Name" value="" placeholder="Nhập họ và tên" data-required-step="1" data-label="Họ và tên" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Số điện thoại<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="SoDienThoai" value="" placeholder="Nhập số điện thoại" data-required-step="1" data-label="Số điện thoại" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Số CMND<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="SoCMND" value="" placeholder="Nhập số CMND" data-required-step="1" data-label="Số CMND" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Số xe<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="SoXe" value="" placeholder="Nhập số xe" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="wizard-actions">
+                                <button type="button" class="cmd-add wizard-next" data-next-step="2">Tiếp theo</button>
+                            </div>
+                        </section>
+
+                        <section class="wizard-panel" data-step-panel="2">
+                            <div class="row">
+                                <div class="col-md-12 col-sm-12 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Mã số thuế<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="MST" value="" placeholder="Nhập mã số thuế" data-required-step="2" data-label="Mã số thuế" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 col-sm-12 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Tên công ty<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="TenKH" value="" data-required-step="2" data-label="Tên công ty" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 col-sm-12 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Địa chỉ<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="DiaChiKH" value="" data-required-step="2" data-label="Địa chỉ" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 col-sm-12 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Email<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="Email" value="" data-required-step="2" data-label="Email" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="wizard-actions">
+                                <button type="button" class="cmd-print wizard-prev" data-prev-step="1">Quay lại</button>
+                                <button type="button" class="cmd-add wizard-next" data-next-step="3">Tiếp theo</button>
+                            </div>
+                        </section>
+
+                        <section class="wizard-panel" data-step-panel="3">
+                            <div class="row">
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">House Bill<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="HouseBill" value="" placeholder="Nhập House Bill" data-required-step="3" data-label="House Bill" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Số lệnh<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="Code" value="" data-required-step="3" data-label="Số lệnh" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Ngày làm lệnh<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="NgayLamLenh" readonly="readonly" value="08/08/2024" data-required-step="3" data-label="Ngày làm lệnh" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Nhập số Cont<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="SoCont" value="" placeholder="Nhập số cont" data-required-step="3" data-label="Số Cont" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Ngày lấy hàng<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control js-order-date" name="NgayDuKienLayHang" autocomplete="off" placeholder="Chọn ngày lấy hàng" value="08/08/2024" data-required-step="3" data-label="Ngày lấy hàng" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 col-xs-12">
+                                    <div class="form-group clear">
+                                        <label class="col-md-4 col-sm-4 control-label">Số tờ khai<span class="required">(*)</span></label>
+                                        <div class="col-md-8 col-sm-8">
+                                            <input type="text" class="form-control" name="SoToKhai" value="" placeholder="Nhập số tờ khai" data-required-step="3" data-label="Số tờ khai" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="wizard-actions">
+                                <button type="button" class="cmd-print wizard-prev" data-prev-step="2">Quay lại</button>
+                                <button type="submit" class="cmd-add wizard-submit">Truy vấn</button>
+                            </div>
+                        </section>
+
                         <input type="hidden" name="_net_action[QuerySCFPOST]" />
                         <input type="submit" name="_net_action[QuerySCFPOST]" style="display: none" />
                     </div>
                 </form>
 
-                <h3 class="title-hero">Thông tin truy vấn</h3>
-                <form method="post" name="add_form" id="add_form">
-                    <div class="row">
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Thủ kho</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Forwarder</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Tên tàu</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Chủ hàng</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input" title=""></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số carton</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số chuyến</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số House Bill</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Trọng lượng</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Ngày tàu cập</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input">08/08/2024</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số cont</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 col-sm-4 col-xs-12">
-                            <div class="form-group clear">
-                                <label class="col-md-4 col-sm-4 control-label">Số khối</label>
-                                <div class="col-md-8 col-sm-8">
-                                    <span class="fake-input"></span>
-                                </div>
-                            </div>
-                        </div>
+                <section id="query-result-section" class="query-result-section" hidden>
+                    <h3 class="title-hero">Thông tin truy vấn</h3>
+                    <div class="wizard-note query-result-note">
+                        Kết quả chỉ hiển thị sau khi hệ thống truy vấn API thành công.
                     </div>
-
-
-                </form>
+                    <form method="post" name="add_form" id="add_form">
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Thủ kho</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="thuKho"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Forwarder</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="forwarder"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Tên tàu</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="tenTau"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Chủ hàng</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" title="" data-query-field="chuHang"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Số carton</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="soCarton"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Số chuyến</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="soChuyen"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Tình trạng thông quan</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="status-badge status-badge-success" data-query-field="tinhTrangThongQuan"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Số House Bill</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="soHouseBill"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Trọng lượng</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="trongLuong"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Ngày tàu cập</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="ngayTauCap">08/08/2024</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Số cont</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="soCont"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-sm-4 col-xs-12">
+                                <div class="form-group clear">
+                                    <label class="col-md-4 col-sm-4 control-label">Số khối</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <span class="fake-input" data-query-field="soKhoi"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </section>
             </div>
         </div>
     </div>
 </div>
+
+<script type="text/javascript">
+    (function () {
+        var wizard = document.querySelector('[data-wizard]');
+        var resultSection = document.getElementById('query-result-section');
+        if (!wizard) {
+            return;
+        }
+
+        var currentStep = 1;
+        var panels = wizard.querySelectorAll('[data-step-panel]');
+        var triggers = wizard.querySelectorAll('[data-step-trigger]');
+        var errorBox = wizard.querySelector('[data-step-error]');
+
+        function setStep(step) {
+            currentStep = step;
+
+            for (var i = 0; i < panels.length; i++) {
+                var panel = panels[i];
+                panel.classList.toggle('is-active', Number(panel.getAttribute('data-step-panel')) === step);
+            }
+
+            for (var j = 0; j < triggers.length; j++) {
+                var trigger = triggers[j];
+                var triggerStep = Number(trigger.getAttribute('data-step-trigger'));
+                trigger.classList.toggle('is-active', triggerStep === step);
+                trigger.classList.toggle('is-complete', triggerStep < step);
+            }
+
+            if (errorBox) {
+                errorBox.hidden = true;
+                errorBox.textContent = '';
+            }
+        }
+
+        function validateStep(step) {
+            var requiredFields = wizard.querySelectorAll('[data-required-step="' + step + '"]');
+            for (var i = 0; i < requiredFields.length; i++) {
+                var field = requiredFields[i];
+                if (!field.value || !field.value.trim()) {
+                    if (errorBox) {
+                        errorBox.hidden = false;
+                        errorBox.textContent = 'Vui lòng nhập ' + (field.getAttribute('data-label') || 'thông tin bắt buộc') + ' trước khi sang bước tiếp theo.';
+                    }
+                    field.focus();
+                    return false;
+                }
+            }
+
+            if (errorBox) {
+                errorBox.hidden = true;
+                errorBox.textContent = '';
+            }
+            return true;
+        }
+
+        wizard.addEventListener('click', function (event) {
+            var nextButton = event.target.closest('[data-next-step]');
+            var prevButton = event.target.closest('[data-prev-step]');
+            var trigger = event.target.closest('[data-step-trigger]');
+
+            if (nextButton) {
+                var nextStep = Number(nextButton.getAttribute('data-next-step'));
+                if (validateStep(currentStep)) {
+                    setStep(nextStep);
+                }
+                return;
+            }
+
+            if (prevButton) {
+                setStep(Number(prevButton.getAttribute('data-prev-step')));
+                return;
+            }
+
+            if (trigger) {
+                var requestedStep = Number(trigger.getAttribute('data-step-trigger'));
+                if (requestedStep <= currentStep) {
+                    setStep(requestedStep);
+                    return;
+                }
+
+                var stepToValidate = currentStep;
+                while (stepToValidate < requestedStep) {
+                    if (!validateStep(stepToValidate)) {
+                        return;
+                    }
+                    stepToValidate++;
+                }
+                setStep(requestedStep);
+            }
+        });
+
+        document.getElementById('query_form').addEventListener('submit', function (event) {
+            var firstValid = validateStep(1);
+            var secondValid = firstValid ? validateStep(2) : false;
+            var thirdValid = firstValid && secondValid ? validateStep(3) : false;
+
+            if (!firstValid || !secondValid || !thirdValid) {
+                event.preventDefault();
+                if (!firstValid) {
+                    setStep(1);
+                } else if (!secondValid) {
+                    setStep(2);
+                } else {
+                    setStep(3);
+                }
+                return;
+            }
+
+            event.preventDefault();
+            window.renderLenhOnlineQueryResult({
+                thuKho: 'Nguyễn Văn A',
+                forwarder: 'GLC Logistics',
+                tenTau: 'M/V GREEN OCEAN',
+                chuHang: document.querySelector('[name="TenKH"]') ? document.querySelector('[name="TenKH"]').value : '',
+                soCarton: '64',
+                soChuyen: '21013S',
+                tinhTrangThongQuan: 'Đã thông quan',
+                soHouseBill: document.querySelector('[name="HouseBill"]') ? document.querySelector('[name="HouseBill"]').value : '',
+                trongLuong: '1593',
+                ngayTauCap: '26/07/2021',
+                soCont: document.querySelector('[name="SoCont"]') ? document.querySelector('[name="SoCont"]').value : '',
+                soKhoi: '12.5'
+            });
+        });
+
+        window.hideLenhOnlineQueryResult = function () {
+            if (resultSection) {
+                resultSection.hidden = true;
+            }
+        };
+
+        window.renderLenhOnlineQueryResult = function (data) {
+            if (!resultSection || !data) {
+                return;
+            }
+
+            var fields = resultSection.querySelectorAll('[data-query-field]');
+            for (var i = 0; i < fields.length; i++) {
+                var field = fields[i];
+                var key = field.getAttribute('data-query-field');
+                var value = data[key];
+                field.textContent = value === undefined || value === null || value === '' ? '' : value;
+                if (key === 'chuHang') {
+                    field.setAttribute('title', field.textContent);
+                }
+            }
+
+            resultSection.hidden = false;
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        if (window.jQuery && jQuery.fn.datetimepicker) {
+            jQuery.datetimepicker.setLocale('vi');
+            jQuery('.js-order-date').datetimepicker({
+                timepicker: false,
+                format: 'd/m/Y',
+                scrollInput: false,
+                closeOnDateSelect: true
+            });
+        }
+
+        setStep(1);
+    })();
+</script>
+
+<style>
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .status-badge-success {
+        color: #0f6b39;
+        background: linear-gradient(135deg, #dff7e8 0%, #c9f0d9 100%);
+        border: 1px solid #8fd0a7;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+</style>

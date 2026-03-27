@@ -175,12 +175,14 @@
     <Compile Include="Areas\AdminQuanTriController.cs" />
     <Compile Include="Areas\KhachHang\KhachHangAreaRegistration.cs" />
     <Compile Include="Areas\KhachHang\Controllers\AuthorizeUserAttributeController.cs" />
+    <Compile Include="Areas\KhachHang\Controllers\KhachHangAuthorizeAttribute.cs" />
     <Compile Include="Areas\KhachHang\Controllers\DangKyController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\HomeController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\HuongDanController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\KiemTraHangNhapController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\LenhOnlineController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\LoginController.cs" />
+    <Compile Include="Areas\KhachHang\Models\KhachHangLoginViewModel.cs" />
     <Compile Include="Areas\KhachHang\Controllers\NguoiDungController.cs" />
     <Compile Include="Areas\KhachHang\Models\NguoiDung.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -1327,8 +1329,8 @@
     <Content Include="Areas\Content\utils\zebradialog\default\question.png" />
     <Content Include="Areas\Content\utils\zebradialog\default\warning.png" />
     <Content Include="Areas\Content\utils\zebradialog\default\zebradialog.css" />
-    <Content Include="Areas\Data\ResizeImage\images\page\anh-glcx200x200x5.jpg" />
-    <Content Include="Areas\Data\ResizeImage\images\page\anh-glcx500x500x4.jpg" />
+    <Content Include="Areas\Data\ResizeImage\images\page\kiemtra-hangnhap.png" />
+    <Content Include="Areas\Data\ResizeImage\images\page\lenh-online.png" />
     <Content Include="Areas\Data\upload\files\imageedit_1_5875786148.png" />
     <Content Include="Content\bootstrap-grid.css" />
     <Content Include="Content\bootstrap-grid.min.css" />

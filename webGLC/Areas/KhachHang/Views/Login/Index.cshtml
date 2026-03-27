@@ -227,6 +227,51 @@
             background: #fff;
         }
 
+        .kh-login-captcha-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .kh-login-captcha-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 52px;
+            padding: 8px 10px 8px 14px;
+            border-radius: 14px;
+            border: 1px solid #d6e9db;
+            background: linear-gradient(135deg, #f8fcf9 0%, #ecf7ef 100%);
+        }
+
+        .kh-login-captcha-text {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: #0b6f33;
+            user-select: none;
+        }
+
+        .kh-login-captcha-refresh {
+            min-width: 46px;
+            min-height: 36px;
+            border: 0;
+            border-radius: 10px;
+            background: #0a8f40;
+            color: #fff;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .kh-login-captcha-hint {
+            margin-top: 8px;
+            color: #617166;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
         @@media (max-width: 991px) {
             .kh-login-card {
                 grid-template-columns: 1fr;
@@ -255,8 +300,18 @@
                 font-size: 26px;
             }
 
-            .kh-login-links {
+            .kh-login-links,
+            .kh-login-captcha-row {
                 grid-template-columns: 1fr;
+            }
+
+            .kh-login-captcha-box {
+                padding: 10px 12px;
+            }
+
+            .kh-login-captcha-text {
+                font-size: 22px;
+                letter-spacing: 0.14em;
             }
         }
     </style>
@@ -284,13 +339,14 @@
 
                 <div class="kh-login-heading">
                     <h1>Đăng nhập khách hàng</h1>
-                    <p>Vui lòng nhập email và mật khẩu đã được cấp để truy cập hệ thống.</p>
+                    <p>Vui lòng nhập email, mật khẩu và mã captcha để truy cập hệ thống.</p>
                 </div>
 
                 @using (Html.BeginForm("Index", "Login", FormMethod.Post, new { novalidate = "novalidate" }))
                 {
                     @Html.AntiForgeryToken()
                     @Html.ValidationSummary(false, "", new { @class = "kh-login-alert validation-summary-errors" })
+                    @Html.HiddenFor(m => m.CaptchaToken)
 
                     <div class="kh-login-field">
                         <label class="kh-login-label" for="Email">Email</label>
@@ -313,6 +369,24 @@
                             placeholder = "Nhập mật khẩu"
                         })
                         @Html.ValidationMessageFor(m => m.Password)
+                    </div>
+
+                    <div class="kh-login-field">
+                        <label class="kh-login-label" for="CaptchaCode">Mã captcha</label>
+                        <div class="kh-login-captcha-row">
+                            @Html.TextBoxFor(m => m.CaptchaCode, new
+                            {
+                                @class = "kh-login-input",
+                                autocomplete = "off",
+                                placeholder = "Nhập mã captcha"
+                            })
+                            <div class="kh-login-captcha-box">
+                                <span class="kh-login-captcha-text">@Model.CaptchaDisplayText</span>
+                                <button type="button" class="kh-login-captcha-refresh" onclick="window.location.reload();" aria-label="Đổi mã captcha">↻</button>
+                            </div>
+                        </div>
+                        <div class="kh-login-captcha-hint">Không phân biệt chữ hoa thường. Bấm nút làm mới nếu bạn muốn đổi mã.</div>
+                        @Html.ValidationMessageFor(m => m.CaptchaCode)
                     </div>
 
                     <button type="submit" class="kh-login-submit">Đăng nhập</button>

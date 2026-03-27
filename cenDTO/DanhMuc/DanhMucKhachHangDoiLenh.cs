@@ -80,11 +80,15 @@ namespace cenDTO
     {
         public string Email { get; set; }
         public string Password { get; set; }
+        public string CaptchaCode { get; set; }
+        public string CaptchaToken { get; set; }
 
         public DanhMucKhachHangDoiLenhLoginRequest()
         {
             Email = null;
             Password = null;
+            CaptchaCode = null;
+            CaptchaToken = null;
         }
     }
     public class DanhMucKhachHangDoiLenhGetMaKichHoatByEmailRequest

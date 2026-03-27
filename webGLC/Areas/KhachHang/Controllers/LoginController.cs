@@ -1,8 +1,10 @@
 ﻿using cenDTO;
+using cenCommon;
 using coreDTO;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Configuration;
@@ -41,6 +43,7 @@ namespace webGLC.Areas.KhachHang.Controllers
         private const string SessionUserEmailKey = "KhachHangEmail";
         private const string SessionUserIdKey = "KhachHangId";
         private const string SessionUserDisplayNameKey = "KhachHangDisplayName";
+        private const string CaptchaSecretAppSettingKey = "CaptchaSecretKey";
 
         private static string GetApiUrl(string action)
         {
@@ -54,6 +57,57 @@ namespace webGLC.Areas.KhachHang.Controllers
                 "{0}/api/DanhMucKhachHangDoiLenh/{1}",
                 baseUrl.TrimEnd('/'),
                 action.TrimStart('/'));
+        }
+
+        private static string GetCaptchaSecretKey()
+        {
+            var secret = ConfigurationManager.AppSettings[CaptchaSecretAppSettingKey];
+            if (string.IsNullOrWhiteSpace(secret))
+            {
+                throw new ConfigurationErrorsException("Missing appSetting 'CaptchaSecretKey' in Web.config.");
+            }
+
+            return secret;
+        }
+
+        private async Task<KhachHangLoginViewModel> BuildLoginViewModelAsync(KhachHangLoginViewModel model = null)
+        {
+            var viewModel = model ?? new KhachHangLoginViewModel();
+
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new Uri(GetApiUrl("GetLoginCaptcha"));
+                    var response = await client.GetAsync(client.BaseAddress);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = await response.Content.ReadAsAsync<webAPIresponse>();
+                        if (result != null && result.Status == 0 && !string.IsNullOrWhiteSpace(result.Data))
+                        {
+                            var data = JsonConvert.DeserializeObject<JObject>(result.Data);
+                            viewModel.CaptchaDisplayText = data?["CaptchaDisplayText"]?.ToString();
+                            viewModel.CaptchaToken = data?["CaptchaToken"]?.ToString();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                var captchaCode = CaptchaTokenHelper.GenerateCode();
+                viewModel.CaptchaDisplayText = captchaCode;
+                viewModel.CaptchaToken = CaptchaTokenHelper.CreateToken(captchaCode, GetCaptchaSecretKey());
+            }
+
+            if (string.IsNullOrWhiteSpace(viewModel.CaptchaDisplayText) || string.IsNullOrWhiteSpace(viewModel.CaptchaToken))
+            {
+                var captchaCode = CaptchaTokenHelper.GenerateCode();
+                viewModel.CaptchaDisplayText = captchaCode;
+                viewModel.CaptchaToken = CaptchaTokenHelper.CreateToken(captchaCode, GetCaptchaSecretKey());
+            }
+
+            viewModel.CaptchaCode = string.Empty;
+            return viewModel;
         }
 
         private void StoreAuthenticatedUserSession(string email, string id = null, string rawData = null)
@@ -149,13 +203,13 @@ namespace webGLC.Areas.KhachHang.Controllers
         }
 
         // GET: Admin/Login
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
             if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Index", "Home", new { area = "KhachHang" });
             }
-            return View(new KhachHangLoginViewModel());
+            return View(await BuildLoginViewModelAsync());
         }
 
         [HttpPost]
@@ -179,7 +233,9 @@ namespace webGLC.Areas.KhachHang.Controllers
                 var loginRequest = new DanhMucKhachHangDoiLenhLoginRequest
                 {
                     Email = model.Email,
-                    Password = model.Password
+                    Password = model.Password,
+                    CaptchaCode = string.IsNullOrWhiteSpace(model.CaptchaCode) ? model.CaptchaCode : model.CaptchaCode.Trim().ToUpperInvariant(),
+                    CaptchaToken = model.CaptchaToken
                 };
 
                 using (var client = new HttpClient())
@@ -212,7 +268,7 @@ namespace webGLC.Areas.KhachHang.Controllers
                     }
                 }
             }
-            return View("Index", model);
+            return View("Index", await BuildLoginViewModelAsync(model));
         }
         // GET: Admin/Register
         public ActionResult Register()

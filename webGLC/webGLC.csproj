@@ -52,11 +52,6 @@
       <HintPath>bin\coreCommon.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="cenDTO, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\cenDTO.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="coreDTO, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\coreDTO.dll</HintPath>
@@ -1442,6 +1437,16 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\cenDTO\cenDTO.csproj">
+      <Project>{198E2BD1-FC29-4060-BEB9-9E0FE5359137}</Project>
+      <Name>cenDTO</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\cenCommon\cenCommon.csproj">
+      <Project>{476E2C80-019F-4C8A-B8ED-3DB8D209661B}</Project>
+      <Name>cenCommon</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

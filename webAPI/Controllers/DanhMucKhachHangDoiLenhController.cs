@@ -16,11 +16,44 @@ using GlobalVariables = webAPI.Code.GlobalVariables;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using coreCommon;
+using System.Configuration;
 namespace webAPI.Controllers
 {
     [EnableCors(origins: "*", headers: "*", methods: "*")]
     public class DanhMucKhachHangDoiLenhController : ApiController
     {
+        [HttpGet]
+        public webAPIresponse GetLoginCaptcha()
+        {
+            var response = new webAPIresponse();
+
+            try
+            {
+                var captchaSecretKey = ConfigurationManager.AppSettings["CaptchaSecretKey"];
+                if (string.IsNullOrWhiteSpace(captchaSecretKey))
+                    throw new Exception("Thiếu cấu hình CaptchaSecretKey.");
+
+                var captchaCode = CaptchaTokenHelper.GenerateCode();
+                var captchaToken = CaptchaTokenHelper.CreateToken(captchaCode, captchaSecretKey);
+
+                response.Status = 0;
+                response.Data = JsonConvert.SerializeObject(new
+                {
+                    CaptchaDisplayText = captchaCode,
+                    CaptchaToken = captchaToken
+                });
+                response.ErrorMsg = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                response.Status = 1;
+                response.Data = string.Empty;
+                response.ErrorMsg = ex.Message;
+            }
+
+            return response;
+        }
+
         // GET: DanhMucKhachHangDoiLenh
         [HttpPost]
         public webAPIresponse List()
@@ -134,6 +167,19 @@ namespace webAPI.Controllers
             try
             {
                 coreCommon.GlobalVariables.IDDonVi = GlobalVariables.IDDanhMucDonVi;
+                var captchaSecretKey = ConfigurationManager.AppSettings["CaptchaSecretKey"];
+
+                if (string.IsNullOrWhiteSpace(captchaSecretKey))
+                    throw new Exception("Thiếu cấu hình CaptchaSecretKey.");
+
+                if (coreCommon.coreCommon.IsNull(objLogin.CaptchaCode))
+                    throw new Exception("Mã captcha không được bỏ trống.");
+
+                if (coreCommon.coreCommon.IsNull(objLogin.CaptchaToken))
+                    throw new Exception("Phiên captcha không hợp lệ.");
+
+                if (!CaptchaTokenHelper.ValidateToken(objLogin.CaptchaCode, objLogin.CaptchaToken, captchaSecretKey))
+                    throw new Exception("Mã captcha không đúng hoặc đã hết hạn.");
 
                 //if (objLogin.Email.ToString().ToUpper().Trim() != "ADMIN@EVERLINK.COM.VN") throw new Exception("Hệ thống đang nâng cấp, mời bạn quay lại sau ít phút!");
 
@@ -154,7 +200,7 @@ namespace webAPI.Controllers
                     response.ErrorMsg = String.Empty;
                 }
                 else
-                    throw new Exception(ErrMsg);
+                    throw new Exception("Email hoặc mật khẩu không đúng.");
 
             }
             catch (Exception ex)

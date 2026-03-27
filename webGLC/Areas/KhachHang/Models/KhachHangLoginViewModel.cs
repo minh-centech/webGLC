@@ -13,5 +13,13 @@ namespace webGLC.Areas.KhachHang.Models
         [DataType(DataType.Password)]
         [Display(Name = "Mật khẩu")]
         public string Password { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập mã captcha.")]
+        [Display(Name = "Mã captcha")]
+        public string CaptchaCode { get; set; }
+
+        public string CaptchaToken { get; set; }
+
+        public string CaptchaDisplayText { get; set; }
     }
 }

@@ -1,0 +1,44 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+AnyCPU/
+
+# ASP.NET / IIS Express
+.idea/
+*.pdb
+*.cache
+*.dbmdl
+*.bak
+*.log
+*.svclog
+*.publishsettings
+
+# NuGet
+packages/*
+!packages/build/
+!packages/repositories.config
+*.nupkg
+
+# Node-style noise sometimes present in web projects
+node_modules/
+
+# Test and coverage output
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# OS files
+Thumbs.db
+Desktop.ini

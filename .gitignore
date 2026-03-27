@@ -1,0 +1,93 @@
+# =========================
+# GLC Web - Multi-module .NET solution
+# =========================
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# JetBrains
+_ReSharper*/
+*.DotSettings.user
+
+# Build output
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+TestResults/
+artifacts/
+
+# MSBuild / compiler caches
+obj/
+Generated\ Files/
+*.cache
+*.ilk
+*.pdb
+*.ipch
+*.aps
+*.ncb
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+
+# Logs
+*.log
+logs/
+Log/
+
+# NuGet
+packages/
+!packages/build/
+*.nupkg
+*.snupkg
+project.assets.json
+project.nuget.cache
+
+# .NET CLI / SDK
+.dotnet/
+
+# Template engine cache
+.templateengine/
+
+# Publish outputs
+app.publish/
+publish/
+*.Publish.xml
+
+# User-specific publish settings
+*.pubxml.user
+
+# IIS Express / local web server
+.vs/config/
+applicationhost.config
+
+# SQL / local data files
+*.mdf
+*.ldf
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Node / frontend tooling (if any submodule adds it later)
+node_modules/
+dist/
+coverage/
+
+# Environment / secrets
+.env
+.env.*
+*.local
+
+# Keep source, configs and business assets tracked
+!.editorconfig
+!packages.config

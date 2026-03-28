@@ -170,6 +170,7 @@
     <Compile Include="Areas\AdminQuanTriController.cs" />
     <Compile Include="Areas\KhachHang\KhachHangAreaRegistration.cs" />
     <Compile Include="Areas\KhachHang\Controllers\AuthorizeUserAttributeController.cs" />
+    <Compile Include="Areas\KhachHang\Controllers\KhachHangAdminAuthorizeAttribute.cs" />
     <Compile Include="Areas\KhachHang\Controllers\KhachHangAuthorizeAttribute.cs" />
     <Compile Include="Areas\KhachHang\Controllers\DangKyController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\HomeController.cs" />
@@ -177,7 +178,11 @@
     <Compile Include="Areas\KhachHang\Controllers\KiemTraHangNhapController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\LenhOnlineController.cs" />
     <Compile Include="Areas\KhachHang\Controllers\LoginController.cs" />
+    <Compile Include="Areas\KhachHang\Controllers\QuanTriTaiKhoanController.cs" />
+    <Compile Include="Areas\KhachHang\Models\DangKyTaiKhoanViewModel.cs" />
+    <Compile Include="Areas\KhachHang\Models\DoanhNghiepViewModels.cs" />
     <Compile Include="Areas\KhachHang\Models\KhachHangLoginViewModel.cs" />
+    <Compile Include="Areas\KhachHang\Models\QuanTriTaiKhoanViewModels.cs" />
     <Compile Include="Areas\KhachHang\Controllers\NguoiDungController.cs" />
     <Compile Include="Areas\KhachHang\Models\NguoiDung.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -1405,6 +1410,10 @@
     <Content Include="Areas\KhachHang\Views\DangKy\Index.cshtml" />
     <Content Include="Areas\KhachHang\Views\KiemTraHangNhap\Index.cshtml" />
     <Content Include="Areas\KhachHang\Views\Login\Register.cshtml" />
+    <Content Include="Areas\KhachHang\Views\QuanTriTaiKhoan\Index.cshtml" />
+    <Content Include="Areas\KhachHang\Views\QuanTriTaiKhoan\Documents.cshtml" />
+    <Content Include="Areas\KhachHang\Views\NguoiDung\Index.cshtml" />
+    <Content Include="Areas\KhachHang\Views\NguoiDung\Edit.cshtml" />
     <Content Include="Areas\KhachHang\Views\Login\ConfirmAccount.cshtml" />
     <Content Include="Areas\KhachHang\Views\Login\Success.cshtml" />
     <Content Include="Areas\KhachHang\Views\Login\getMaKichHoatByEmail.cshtml" />

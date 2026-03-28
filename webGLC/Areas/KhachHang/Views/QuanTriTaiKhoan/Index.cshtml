@@ -1,0 +1,373 @@
+@model webGLC.Areas.KhachHang.Models.QuanTriTaiKhoanPageViewModel
+@{
+    ViewBag.Title = "Quản trị tài khoản";
+    Layout = "~/Areas/KhachHang/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .kh-admin-shell {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 32px 24px 48px;
+    }
+
+    .kh-admin-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid rgba(47, 157, 87, 0.10);
+        box-shadow: 0 20px 52px rgba(20, 86, 44, 0.12);
+        padding: 28px;
+    }
+
+    .kh-admin-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 24px;
+    }
+
+    .kh-admin-title {
+        margin: 0 0 8px;
+        font-size: 34px;
+        color: #166e37;
+        text-transform: uppercase;
+    }
+
+    .kh-admin-subtitle {
+        margin: 0;
+        color: #4a6552;
+        font-size: 15px;
+        line-height: 1.7;
+    }
+
+    .kh-admin-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: #f3fbf5;
+        color: #166e37;
+        border: 1px solid #ccecd4;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .kh-admin-tabs {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .kh-admin-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: #f7fbf8;
+        color: #4a6552;
+        border: 1px solid #dde9e1;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .kh-admin-tab.active {
+        background: linear-gradient(135deg, #1f8b47 0%, #2f9d57 100%);
+        color: #fff;
+        border-color: #1f8b47;
+    }
+
+    .kh-admin-filter-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto auto;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .kh-admin-input {
+        width: 100%;
+        min-height: 46px;
+        border-radius: 12px;
+        border: 1px solid #ccecd4;
+        background: #fcfefc;
+        padding: 0 14px;
+        font-size: 14px;
+        color: #1f3528;
+        box-sizing: border-box;
+    }
+
+    .kh-admin-input:focus {
+        outline: none;
+        border-color: #2f9d57;
+        box-shadow: 0 0 0 3px rgba(47, 157, 87, 0.14);
+    }
+
+    .kh-admin-filter-btn,
+    .kh-admin-reset-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .kh-admin-filter-btn {
+        border: none;
+        background: linear-gradient(135deg, #1f8b47 0%, #2f9d57 100%);
+        color: #fff;
+    }
+
+    .kh-admin-reset-btn {
+        border: 1px solid #dde9e1;
+        background: #f7fbf8;
+        color: #365041;
+    }
+
+    .kh-admin-alert {
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
+        font-size: 14px;
+    }
+
+    .kh-admin-alert.success {
+        background: #f3fbf5;
+        color: #166e37;
+        border: 1px solid #ccecd4;
+    }
+
+    .kh-admin-alert.error {
+        background: #fff4f4;
+        color: #c93a3a;
+        border: 1px solid #f0b6b6;
+    }
+
+    .kh-admin-table-wrap {
+        overflow-x: auto;
+    }
+
+    .kh-admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 920px;
+    }
+
+    .kh-admin-table th,
+    .kh-admin-table td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #e5efe8;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .kh-admin-table th {
+        color: #166e37;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: #f7fbf8;
+    }
+
+    .kh-admin-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .kh-admin-badge.type {
+        background: #edf8f0;
+        color: #166e37;
+    }
+
+    .kh-admin-badge.active {
+        background: #edf8f0;
+        color: #166e37;
+    }
+
+    .kh-admin-badge.inactive {
+        background: #fff3f0;
+        color: #c95b36;
+    }
+
+    .kh-admin-action-form {
+        margin: 0;
+    }
+
+    .kh-admin-btn {
+        min-width: 120px;
+        min-height: 40px;
+        border: none;
+        border-radius: 10px;
+        padding: 9px 16px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .kh-admin-btn.activate {
+        background: linear-gradient(135deg, #1f8b47 0%, #2f9d57 100%);
+        color: #fff;
+    }
+
+    .kh-admin-btn.deactivate {
+        background: #eef4ef;
+        color: #1f3528;
+        border: 1px solid #d7e4da;
+    }
+
+    .kh-admin-empty {
+        padding: 24px;
+        border-radius: 16px;
+        background: #f7fbf8;
+        color: #4a6552;
+        text-align: center;
+    }
+
+    @@media (max-width: 991px) {
+        .kh-admin-shell {
+            padding: 20px 12px 32px;
+        }
+
+        .kh-admin-card {
+            padding: 20px;
+        }
+
+        .kh-admin-header {
+            flex-direction: column;
+        }
+
+        .kh-admin-title {
+            font-size: 28px;
+        }
+
+        .kh-admin-filter-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="kh-admin-shell">
+    <div class="kh-admin-card">
+        <div class="kh-admin-header">
+            <div>
+                <h1 class="kh-admin-title">Quản trị tài khoản</h1>
+                <p class="kh-admin-subtitle">Admin hệ thống có thể theo dõi tài khoản đăng ký, lọc nhanh theo thông tin người dùng và bật hoặc khóa quyền đăng nhập trực tiếp tại đây.</p>
+            </div>
+            <a class="kh-admin-link" href="@Url.Action("Index", "Home", new { area = "KhachHang" })">Về trang chủ</a>
+        </div>
+
+        <div class="kh-admin-tabs">
+            <a class="kh-admin-tab @(Model.Tab == "all" ? "active" : string.Empty)"
+               href="@Url.Action("Index", "QuanTriTaiKhoan", new { area = "KhachHang", tab = "all", searchTerm = Model.SearchTerm, phone = Model.Phone })">
+                Tất cả
+                <span>@Model.TotalCount</span>
+            </a>
+            <a class="kh-admin-tab @(Model.Tab == "inactive" ? "active" : string.Empty)"
+               href="@Url.Action("Index", "QuanTriTaiKhoan", new { area = "KhachHang", tab = "inactive", searchTerm = Model.SearchTerm, phone = Model.Phone })">
+                Chưa active
+                <span>@Model.InactiveCount</span>
+            </a>
+        </div>
+
+        @using (Html.BeginForm("Index", "QuanTriTaiKhoan", FormMethod.Get, new { @class = "kh-admin-filter-form" }))
+        {
+            @Html.Hidden("tab", Model.Tab)
+            <input class="kh-admin-input" type="text" name="searchTerm" value="@Model.SearchTerm" placeholder="Tìm theo tên hoặc email" />
+            <input class="kh-admin-input" type="text" name="phone" value="@Model.Phone" placeholder="Lọc theo số điện thoại" />
+            <button type="submit" class="kh-admin-filter-btn">Tìm kiếm</button>
+            <a class="kh-admin-reset-btn" href="@Url.Action("Index", "QuanTriTaiKhoan", new { area = "KhachHang", tab = Model.Tab })">Xóa lọc</a>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(TempData["QuanTriTaiKhoanSuccess"] as string))
+        {
+            <div class="kh-admin-alert success">@TempData["QuanTriTaiKhoanSuccess"]</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(TempData["QuanTriTaiKhoanError"] as string))
+        {
+            <div class="kh-admin-alert error">@TempData["QuanTriTaiKhoanError"]</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="kh-admin-alert error">@Model.ErrorMessage</div>
+        }
+        else if (Model.Accounts == null || Model.Accounts.Count == 0)
+        {
+            <div class="kh-admin-empty">Không có tài khoản nào phù hợp với điều kiện lọc hiện tại.</div>
+        }
+        else
+        {
+            <div class="kh-admin-table-wrap">
+                <table class="kh-admin-table">
+                    <thead>
+                        <tr>
+                            <th>Tên</th>
+                            <th>Email</th>
+                            <th>Điện thoại</th>
+                            <th>Loại tài khoản</th>
+                            <th>Trạng thái</th>
+                            <th>Kích hoạt email</th>
+                            <th>Tài liệu</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var account in Model.Accounts)
+                        {
+                            <tr>
+                                <td>@account.Ten</td>
+                                <td>@account.Email</td>
+                                <td>@account.SoDienThoai</td>
+                                <td><span class="kh-admin-badge type">@account.LoaiTaiKhoanText</span></td>
+                                <td>
+                                    <span class="kh-admin-badge @(account.IsActive ? "active" : "inactive")">
+                                        @account.TrangThaiText
+                                    </span>
+                                </td>
+                                <td>@(account.KichHoat ? "Đã kích hoạt" : "Chưa kích hoạt")</td>
+                                <td>
+                                    @if (account.LoaiTaiKhoan == 1 || account.LoaiTaiKhoan == 2)
+                                    {
+                                        <a class="kh-admin-reset-btn" href="@Url.Action("Documents", "QuanTriTaiKhoan", new { area = "KhachHang", id = account.ID })">Xem tài liệu</a>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @using (Html.BeginForm("SetActive", "QuanTriTaiKhoan", FormMethod.Post, new { @class = "kh-admin-action-form" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        @Html.Hidden("id", account.ID)
+                                        @Html.Hidden("isActive", !account.IsActive)
+                                        @Html.Hidden("searchTerm", Model.SearchTerm)
+                                        @Html.Hidden("phone", Model.Phone)
+                                        @Html.Hidden("tab", Model.Tab)
+                                        <button type="submit" class="kh-admin-btn @(account.IsActive ? "deactivate" : "activate")">
+                                            @(account.IsActive ? "Khóa tài khoản" : "Kích hoạt")
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

@@ -11,9 +11,12 @@ namespace cenDTO
     {
         public object IDDanhMucDonVi { get; set; }
         public object IDDanhMucLoaiDoiTuong { get; set; }
+        public object LoaiTaiKhoan { get; set; }
+        public object IsActive { get; set; }
         public object Email { get; set; }
         public object Ten { get; set; }
         public object SoDienThoai { get; set; }
+        public object BanScanSoCMNDCanCuocPath { get; set; }
         public object Password { get; set; }
         public object PasswordConfirm { get; set; }
         public object PartnerGUID { get; set; }
@@ -46,6 +49,8 @@ namespace cenDTO
             ID = null;
             IDDanhMucDonVi = null;
             IDDanhMucLoaiDoiTuong = null;
+            LoaiTaiKhoan = 1;
+            IsActive = false;
             Email = null;
             Ten = null;
             SoDienThoai = null;
@@ -61,6 +66,8 @@ namespace cenDTO
     }
     public class DanhMucKhachHangDoiLenhInsertRequest
     {
+        public int LoaiTaiKhoan { get; set; }
+        public bool IsActive { get; set; }
         public string Email { get; set; }
         public string Ten { get; set; }
         public string SoDienThoai { get; set; }
@@ -69,11 +76,71 @@ namespace cenDTO
 
         public DanhMucKhachHangDoiLenhInsertRequest()
         {
+            LoaiTaiKhoan = 1;
+            IsActive = false;
             Email = null;
             Ten = null;
             SoDienThoai = null;
             Password = null;
             PasswordConfirm = null;
+        }
+    }
+    public class DangKyTaiKhoanRequest
+    {
+        public int LoaiTaiKhoan { get; set; }
+        public bool IsActive { get; set; }
+        public string TenDangNhap { get; set; }
+        public string Email { get; set; }
+        public string Ten { get; set; }
+        public string SoDienThoai { get; set; }
+        public string Password { get; set; }
+        public string PasswordConfirm { get; set; }
+        public string EmailXuatHoaDon { get; set; }
+        public string SoCMNDCanCuoc { get; set; }
+        public string BanScanSoCMNDCanCuocPath { get; set; }
+        public string TenDoanhNghiep { get; set; }
+        public string MaSoThue { get; set; }
+        public string DiaChi { get; set; }
+        public string SoDienThoaiDoanhNghiep { get; set; }
+        public string EmailDoanhNghiep { get; set; }
+        public string SoFax { get; set; }
+        public string GiayPhepKinhDoanh { get; set; }
+        public DateTime? NgayCap { get; set; }
+        public string NoiCap { get; set; }
+        public string DaiDienCoThamQuyen { get; set; }
+        public string ChucVu { get; set; }
+        public string DoanhNghiepCongTyDuocUyQuyen { get; set; }
+        public string BanScanGiayPhepKinhDoanhPath { get; set; }
+        public string BanDangKyEPortChuKySoPath { get; set; }
+
+        public DangKyTaiKhoanRequest()
+        {
+            LoaiTaiKhoan = 1;
+            IsActive = false;
+            TenDangNhap = null;
+            Email = null;
+            Ten = null;
+            SoDienThoai = null;
+            BanScanSoCMNDCanCuocPath = null;
+            Password = null;
+            PasswordConfirm = null;
+            EmailXuatHoaDon = null;
+            SoCMNDCanCuoc = null;
+            BanScanSoCMNDCanCuocPath = null;
+            TenDoanhNghiep = null;
+            MaSoThue = null;
+            DiaChi = null;
+            SoDienThoaiDoanhNghiep = null;
+            EmailDoanhNghiep = null;
+            SoFax = null;
+            GiayPhepKinhDoanh = null;
+            NgayCap = null;
+            NoiCap = null;
+            DaiDienCoThamQuyen = null;
+            ChucVu = null;
+            DoanhNghiepCongTyDuocUyQuyen = null;
+            BanScanGiayPhepKinhDoanhPath = null;
+            BanDangKyEPortChuKySoPath = null;
         }
     }
     public class DanhMucKhachHangDoiLenhLoginRequest
@@ -182,6 +249,93 @@ namespace cenDTO
             OldPassword = null;
             NewPassword = null;
             NewPasswordConfirm = null;
+        }
+    }
+    public class DanhMucKhachHangDoiLenhSetActiveRequest
+    {
+        public object ID { get; set; }
+        public bool IsActive { get; set; }
+
+        public DanhMucKhachHangDoiLenhSetActiveRequest()
+        {
+            ID = null;
+            IsActive = true;
+        }
+    }
+
+    public class NguoiDungDoanhNghiepDto
+    {
+        public object ID { get; set; }
+        public object IDDanhMucKhachHangDoiLenh { get; set; }
+        public object TenDoanhNghiep { get; set; }
+        public object MaSoThue { get; set; }
+        public object DiaChi { get; set; }
+        public object SoDienThoaiDoanhNghiep { get; set; }
+        public object EmailDoanhNghiep { get; set; }
+        public object SoFax { get; set; }
+        public object GiayPhepKinhDoanh { get; set; }
+        public object BanScanGiayPhepKinhDoanhPath { get; set; }
+        public object NgayCap { get; set; }
+        public object NoiCap { get; set; }
+        public object DaiDienCoThamQuyen { get; set; }
+        public object ChucVu { get; set; }
+        public object DoanhNghiepCongTyDuocUyQuyen { get; set; }
+        public object TenDangNhapDangKyDichVu { get; set; }
+        public object EmailXuatHoaDon { get; set; }
+        public object SoCMNDCanCuoc { get; set; }
+        public object BanScanSoCMNDCanCuocPath { get; set; }
+        public object BanDangKyEPortChuKySoPath { get; set; }
+        public object IsActive { get; set; }
+        public object CreateDate { get; set; }
+        public object EditDate { get; set; }
+    }
+
+    public class NguoiDungDoanhNghiepSaveRequest
+    {
+        public long? ID { get; set; }
+        public long IDDanhMucKhachHangDoiLenh { get; set; }
+        public string TenDoanhNghiep { get; set; }
+        public string MaSoThue { get; set; }
+        public string DiaChi { get; set; }
+        public string SoDienThoaiDoanhNghiep { get; set; }
+        public string EmailDoanhNghiep { get; set; }
+        public string SoFax { get; set; }
+        public string GiayPhepKinhDoanh { get; set; }
+        public string BanScanGiayPhepKinhDoanhPath { get; set; }
+        public DateTime? NgayCap { get; set; }
+        public string NoiCap { get; set; }
+        public string DaiDienCoThamQuyen { get; set; }
+        public string ChucVu { get; set; }
+        public string DoanhNghiepCongTyDuocUyQuyen { get; set; }
+        public string TenDangNhapDangKyDichVu { get; set; }
+        public string EmailXuatHoaDon { get; set; }
+        public string SoCMNDCanCuoc { get; set; }
+        public string BanScanSoCMNDCanCuocPath { get; set; }
+        public string BanDangKyEPortChuKySoPath { get; set; }
+        public bool IsActive { get; set; }
+
+        public NguoiDungDoanhNghiepSaveRequest()
+        {
+            ID = null;
+            TenDoanhNghiep = null;
+            MaSoThue = null;
+            DiaChi = null;
+            SoDienThoaiDoanhNghiep = null;
+            EmailDoanhNghiep = null;
+            SoFax = null;
+            GiayPhepKinhDoanh = null;
+            BanScanGiayPhepKinhDoanhPath = null;
+            NgayCap = null;
+            NoiCap = null;
+            DaiDienCoThamQuyen = null;
+            ChucVu = null;
+            DoanhNghiepCongTyDuocUyQuyen = null;
+            TenDangNhapDangKyDichVu = null;
+            EmailXuatHoaDon = null;
+            SoCMNDCanCuoc = null;
+            BanScanSoCMNDCanCuocPath = null;
+            BanDangKyEPortChuKySoPath = null;
+            IsActive = true;
         }
     }
 }

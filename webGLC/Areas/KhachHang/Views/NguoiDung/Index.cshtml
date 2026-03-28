@@ -1,0 +1,109 @@
+@model webGLC.Areas.KhachHang.Models.DoanhNghiepListPageViewModel
+@{
+    ViewBag.Title = "Quản lý doanh nghiệp";
+    Layout = "~/Areas/KhachHang/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .kh-company-shell { max-width: 1280px; margin: 0 auto; padding: 32px 24px 48px; }
+    .kh-company-card { background: #fff; border-radius: 20px; border: 1px solid rgba(47,157,87,.10); box-shadow: 0 20px 52px rgba(20,86,44,.12); padding: 28px; }
+    .kh-company-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:24px; }
+    .kh-company-title { margin:0 0 8px; font-size:34px; color:#166e37; text-transform:uppercase; }
+    .kh-company-subtitle { margin:0; color:#4a6552; line-height:1.7; }
+    .kh-company-link { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:10px 16px; border-radius:999px; background:#f3fbf5; color:#166e37; border:1px solid #ccecd4; font-weight:700; text-decoration:none; }
+    .kh-company-alert { border-radius:12px; padding:12px 14px; margin-bottom:18px; font-size:14px; }
+    .kh-company-alert.success { background:#f3fbf5; color:#166e37; border:1px solid #ccecd4; }
+    .kh-company-alert.error { background:#fff4f4; color:#c93a3a; border:1px solid #f0b6b6; }
+    .kh-company-table-wrap { overflow-x:auto; }
+    .kh-company-table { width:100%; border-collapse:collapse; min-width:900px; }
+    .kh-company-table th, .kh-company-table td { padding:14px 12px; border-bottom:1px solid #e5efe8; text-align:left; vertical-align:middle; }
+    .kh-company-table th { color:#166e37; font-size:13px; text-transform:uppercase; letter-spacing:.04em; background:#f7fbf8; }
+    .kh-company-badge { display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; background:#edf8f0; color:#166e37; }
+    .kh-company-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .kh-company-btn { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:9px 14px; border-radius:10px; text-decoration:none; font-size:14px; font-weight:700; }
+    .kh-company-btn.edit { background:linear-gradient(135deg,#1f8b47 0%,#2f9d57 100%); color:#fff; }
+    .kh-company-btn.view { background:#eef4ef; color:#1f3528; border:1px solid #d7e4da; }
+    .kh-company-empty { padding:24px; border-radius:16px; background:#f7fbf8; color:#4a6552; text-align:center; }
+    @@media (max-width: 991px) {
+        .kh-company-shell { padding:20px 12px 32px; }
+        .kh-company-card { padding:20px; }
+        .kh-company-header { flex-direction:column; }
+        .kh-company-title { font-size:28px; }
+    }
+</style>
+
+<div class="kh-company-shell">
+    <div class="kh-company-card">
+        <div class="kh-company-header">
+            <div>
+                <h1 class="kh-company-title">Quản lý doanh nghiệp</h1>
+                <p class="kh-company-subtitle">
+                    @if (Model.IsEnterpriseAccount)
+                    {
+                        @:Tài khoản doanh nghiệp có thể xem và chỉnh sửa hồ sơ doanh nghiệp đã đăng ký ban đầu.
+                    }
+                    else
+                    {
+                        @:Tài khoản cá nhân có thể xem danh sách và thêm mới nhiều doanh nghiệp để quản lý.
+                    }
+                </p>
+            </div>
+            @if (Model.CanCreate)
+            {
+                <a class="kh-company-link" href="@Url.Action("Create", "NguoiDung", new { area = "KhachHang" })">Thêm doanh nghiệp</a>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(TempData["DoanhNghiepSuccess"] as string))
+        {
+            <div class="kh-company-alert success">@TempData["DoanhNghiepSuccess"]</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(TempData["DoanhNghiepError"] as string))
+        {
+            <div class="kh-company-alert error">@TempData["DoanhNghiepError"]</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="kh-company-alert error">@Model.ErrorMessage</div>
+        }
+        else if (Model.Items == null || Model.Items.Count == 0)
+        {
+            <div class="kh-company-empty">Chưa có doanh nghiệp nào trong tài khoản này.</div>
+        }
+        else
+        {
+            <div class="kh-company-table-wrap">
+                <table class="kh-company-table">
+                    <thead>
+                        <tr>
+                            <th>Tên doanh nghiệp</th>
+                            <th>Mã số thuế</th>
+                            <th>Email</th>
+                            <th>Điện thoại</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.TenDoanhNghiep</td>
+                                <td>@item.MaSoThue</td>
+                                <td>@item.EmailDoanhNghiep</td>
+                                <td>@item.SoDienThoaiDoanhNghiep</td>
+                                <td><span class="kh-company-badge">@item.TrangThaiText</span></td>
+                                <td>
+                                    <div class="kh-company-actions">
+                                        <a class="kh-company-btn edit" href="@Url.Action("Edit", "NguoiDung", new { area = "KhachHang", id = item.ID })">@(Model.IsEnterpriseAccount ? "Xem / sửa" : "Chỉnh sửa")</a>
+                                        <a class="kh-company-btn view" href="@Url.Action("Edit", "NguoiDung", new { area = "KhachHang", id = item.ID })#tai-lieu">Xem tài liệu</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

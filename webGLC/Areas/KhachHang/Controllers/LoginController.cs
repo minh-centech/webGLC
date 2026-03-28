@@ -43,6 +43,8 @@ namespace webGLC.Areas.KhachHang.Controllers
         private const string SessionUserEmailKey = "KhachHangEmail";
         private const string SessionUserIdKey = "KhachHangId";
         private const string SessionUserDisplayNameKey = "KhachHangDisplayName";
+        private const string SessionUserAccountTypeKey = "KhachHangLoaiTaiKhoan";
+        private const string SessionUserAccountTypeNameKey = "KhachHangLoaiTaiKhoanName";
         private const string CaptchaSecretAppSettingKey = "CaptchaSecretKey";
 
         private static string GetApiUrl(string action)
@@ -113,16 +115,22 @@ namespace webGLC.Areas.KhachHang.Controllers
         private void StoreAuthenticatedUserSession(string email, string id = null, string rawData = null)
         {
             var displayName = TryExtractDisplayNameFromApiData(rawData, email);
+            var accountType = TryExtractLoaiTaiKhoanFromApiData(rawData);
+            var accountTypeName = GetLoaiTaiKhoanDisplayName(accountType);
             Session[SessionUserKey] = new
             {
                 Email = email,
                 ID = id,
                 DisplayName = displayName,
+                LoaiTaiKhoan = accountType,
+                LoaiTaiKhoanName = accountTypeName,
                 Data = rawData
             };
             Session[SessionUserEmailKey] = email;
             Session[SessionUserIdKey] = id;
             Session[SessionUserDisplayNameKey] = displayName;
+            Session[SessionUserAccountTypeKey] = accountType;
+            Session[SessionUserAccountTypeNameKey] = accountTypeName;
         }
 
         private void ClearAuthenticatedUserSession()
@@ -131,6 +139,8 @@ namespace webGLC.Areas.KhachHang.Controllers
             Session.Remove(SessionUserEmailKey);
             Session.Remove(SessionUserIdKey);
             Session.Remove(SessionUserDisplayNameKey);
+            Session.Remove(SessionUserAccountTypeKey);
+            Session.Remove(SessionUserAccountTypeNameKey);
         }
 
         private string TryExtractIdFromApiData(string rawData)
@@ -165,7 +175,7 @@ namespace webGLC.Areas.KhachHang.Controllers
             try
             {
                 var jsonObject = JObject.Parse(rawData);
-                var candidateKeys = new[] { "Name", "HoTen", "FullName", "TenNguoiDung", "TenKH", "DisplayName" };
+                var candidateKeys = new[] { "Ten", "Name", "HoTen", "FullName", "TenNguoiDung", "TenKH", "DisplayName" };
                 foreach (var key in candidateKeys)
                 {
                     var value = jsonObject[key]?.ToString();
@@ -181,6 +191,39 @@ namespace webGLC.Areas.KhachHang.Controllers
             }
 
             return fallbackName;
+        }
+
+        private string TryExtractLoaiTaiKhoanFromApiData(string rawData)
+        {
+            if (string.IsNullOrWhiteSpace(rawData))
+            {
+                return null;
+            }
+
+            try
+            {
+                var jsonObject = JObject.Parse(rawData);
+                return jsonObject["LoaiTaiKhoan"]?.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private string GetLoaiTaiKhoanDisplayName(string loaiTaiKhoan)
+        {
+            switch ((loaiTaiKhoan ?? string.Empty).Trim())
+            {
+                case "0":
+                    return "Admin";
+                case "1":
+                    return "Cá nhân";
+                case "2":
+                    return "Doanh nghiệp";
+                default:
+                    return "Tài khoản";
+            }
         }
 
         private ActionResult SignOutAndRedirectToLogin()
@@ -273,17 +316,20 @@ namespace webGLC.Areas.KhachHang.Controllers
         // GET: Admin/Register
         public ActionResult Register()
         {
-            return View();
+            return View(new DangKyTaiKhoanViewModel());
         }
         [HttpPost]
-        public async Task<ActionResult> Register(DanhMucKhachHangDoiLenhInsertRequest model)
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Register(DangKyTaiKhoanViewModel model)
         {
+            ValidateEnterpriseRegistration(model);
+
             if (ModelState.IsValid)
             {
                 using (var client = new HttpClient())
                 {
-                    client.BaseAddress = new Uri(GetApiUrl("Insert"));
-                    var response = await client.PostAsJsonAsync(client.BaseAddress, model);
+                    client.BaseAddress = new Uri(GetApiUrl("RegisterTaiKhoan"));
+                    var response = await client.PostAsJsonAsync(client.BaseAddress, model.ToRequest());
                     if (response.IsSuccessStatusCode)
                     {
                         var result = await response.Content.ReadAsAsync<webAPIresponse>();
@@ -342,6 +388,44 @@ namespace webGLC.Areas.KhachHang.Controllers
                 }
             }
             return View(model);
+        }
+
+        private void ValidateEnterpriseRegistration(DangKyTaiKhoanViewModel model)
+        {
+            if (model == null)
+            {
+                return;
+            }
+
+            if (model.LoaiTaiKhoan != 2)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.TenDoanhNghiep))
+            {
+                ModelState.AddModelError(nameof(model.TenDoanhNghiep), "Vui lòng nhập tên doanh nghiệp.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.DiaChi))
+            {
+                ModelState.AddModelError(nameof(model.DiaChi), "Vui lòng nhập địa chỉ doanh nghiệp.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.MaSoThue))
+            {
+                ModelState.AddModelError(nameof(model.MaSoThue), "Vui lòng nhập mã số thuế.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.SoDienThoaiDoanhNghiep))
+            {
+                ModelState.AddModelError(nameof(model.SoDienThoaiDoanhNghiep), "Vui lòng nhập số điện thoại doanh nghiệp.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.EmailDoanhNghiep))
+            {
+                ModelState.AddModelError(nameof(model.EmailDoanhNghiep), "Vui lòng nhập email doanh nghiệp.");
+            }
         }
 
         public ActionResult Success()

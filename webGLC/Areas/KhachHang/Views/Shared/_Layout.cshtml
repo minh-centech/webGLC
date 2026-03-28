@@ -3,8 +3,13 @@
 
 @{
     var khachHangDisplayName = Session["KhachHangDisplayName"] as string;
-    var khachHangEmail = Session["KhachHangEmail"] as string;
     var khachHangHeaderName = !string.IsNullOrWhiteSpace(khachHangDisplayName) ? khachHangDisplayName : "Khách hàng";
+    var khachHangLoaiTaiKhoan = Session["KhachHangLoaiTaiKhoanName"] as string;
+    var khachHangLoaiTaiKhoanDisplay = !string.IsNullOrWhiteSpace(khachHangLoaiTaiKhoan) ? khachHangLoaiTaiKhoan : "Tài khoản";
+    var khachHangLoaiTaiKhoanValue = Session["KhachHangLoaiTaiKhoan"] as string;
+    var isKhachHangAdmin = string.Equals(khachHangLoaiTaiKhoanValue, "0", StringComparison.OrdinalIgnoreCase);
+    var isKhachHangUser = string.Equals(khachHangLoaiTaiKhoanValue, "1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(khachHangLoaiTaiKhoanValue, "2", StringComparison.OrdinalIgnoreCase);
 }
 
 <!DOCTYPE html>
@@ -109,10 +114,7 @@
                             <div class="account-pill mt5">
                                 <div class="account-pill-copy">
                                     <strong>@khachHangHeaderName</strong>
-                                    @if (!string.IsNullOrWhiteSpace(khachHangEmail))
-                                    {
-                                        <span>@khachHangEmail</span>
-                                    }
+                                    <span>@khachHangLoaiTaiKhoanDisplay</span>
                                 </div>
                                 @using (Html.BeginForm("Logout", "Login", FormMethod.Post, new { @class = "account-pill-form" }))
                                 {
@@ -137,6 +139,14 @@
                             <li><a href="@Url.Action("Index","HuongDan")">Hướng dẫn </a></li>
 
                             <li><a href="@Url.Action("Index","DangKy")">Đăng ký</a></li>
+                            @if (isKhachHangUser)
+                            {
+                                <li><a href="@Url.Action("Index","NguoiDung")">Quản lý doanh nghiệp</a></li>
+                            }
+                            @if (isKhachHangAdmin)
+                            {
+                                <li><a href="@Url.Action("Index","QuanTriTaiKhoan")">Quản trị tài khoản</a></li>
+                            }
 
                         </ul>
                     </div>

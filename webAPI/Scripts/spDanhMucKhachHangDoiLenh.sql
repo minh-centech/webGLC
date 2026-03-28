@@ -9,6 +9,8 @@ begin
 	select	a.ID, 
 			a.IDDanhMucDonVi, 
 			a.IDDanhMucLoaiDoiTuong, 
+			a.LoaiTaiKhoan,
+			a.IsActive,
 			a.Email, 
 			a.Ten, 
 			a.SoDienThoai,
@@ -70,6 +72,14 @@ begin
 		return;
 	end;
 
+	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and IsActive = 1;
+	if @countID = 0
+	begin
+		set @ErrMsg = N'Tài khoản đã bị khóa hoặc ngừng hoạt động!';
+		raiserror(@ErrMsg, 16, 1);
+		return;
+	end;
+
 
 	declare @OriginalPassword nvarchar(256);
 	select @OriginalPassword = [Password] from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email));
@@ -77,7 +87,7 @@ begin
 	if convert(varbinary, @Password) = convert(varbinary, @OriginalPassword)
 	begin
 		--select	@ID = a.ID from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email));
-		select	* from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email));
+		select	* from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email)) and a.IsActive = 1;
 	end
 	else
 	begin
@@ -93,6 +103,8 @@ alter procedure Insert_DanhMucKhachHangDoiLenh
 	@ID							bigint out,
 	@IDDanhMucDonVi				bigint,
 	@IDDanhMucLoaiDoiTuong		bigint,
+	@LoaiTaiKhoan				tinyint = 1,
+	@IsActive					bit = 0,
 	@Email						nvarchar(128) = null,
 	@Ten						nvarchar(255) = null,
 	@SoDienThoai				nvarchar(128) = null,
@@ -112,6 +124,12 @@ begin
 	set @Email = dbo.ChuanHoaChuoi(@Email);
 	set @Ten = dbo.ChuanHoaChuoi(@Ten);
 	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
+
+	if @LoaiTaiKhoan not in (0, 1, 2)
+	begin
+		raiserror(N'LoaiTaiKhoan chỉ nhận các giá trị 0-admin, 1-cá nhân, 2-doanh nghiệp!', 16, 1);
+		return;
+	end;
 
 	if @Email is null or len(ltrim(rtrim(@Email))) = 0 or len(ltrim(rtrim(@Email))) > 128
 	begin
@@ -179,6 +197,8 @@ begin
 			ID, 
 			IDDanhMucDonVi, 
 			IDDanhMucLoaiDoiTuong, 
+			LoaiTaiKhoan,
+			IsActive,
 			Email, 
 			Ten, 
 			SoDienThoai, 
@@ -195,6 +215,8 @@ begin
 			@ID, 
 			@IDDanhMucDonVi, 
 			@IDDanhMucLoaiDoiTuong, 
+			@LoaiTaiKhoan,
+			@IsActive,
 			ltrim(rtrim(@Email)), 
 			ltrim(rtrim(@Ten)), 
 			ltrim(rtrim(@SoDienThoai)), 
@@ -220,6 +242,8 @@ alter procedure Update_DanhMucKhachHangDoiLenh
 	@ID							bigint,
 	@IDDanhMucDonVi				bigint,
 	@IDDanhMucLoaiDoiTuong		bigint,
+	@LoaiTaiKhoan				tinyint,
+	@IsActive					bit,
 	@Email						nvarchar(128) = null,
 	@Ten						nvarchar(255) = null,
 	@SoDienThoai				nvarchar(128) = null,
@@ -233,6 +257,12 @@ begin
 	set @Email = dbo.ChuanHoaChuoi(@Email);
 	set @Ten = dbo.ChuanHoaChuoi(@Ten);
 	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
+
+	if @LoaiTaiKhoan not in (0, 1, 2)
+	begin
+		raiserror(N'LoaiTaiKhoan chỉ nhận các giá trị 0-admin, 1-cá nhân, 2-doanh nghiệp!', 16, 1);
+		return;
+	end;
 
 	if @Email is null or len(ltrim(rtrim(@Email))) = 0 or len(ltrim(rtrim(@Email))) > 128
 	begin
@@ -273,6 +303,8 @@ begin
 		exec Update_DanhMucDoiTuong @ID = @ID, @IDDanhMucDonVi = @IDDanhMucDonVi, @IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong, @Ma = null, @Ten = null, @IDDanhMucNguoiSuDungEdit = @IDDanhMucNguoiSuDungEdit, @EditDate = @EditDate out;
 
 		update DanhMucKhachHangDoiLenh set
+			LoaiTaiKhoan = @LoaiTaiKhoan,
+			IsActive = @IsActive,
 			Email = @Email,
 			Ten = @Ten,
 			SoDienThoai = @SoDienThoai,

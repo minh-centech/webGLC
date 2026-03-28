@@ -1311,6 +1311,7 @@
     <Content Include="Areas\Content\pc\js\jwplayer.js" />
     <Content Include="Areas\Content\pc\js\library.js" />
     <Content Include="Areas\Content\pc\login.css" />
+    <Content Include="Areas\Content\pc\mobile-enhancements.css" />
     <Content Include="Areas\Content\pc\modules.css" />
     <Content Include="Areas\Content\pc\responsive.css" />
     <Content Include="Areas\Content\pc\style.css" />

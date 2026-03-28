@@ -10,6 +10,7 @@ create table DanhMucKhachHangDoiLenh
 	Ten							nvarchar(255)	not null,
 	SoDienThoai					nvarchar(128)	not null,
 	BanScanSoCMNDCanCuocPath	nvarchar(500),
+	BanDangKyCaNhanCoChuKyPath	nvarchar(500),
 	Password					nvarchar(256)	not null,
 	PartnerGUID					nvarchar(36)	not null,
 	MaKichHoat					nvarchar(6),
@@ -74,7 +75,15 @@ BEGIN
 END
 GO
 
--- 4. Xử lý các Index (Chỉ tạo nếu chưa tồn tại)
+-- 4. Thêm cột lưu bản đăng ký scan có chữ ký cho tài khoản cá nhân nếu chưa có
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('[dbo].[DanhMucKhachHangDoiLenh]') AND name = 'BanDangKyCaNhanCoChuKyPath')
+BEGIN
+    ALTER TABLE [dbo].[DanhMucKhachHangDoiLenh]
+    ADD [BanDangKyCaNhanCoChuKyPath] [nvarchar](500) NULL;
+END
+GO
+
+-- 5. Xử lý các Index (Chỉ tạo nếu chưa tồn tại)
 -- Kiểm tra Index cho Email
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_DanhMucKhachHangDoiLenh_Email' AND object_id = OBJECT_ID('[dbo].[DanhMucKhachHangDoiLenh]'))
 BEGIN

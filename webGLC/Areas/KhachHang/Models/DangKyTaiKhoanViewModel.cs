@@ -46,6 +46,7 @@ namespace webGLC.Areas.KhachHang.Models
                 EmailXuatHoaDon = EmailXuatHoaDon,
                 SoCMNDCanCuoc = SoCMNDCanCuoc,
                 BanScanSoCMNDCanCuocPath = BanScanSoCMNDCanCuocPath,
+                BanDangKyCaNhanCoChuKyPath = BanDangKyCaNhanCoChuKyPath,
                 TenDoanhNghiep = TenDoanhNghiep,
                 MaSoThue = MaSoThue,
                 DiaChi = DiaChi,

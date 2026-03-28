@@ -16,6 +16,11 @@
     .kh-company-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px 24px; }
     .kh-company-col-span-2 { grid-column:span 2; }
     .kh-company-group { display:flex; flex-direction:column; gap:8px; }
+    .kh-inline-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .kh-inline-actions .kh-company-input { flex:1; }
+    .kh-inline-status { font-size:13px; color:#5d7566; }
+    .kh-inline-status.error { color:#d14c4c; }
+    .kh-inline-status.success { color:#23783b; }
     .kh-company-label { display:block; margin-bottom:8px; font-size:15px; color:#166e37; }
     .kh-company-required { color:#ff6b42; }
     .kh-company-input, .kh-company-date, .kh-company-upload-status { width:100%; min-height:48px; border:1px solid #ccecd4; border-radius:10px; padding:12px 14px; font-size:15px; color:#1f3528; background:#fcfefc; box-sizing:border-box; }
@@ -80,17 +85,21 @@
             <div id="tai-lieu" class="kh-company-grid">
                 <div class="kh-company-group kh-company-col-span-2">
                     <label class="kh-company-label">Tên doanh nghiệp <span class="kh-company-required">*</span></label>
-                    @Html.TextBoxFor(m => m.TenDoanhNghiep, new { @class = "kh-company-input", placeholder = "Nhập tên doanh nghiệp" })
+                    @Html.TextBoxFor(m => m.TenDoanhNghiep, new { @class = "kh-company-input", placeholder = "Nhập tên doanh nghiệp", id = "TenDoanhNghiep" })
                     @Html.ValidationMessageFor(m => m.TenDoanhNghiep)
                 </div>
                 <div class="kh-company-group kh-company-col-span-2">
                     <label class="kh-company-label">Địa chỉ <span class="kh-company-required">*</span></label>
-                    @Html.TextBoxFor(m => m.DiaChi, new { @class = "kh-company-input", placeholder = "Nhập địa chỉ doanh nghiệp" })
+                    @Html.TextBoxFor(m => m.DiaChi, new { @class = "kh-company-input", placeholder = "Nhập địa chỉ doanh nghiệp", id = "DiaChi" })
                     @Html.ValidationMessageFor(m => m.DiaChi)
                 </div>
-                <div class="kh-company-group">
+                <div class="kh-company-group" id="taxCodeGroup">
                     <label class="kh-company-label">Mã số thuế <span class="kh-company-required">*</span></label>
-                    @Html.TextBoxFor(m => m.MaSoThue, new { @class = "kh-company-input", placeholder = "Nhập mã số thuế" })
+                    <div class="kh-inline-actions">
+                        @Html.TextBoxFor(m => m.MaSoThue, new { @class = "kh-company-input", placeholder = "Nhập mã số thuế", id = "MaSoThue" })
+                        <button type="button" id="fetchBusinessButton" class="kh-company-btn secondary">Lấy thông tin</button>
+                    </div>
+                    <div id="businessLookupStatus" class="kh-inline-status"></div>
                     @Html.ValidationMessageFor(m => m.MaSoThue)
                 </div>
                 <div class="kh-company-group">
@@ -198,11 +207,69 @@
 <script>
     (function () {
         var apiBaseUrl = '@apiBaseUrl'.replace(/\/$/, '');
+        var fetchBusinessButton = document.getElementById('fetchBusinessButton');
+        var taxCodeGroup = document.getElementById('taxCodeGroup');
+        var maSoThueInput = document.getElementById('MaSoThue');
+        var tenDoanhNghiepInput = document.getElementById('TenDoanhNghiep');
+        var diaChiInput = document.getElementById('DiaChi');
+        var businessLookupStatus = document.getElementById('businessLookupStatus');
         var hiddenInputs = {
             BanScanGiayPhepKinhDoanhPath: document.getElementById('BanScanGiayPhepKinhDoanhPath'),
             BanScanSoCMNDCanCuocPath: document.getElementById('BanScanSoCMNDCanCuocPath'),
             BanDangKyEPortChuKySoPath: document.getElementById('BanDangKyEPortChuKySoPath')
         };
+
+        function setBusinessLookupStatus(message, type) {
+            if (!businessLookupStatus) {
+                return;
+            }
+
+            businessLookupStatus.className = 'kh-inline-status' + (type ? ' ' + type : '');
+            businessLookupStatus.textContent = message || '';
+        }
+
+        function moveTaxCodeToTop() {
+            if (!taxCodeGroup || !taxCodeGroup.parentNode) {
+                return;
+            }
+
+            taxCodeGroup.parentNode.insertBefore(taxCodeGroup, taxCodeGroup.parentNode.firstElementChild);
+        }
+
+        function fetchBusinessInfo() {
+            var taxCode = maSoThueInput ? (maSoThueInput.value || '').trim() : '';
+            if (!taxCode) {
+                setBusinessLookupStatus('Vui lòng nhập mã số thuế trước khi lấy thông tin.', 'error');
+                if (maSoThueInput) {
+                    maSoThueInput.focus();
+                }
+                return;
+            }
+
+            setBusinessLookupStatus('Đang lấy thông tin doanh nghiệp...', '');
+            fetch('https://api.vietqr.io/v2/business/' + encodeURIComponent(taxCode), {
+                method: 'GET'
+            })
+            .then(function (response) { return response.json(); })
+            .then(function (result) {
+                if (!result || result.code !== '00' || !result.data) {
+                    throw new Error(result && result.desc ? result.desc : 'Không lấy được thông tin doanh nghiệp.');
+                }
+
+                if (tenDoanhNghiepInput) {
+                    tenDoanhNghiepInput.value = result.data.name || '';
+                }
+
+                if (diaChiInput) {
+                    diaChiInput.value = result.data.address || '';
+                }
+
+                setBusinessLookupStatus('Đã tự động điền tên doanh nghiệp và địa chỉ.', 'success');
+            })
+            .catch(function (error) {
+                setBusinessLookupStatus(error.message || 'Không lấy được thông tin doanh nghiệp.', 'error');
+            });
+        }
 
         function uploadFile(fileInput) {
             if (!fileInput.files || fileInput.files.length === 0) {
@@ -254,5 +321,13 @@
                 uploadFile(input);
             });
         });
+
+        if (fetchBusinessButton) {
+            fetchBusinessButton.addEventListener('click', function () {
+                fetchBusinessInfo();
+            });
+        }
+
+        moveTaxCodeToTop();
     })();
 </script>

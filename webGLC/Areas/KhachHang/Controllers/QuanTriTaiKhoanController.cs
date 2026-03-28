@@ -74,9 +74,8 @@ namespace webGLC.Areas.KhachHang.Controllers
                     var accounts = JsonConvert.DeserializeObject<List<DanhMucKhachHangDoiLenh>>(result.Data) ?? new List<DanhMucKhachHangDoiLenh>();
                     var mappedAccounts = accounts
                         .Select(MapAccount)
-                        .OrderByDescending(x => x.LoaiTaiKhoan == 0)
-                        .ThenBy(x => x.Ten)
-                        .ThenBy(x => x.Email)
+                        .OrderByDescending(x => x.CreateDate ?? DateTime.MinValue)
+                        .ThenByDescending(x => ParseLong(x.ID))
                         .ToList();
 
                     viewModel.TotalCount = mappedAccounts.Count;
@@ -223,12 +222,25 @@ namespace webGLC.Areas.KhachHang.Controllers
                 Ten = account.Ten != null ? account.Ten.ToString() : string.Empty,
                 Email = account.Email != null ? account.Email.ToString() : string.Empty,
                 SoDienThoai = account.SoDienThoai != null ? account.SoDienThoai.ToString() : string.Empty,
+                CreateDate = ParseDateTime(account.CreateDate),
                 LoaiTaiKhoan = loaiTaiKhoan,
                 IsActive = isActive,
                 KichHoat = kichHoat,
                 LoaiTaiKhoanText = GetLoaiTaiKhoanText(loaiTaiKhoan),
                 TrangThaiText = GetTrangThaiText(isActive, kichHoat)
             };
+        }
+
+        private static DateTime? ParseDateTime(object value)
+        {
+            DateTime parsed;
+            return value != null && DateTime.TryParse(value.ToString(), out parsed) ? parsed : (DateTime?)null;
+        }
+
+        private static long ParseLong(object value)
+        {
+            long parsed;
+            return value != null && long.TryParse(value.ToString(), out parsed) ? parsed : 0L;
         }
 
         private static int ParseInt(object value)
@@ -263,6 +275,11 @@ namespace webGLC.Areas.KhachHang.Controllers
             else
             {
                 documents.Add(BuildDocument("Bản scan CMND / Căn cước", data["BanScanSoCMNDCanCuocPathCaNhan"], apiBaseUrl));
+            }
+
+            if (loaiTaiKhoan != 2)
+            {
+                documents.Add(BuildDocument("Bản đăng ký scan của cá nhân có chữ ký", data["BanDangKyCaNhanCoChuKyPath"], apiBaseUrl));
             }
 
             return documents;

@@ -8,6 +8,7 @@ namespace webGLC.Areas.KhachHang.Models
         public string Ten { get; set; }
         public string Email { get; set; }
         public string SoDienThoai { get; set; }
+        public System.DateTime? CreateDate { get; set; }
         public int LoaiTaiKhoan { get; set; }
         public bool IsActive { get; set; }
         public bool KichHoat { get; set; }

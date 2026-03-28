@@ -550,6 +550,7 @@ namespace webAPI.Controllers
                         kh.IsActive,
                         kh.KichHoat,
                         kh.BanScanSoCMNDCanCuocPath as BanScanSoCMNDCanCuocPathCaNhan,
+                        kh.BanDangKyCaNhanCoChuKyPath,
                         dn.TenDoanhNghiep,
                         dn.MaSoThue,
                         dn.EmailDoanhNghiep,
@@ -592,6 +593,7 @@ namespace webAPI.Controllers
                                 MaSoThue = reader["MaSoThue"] == DBNull.Value ? null : reader["MaSoThue"].ToString(),
                                 EmailDoanhNghiep = reader["EmailDoanhNghiep"] == DBNull.Value ? null : reader["EmailDoanhNghiep"].ToString(),
                                 BanScanSoCMNDCanCuocPathCaNhan = reader["BanScanSoCMNDCanCuocPathCaNhan"] == DBNull.Value ? null : reader["BanScanSoCMNDCanCuocPathCaNhan"].ToString(),
+                                BanDangKyCaNhanCoChuKyPath = reader["BanDangKyCaNhanCoChuKyPath"] == DBNull.Value ? null : reader["BanDangKyCaNhanCoChuKyPath"].ToString(),
                                 BanScanGiayPhepKinhDoanhPath = reader["BanScanGiayPhepKinhDoanhPath"] == DBNull.Value ? null : reader["BanScanGiayPhepKinhDoanhPath"].ToString(),
                                 BanScanSoCMNDCanCuocPath = reader["BanScanSoCMNDCanCuocPath"] == DBNull.Value ? null : reader["BanScanSoCMNDCanCuocPath"].ToString(),
                                 BanDangKyEPortChuKySoPath = reader["BanDangKyEPortChuKySoPath"] == DBNull.Value ? null : reader["BanDangKyEPortChuKySoPath"].ToString()
@@ -823,6 +825,7 @@ namespace webAPI.Controllers
             model.EmailXuatHoaDon = NormalizeText(model.EmailXuatHoaDon);
             model.SoCMNDCanCuoc = NormalizeText(model.SoCMNDCanCuoc);
             model.BanScanSoCMNDCanCuocPath = NormalizeText(model.BanScanSoCMNDCanCuocPath);
+            model.BanDangKyCaNhanCoChuKyPath = NormalizeText(model.BanDangKyCaNhanCoChuKyPath);
             model.TenDoanhNghiep = NormalizeText(model.TenDoanhNghiep);
             model.MaSoThue = NormalizeText(model.MaSoThue);
             model.DiaChi = NormalizeText(model.DiaChi);
@@ -948,6 +951,7 @@ namespace webAPI.Controllers
                     Ten,
                     SoDienThoai,
                     BanScanSoCMNDCanCuocPath,
+                    BanDangKyCaNhanCoChuKyPath,
                     [Password],
                     PartnerGUID,
                     MaKichHoat,
@@ -967,6 +971,7 @@ namespace webAPI.Controllers
                     @Ten,
                     @SoDienThoai,
                     @BanScanSoCMNDCanCuocPath,
+                    @BanDangKyCaNhanCoChuKyPath,
                     @Password,
                     @PartnerGUID,
                     @MaKichHoat,
@@ -987,6 +992,7 @@ namespace webAPI.Controllers
                 command.Parameters.AddWithValue("@Ten", model.Ten);
                 command.Parameters.AddWithValue("@SoDienThoai", model.SoDienThoai);
                 command.Parameters.AddWithValue("@BanScanSoCMNDCanCuocPath", (object)model.BanScanSoCMNDCanCuocPath ?? DBNull.Value);
+                command.Parameters.AddWithValue("@BanDangKyCaNhanCoChuKyPath", (object)model.BanDangKyCaNhanCoChuKyPath ?? DBNull.Value);
                 command.Parameters.AddWithValue("@Password", encryptedPassword);
                 command.Parameters.AddWithValue("@PartnerGUID", partnerGuid);
                 command.Parameters.AddWithValue("@MaKichHoat", maKichHoat);

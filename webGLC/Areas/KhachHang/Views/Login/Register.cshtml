@@ -361,6 +361,7 @@
             @Html.HiddenFor(m => m.BanScanGiayPhepKinhDoanhPath)
             @Html.HiddenFor(m => m.BanDangKyEPortChuKySoPath)
             @Html.HiddenFor(m => m.BanScanSoCMNDCanCuocPath)
+            @Html.HiddenFor(m => m.BanDangKyCaNhanCoChuKyPath)
 
             <div class="kh-register-toolbar">
                 <div>
@@ -489,6 +490,17 @@
                             <div id="eportStatus" class="kh-upload-status">Chưa tải tài liệu</div>
                         </div>
                     </div>
+
+                    <div class="kh-form-group kh-col-span-2 kh-personal-only">
+                        <label class="kh-label">Bản đăng ký scan của cá nhân có chữ ký (PDF)</label>
+                        <div class="kh-upload-wrap">
+                            <label class="kh-upload-button">
+                                Chọn file PDF
+                                <input type="file" data-target="BanDangKyCaNhanCoChuKyPath" data-status="personalRegistrationStatus" data-folder="KhachHangCaNhan/DangKy" accept=".pdf" />
+                            </label>
+                            <div id="personalRegistrationStatus" class="kh-upload-status">Chưa tải tài liệu</div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -593,8 +605,31 @@
         var hiddenInputs = {
             BanScanGiayPhepKinhDoanhPath: document.getElementById('BanScanGiayPhepKinhDoanhPath'),
             BanDangKyEPortChuKySoPath: document.getElementById('BanDangKyEPortChuKySoPath'),
-            BanScanSoCMNDCanCuocPath: document.getElementById('BanScanSoCMNDCanCuocPath')
+            BanScanSoCMNDCanCuocPath: document.getElementById('BanScanSoCMNDCanCuocPath'),
+            BanDangKyCaNhanCoChuKyPath: document.getElementById('BanDangKyCaNhanCoChuKyPath')
         };
+
+        function ensurePersonalRegistrationUpload() {
+            var accountGrid = accountStepPanel ? accountStepPanel.querySelector('.kh-grid') : null;
+            if (!accountGrid || document.getElementById('personalRegistrationStatusRendered')) {
+                return;
+            }
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'kh-form-group kh-col-span-2 kh-personal-only';
+            wrapper.innerHTML = [
+                '<label class="kh-label">Bản đăng ký scan của cá nhân có chữ ký (PDF)</label>',
+                '<div class="kh-upload-wrap">',
+                '    <label class="kh-upload-button">',
+                '        Chọn file PDF',
+                '        <input type="file" data-target="BanDangKyCaNhanCoChuKyPath" data-status="personalRegistrationStatusRendered" data-folder="KhachHangCaNhan/DangKy" accept=".pdf" />',
+                '    </label>',
+                '    <div id="personalRegistrationStatusRendered" class="kh-upload-status">Chưa tải tài liệu</div>',
+                '</div>'
+            ].join('');
+
+            accountGrid.appendChild(wrapper);
+        }
 
         function setStep(stepNumber) {
             var isEnterprise = parseInt(accountTypeSelect.value || '1', 10) === 2;
@@ -755,6 +790,8 @@
                 fetchBusinessInfo();
             });
         }
+
+        ensurePersonalRegistrationUpload();
 
         Array.prototype.forEach.call(document.querySelectorAll('input[type="file"][data-target]'), function (input) {
             input.addEventListener('change', function () {

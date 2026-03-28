@@ -404,5 +404,16 @@
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        (function () {
+            var accountGuideLink = document.querySelector('.kh-login-secondary');
+            if (!accountGuideLink) {
+                return;
+            }
+
+            accountGuideLink.setAttribute('href', '/khach-hang/dang-ky');
+            accountGuideLink.textContent = 'Hướng dẫn quy trình đăng ký';
+        })();
+    </script>
 </body>
 </html>

@@ -98,6 +98,7 @@ namespace cenDTO
         public string EmailXuatHoaDon { get; set; }
         public string SoCMNDCanCuoc { get; set; }
         public string BanScanSoCMNDCanCuocPath { get; set; }
+        public string BanDangKyCaNhanCoChuKyPath { get; set; }
         public string TenDoanhNghiep { get; set; }
         public string MaSoThue { get; set; }
         public string DiaChi { get; set; }
@@ -127,6 +128,7 @@ namespace cenDTO
             EmailXuatHoaDon = null;
             SoCMNDCanCuoc = null;
             BanScanSoCMNDCanCuocPath = null;
+            BanDangKyCaNhanCoChuKyPath = null;
             TenDoanhNghiep = null;
             MaSoThue = null;
             DiaChi = null;

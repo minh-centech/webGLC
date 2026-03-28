@@ -70,6 +70,13 @@ begin
 end
 go
 
+if col_length('dbo.DanhMucKhachHangDoiLenh', 'BanDangKyCaNhanCoChuKyPath') is null
+begin
+    alter table dbo.DanhMucKhachHangDoiLenh
+    add BanDangKyCaNhanCoChuKyPath nvarchar(500) null;
+end
+go
+
 if not exists (
     select 1
     from sys.indexes

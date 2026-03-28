@@ -64,13 +64,13 @@ begin
 		return;
 	end;
 
-	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and KichHoat = 1;
-	if @countID = 0 
-	begin
-		set @ErrMsg = N'Email chưa được kích hoạt!';
-		raiserror(@ErrMsg, 16, 1);
-		return;
-	end;
+	--select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and KichHoat = 1;
+	--if @countID = 0 
+	--begin
+	--	set @ErrMsg = N'Email chưa được kích hoạt!';
+	--	raiserror(@ErrMsg, 16, 1);
+	--	return;
+	--end;
 
 	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and IsActive = 1;
 	if @countID = 0
@@ -405,12 +405,12 @@ begin
 		return;
 	end;
 
-	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and KichHoat = 1;
-	if @countID = 0 
-	begin
-		raiserror(N'Email chưa được kích hoạt!', 16, 1);
-		return;
-	end;
+	--select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and KichHoat = 1;
+	--if @countID = 0 
+	--begin
+	--	raiserror(N'Email chưa được kích hoạt!', 16, 1);
+	--	return;
+	--end;
 
 	if @OldPassword is null or len(@OldPassword) > 64
 	begin
@@ -503,13 +503,13 @@ begin
 		return;
 	end;
 
-	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and KichHoat = 1;
-	if @countID = 0 
-	begin
-		set @ErrMsg = N'Email chưa được kích hoạt!';
-		raiserror(@ErrMsg, 16, 1);
-		return;
-	end;
+	--select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and KichHoat = 1;
+	--if @countID = 0 
+	--begin
+	--	set @ErrMsg = N'Email chưa được kích hoạt!';
+	--	raiserror(@ErrMsg, 16, 1);
+	--	return;
+	--end;
 
 	select	@PartnerGUID = a.PartnerGUID from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email));
 end;

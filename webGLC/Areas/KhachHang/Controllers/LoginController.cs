@@ -234,6 +234,13 @@ namespace webGLC.Areas.KhachHang.Controllers
             Session.Clear();
             Session.Abandon();
 
+            Response.Cache.SetExpires(DateTime.UtcNow.AddMinutes(-1));
+            Response.Cache.SetValidUntilExpires(false);
+            Response.Cache.SetRevalidation(HttpCacheRevalidation.AllCaches);
+            Response.Cache.SetCacheability(HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            Response.Cache.SetProxyMaxAge(TimeSpan.Zero);
+
             var authCookie = Request.Cookies[FormsAuthentication.FormsCookieName];
             if (authCookie != null)
             {
@@ -242,10 +249,11 @@ namespace webGLC.Areas.KhachHang.Controllers
                 Response.Cookies.Add(authCookie);
             }
 
-            return RedirectToAction("Index", "Login");
+            return RedirectToAction("Index", "Login", new { t = DateTime.UtcNow.Ticks });
         }
 
         // GET: Admin/Login
+        [NoCache]
         public async Task<ActionResult> Index()
         {
             if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
@@ -311,7 +319,12 @@ namespace webGLC.Areas.KhachHang.Controllers
                     }
                 }
             }
-            return View("Index", await BuildLoginViewModelAsync(model));
+            var refreshedModel = await BuildLoginViewModelAsync(model);
+            ModelState.Remove(nameof(KhachHangLoginViewModel.CaptchaCode));
+            ModelState.Remove(nameof(KhachHangLoginViewModel.CaptchaToken));
+            ModelState.Remove(nameof(KhachHangLoginViewModel.CaptchaDisplayText));
+            refreshedModel.CaptchaCode = string.Empty;
+            return View("Index", refreshedModel);
         }
         // GET: Admin/Register
         public ActionResult Register()
@@ -336,45 +349,8 @@ namespace webGLC.Areas.KhachHang.Controllers
                         if (result.Status == 0)
 
                         {
-                            JObject jsonObject = JObject.Parse(result.Data);
-                            string maKichHoat = jsonObject["MaKichHoat"].ToString();
-                            string idKhachHang = jsonObject["ID"].ToString();
-
-                            Session["ID"] = idKhachHang; // Hoặc TempData["ID"] = id;
-                            try
-                            {
-                                // Tạo đối tượng email
-                                var message = new MimeMessage();
-                                message.From.Add(new MailboxAddress("CFS-GLC", "nmdat571.work@gmail.com")); // Thay thế bằng email của bạn
-                                message.To.Add(new MailboxAddress("Recipient Name", model.Email)); // Thay thế bằng email người nhận cố định
-                                message.Subject = "Mã xác nhận tài khoản của bạn"; // Tiêu đề email cố định
-                                message.Body = new TextPart("plain") { Text = $"Mã xác nhận kích hoạt hệ thống GLC của bạn là: {maKichHoat}" }; // Nội dung email cố định
-
-
-                                using (var client1 = new SmtpClient())
-                                {
-
-                                    client1.Connect("smtp.gmail.com", 465, SecureSocketOptions.SslOnConnect);
-                                    client1.Authenticate("nmdat571.work@gmail.com", "qszzyzblolxpnbhe"); // Thay thế bằng email và mật khẩu của bạn
-
-                                    // Gửi email
-                                    client1.Send(message);
-
-                                    // Ngắt kết nối
-                                    client1.Disconnect(true);
-                                }
-
-                                return RedirectToAction("ConfirmAccount", "Login");
-                            }
-                            catch (Exception ex)
-                            {
-                                // Ghi log lỗi chi tiết để debug
-                                Console.WriteLine($"Lỗi: {ex.Message}"); // Hoặc sử dụng logger chuyên nghiệp
-                                throw new Exception(ex.Message); // Trả về lỗi cho client
-                            }
-
-                            // Xử lý kết quả đăng ký thành công, ví dụ: chuyển hướng đến trang đăng nhập
-
+                            TempData["SuccessMessage"] = "Hệ thống đã tiếp nhận và xem xét yêu cầu đăng ký của bạn. Kết quả xử lý sẽ được gửi vào email cá nhân/doanh nghiệp sau khi quản trị phê duyệt.";
+                            return RedirectToAction("Success", "Login");
                         }
                         else if (result.Status == 1)
                         {

@@ -1,5 +1,8 @@
 using cenDTO;
 using coreDTO;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -127,6 +130,25 @@ namespace webGLC.Areas.KhachHang.Controllers
                     TempData["QuanTriTaiKhoanSuccess"] = isActive
                         ? "Đã kích hoạt tài khoản thành công."
                         : "Đã khóa tài khoản thành công.";
+
+                    if (isActive)
+                    {
+                        var activatedAccount = await GetAccountByIdAsync(id);
+                        if (activatedAccount != null && !string.IsNullOrWhiteSpace(Convert.ToString(activatedAccount.Email)))
+                        {
+                            try
+                            {
+                                SendAccountApprovedEmail(
+                                    Convert.ToString(activatedAccount.Email),
+                                    Convert.ToString(activatedAccount.Ten),
+                                    activatedAccount.LoaiTaiKhoan);
+                            }
+                            catch (Exception ex)
+                            {
+                                TempData["QuanTriTaiKhoanSuccess"] += " Tài khoản đã được phê duyệt nhưng chưa gửi được email thông báo: " + ex.Message;
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -286,6 +308,55 @@ namespace webGLC.Areas.KhachHang.Controllers
         private static string NormalizeTab(string tab)
         {
             return string.Equals(tab, "inactive", StringComparison.OrdinalIgnoreCase) ? "inactive" : "all";
+        }
+
+        private async Task<DanhMucKhachHangDoiLenh> GetAccountByIdAsync(string id)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(GetApiUrl("List"));
+                var response = await client.PostAsJsonAsync(client.BaseAddress, new { });
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                var result = await response.Content.ReadAsAsync<webAPIresponse>();
+                if (result == null || result.Status != 0 || string.IsNullOrWhiteSpace(result.Data))
+                {
+                    return null;
+                }
+
+                var accounts = JsonConvert.DeserializeObject<List<DanhMucKhachHangDoiLenh>>(result.Data) ?? new List<DanhMucKhachHangDoiLenh>();
+                return accounts.FirstOrDefault(x => string.Equals(Convert.ToString(x.ID), id, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        private void SendAccountApprovedEmail(string email, string ten, object loaiTaiKhoan)
+        {
+            var accountTypeText = GetLoaiTaiKhoanText(ParseInt(loaiTaiKhoan));
+            var displayName = string.IsNullOrWhiteSpace(ten) ? "Quý khách" : ten;
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("CFS-GLC", "nmdat571.work@gmail.com"));
+            message.To.Add(new MailboxAddress(displayName, email));
+            message.Subject = "Tài khoản GLC đã được phê duyệt";
+            message.Body = new TextPart("plain")
+            {
+                Text =
+                    "Kính gửi " + displayName + "," + Environment.NewLine + Environment.NewLine +
+                    "Tài khoản " + accountTypeText + " của bạn trên hệ thống GLC đã được phê duyệt thành công." + Environment.NewLine +
+                    "Bạn có thể đăng nhập và sử dụng hệ thống ngay bây giờ." + Environment.NewLine + Environment.NewLine +
+                    "Trân trọng."
+            };
+
+            using (var smtpClient = new SmtpClient())
+            {
+                smtpClient.Connect("smtp.gmail.com", 465, SecureSocketOptions.SslOnConnect);
+                smtpClient.Authenticate("nmdat571.work@gmail.com", "qszzyzblolxpnbhe");
+                smtpClient.Send(message);
+                smtpClient.Disconnect(true);
+            }
         }
 
         private static List<QuanTriTaiKhoanItemViewModel> ApplyFilters(

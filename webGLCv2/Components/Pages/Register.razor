@@ -1,0 +1,359 @@
+@page "/register"
+@rendermode InteractiveServer
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+
+<PageTitle>Đăng ký tài khoản</PageTitle>
+
+<div class="register-shell">
+    <div class="register-card">
+        <aside class="register-aside">
+            <div class="login-brandline register-brandline">
+                <img class="login-brand-image" src="/images/glc-logo.png" alt="GLC logo" />
+                <div>
+                    <div class="login-brandname">GLC Portal v2</div>
+                    <div class="login-brandmeta">Đăng ký tài khoản mới</div>
+                </div>
+            </div>
+
+            <h1>Tạo tài khoản cá nhân hoặc doanh nghiệp trên nền giao diện mới.</h1>
+            <p>
+                Biểu mẫu này dùng lại backend đăng ký của `webGLC`, gồm cả các tài liệu PDF để admin kiểm tra và phê duyệt.
+            </p>
+
+            <ul class="login-points">
+                <li>Cá nhân: thông tin liên hệ, CCCD và bản đăng ký có chữ ký.</li>
+                <li>Doanh nghiệp: MST, hồ sơ pháp lý, người đại diện và biểu mẫu ePort.</li>
+                <li>Sau khi gửi, hồ sơ sẽ xuất hiện ngay ở phân hệ admin.</li>
+            </ul>
+
+            <div class="register-side-actions">
+                <a class="portal-secondary-action" href="/login">Quay lại đăng nhập</a>
+            </div>
+        </aside>
+
+        <section class="register-form-panel">
+            <div class="login-form-header">
+                <h2>Đăng ký tài khoản</h2>
+                <p>Điền đúng loại tài khoản và tải lên các file PDF cần thiết.</p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+            {
+                <div class="portal-alert portal-alert-success">@SuccessMessage</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <div class="portal-alert portal-alert-error">@ErrorMessage</div>
+            }
+
+            <EditForm Model="@Model" OnValidSubmit="@SubmitAsync" class="register-form">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="field-grid">
+                    <div class="field-card">
+                        <label class="portal-label" for="LoaiTaiKhoan">Loại tài khoản</label>
+                        <InputSelect id="LoaiTaiKhoan" class="portal-input" @bind-Value="Model.LoaiTaiKhoan">
+                            <option value="1">Cá nhân</option>
+                            <option value="2">Doanh nghiệp</option>
+                        </InputSelect>
+                    </div>
+                </div>
+
+                @if (IsEnterprise)
+                {
+                    <section class="register-section-card">
+                        <div class="section-heading">
+                            <h3>Thông tin doanh nghiệp</h3>
+                            <p>Nhóm thông tin pháp lý và liên hệ chính của doanh nghiệp.</p>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field-card wide">
+                                <label class="portal-label" for="TenDoanhNghiep">Tên doanh nghiệp</label>
+                                <InputText id="TenDoanhNghiep" class="portal-input" @bind-Value="Model.TenDoanhNghiep" />
+                            </div>
+
+                            <div class="field-card wide">
+                                <label class="portal-label" for="DiaChi">Địa chỉ</label>
+                                <InputText id="DiaChi" class="portal-input" @bind-Value="Model.DiaChi" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="MaSoThue">Mã số thuế</label>
+                                <InputText id="MaSoThue" class="portal-input" @bind-Value="Model.MaSoThue" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="SoDienThoaiDoanhNghiep">Số điện thoại doanh nghiệp</label>
+                                <InputText id="SoDienThoaiDoanhNghiep" class="portal-input" @bind-Value="Model.SoDienThoaiDoanhNghiep" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="EmailDoanhNghiep">Email doanh nghiệp</label>
+                                <InputText id="EmailDoanhNghiep" class="portal-input" @bind-Value="Model.EmailDoanhNghiep" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="SoFax">Số fax</label>
+                                <InputText id="SoFax" class="portal-input" @bind-Value="Model.SoFax" />
+                            </div>
+
+                            <div class="field-card wide">
+                                <label class="portal-label" for="GiayPhepKinhDoanh">Giấy phép kinh doanh</label>
+                                <InputText id="GiayPhepKinhDoanh" class="portal-input" @bind-Value="Model.GiayPhepKinhDoanh" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="NgayCap">Ngày cấp</label>
+                                <InputDate id="NgayCap" class="portal-input" @bind-Value="Model.NgayCap" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="NoiCap">Nơi cấp</label>
+                                <InputText id="NoiCap" class="portal-input" @bind-Value="Model.NoiCap" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="DaiDienCoThamQuyen">Đại diện có thẩm quyền</label>
+                                <InputText id="DaiDienCoThamQuyen" class="portal-input" @bind-Value="Model.DaiDienCoThamQuyen" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="ChucVu">Chức vụ</label>
+                                <InputText id="ChucVu" class="portal-input" @bind-Value="Model.ChucVu" />
+                            </div>
+
+                            <div class="field-card wide">
+                                <label class="portal-label" for="DoanhNghiepCongTyDuocUyQuyen">Doanh nghiệp/Công ty được ủy quyền</label>
+                                <InputText id="DoanhNghiepCongTyDuocUyQuyen" class="portal-input" @bind-Value="Model.DoanhNghiepCongTyDuocUyQuyen" />
+                            </div>
+                        </div>
+                    </section>
+                }
+
+                <section class="register-section-card">
+                    <div class="section-heading">
+                        <h3>@(IsEnterprise ? "Người đại diện đăng ký" : "Thông tin cá nhân")</h3>
+                        <p>Thông tin dùng để đăng nhập và nhận thông báo từ hệ thống.</p>
+                    </div>
+
+                    <div class="field-grid">
+                        <div class="field-card">
+                            <label class="portal-label" for="TenDangNhap">Tên đăng nhập</label>
+                            <InputText id="TenDangNhap" class="portal-input" @bind-Value="Model.TenDangNhap" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="Ten">Họ và tên</label>
+                            <InputText id="Ten" class="portal-input" @bind-Value="Model.Ten" />
+                            <ValidationMessage For="@(() => Model.Ten)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="Email">Email</label>
+                            <InputText id="Email" class="portal-input" @bind-Value="Model.Email" />
+                            <ValidationMessage For="@(() => Model.Email)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="SoDienThoai">Số điện thoại</label>
+                            <InputText id="SoDienThoai" class="portal-input" @bind-Value="Model.SoDienThoai" />
+                            <ValidationMessage For="@(() => Model.SoDienThoai)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="Password">Mật khẩu</label>
+                            <InputText id="Password" type="password" class="portal-input" @bind-Value="Model.Password" />
+                            <ValidationMessage For="@(() => Model.Password)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="PasswordConfirm">Xác nhận mật khẩu</label>
+                            <InputText id="PasswordConfirm" type="password" class="portal-input" @bind-Value="Model.PasswordConfirm" />
+                            <ValidationMessage For="@(() => Model.PasswordConfirm)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
+                            <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="Model.EmailXuatHoaDon" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
+                            <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" />
+                        </div>
+                    </div>
+                </section>
+
+                <section class="register-section-card">
+                    <div class="section-heading">
+                        <h3>Tài liệu PDF</h3>
+                        <p>Tải đúng file PDF để admin có thể duyệt hồ sơ ngay trong hệ thống.</p>
+                    </div>
+
+                    <div class="field-grid">
+                        <div class="field-card wide">
+                            <label class="portal-label">Bản scan CMND/CCCD (PDF)</label>
+                            <InputFile OnChange="@OnCitizenCardChanged" accept=".pdf,application/pdf" />
+                            <div class="upload-status">@CitizenCardStatus</div>
+                        </div>
+
+                        @if (IsEnterprise)
+                        {
+                            <div class="field-card wide">
+                                <label class="portal-label">Bản scan giấy phép kinh doanh (PDF)</label>
+                                <InputFile OnChange="@OnBusinessLicenseChanged" accept=".pdf,application/pdf" />
+                                <div class="upload-status">@BusinessLicenseStatus</div>
+                            </div>
+
+                            <div class="field-card wide">
+                                <label class="portal-label">Bản đăng ký ePort có chữ ký số (PDF)</label>
+                                <InputFile OnChange="@OnEportFormChanged" accept=".pdf,application/pdf" />
+                                <div class="upload-status">@EportFormStatus</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="field-card wide">
+                                <label class="portal-label">Bản đăng ký cá nhân có chữ ký (PDF)</label>
+                                <InputFile OnChange="@OnPersonalFormChanged" accept=".pdf,application/pdf" />
+                                <div class="upload-status">@PersonalFormStatus</div>
+                            </div>
+                        }
+                    </div>
+                </section>
+
+                <div class="register-actions">
+                    <a class="portal-secondary-action" href="/login">Hủy</a>
+                    <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
+                        @(IsSubmitting ? "Đang gửi hồ sơ..." : "Đăng ký tài khoản")
+                    </button>
+                </div>
+            </EditForm>
+        </section>
+    </div>
+</div>
+
+@code {
+    private const long MaxUploadSize = 15 * 1024 * 1024;
+
+    private RegisterAccountModel Model { get; set; } = new();
+    private bool IsSubmitting { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+    private string CitizenCardStatus { get; set; } = "Chưa tải tài liệu.";
+    private string BusinessLicenseStatus { get; set; } = "Chưa tải tài liệu.";
+    private string EportFormStatus { get; set; } = "Chưa tải tài liệu.";
+    private string PersonalFormStatus { get; set; } = "Chưa tải tài liệu.";
+
+    private bool IsEnterprise => Model.LoaiTaiKhoan == 2;
+
+    private async Task SubmitAsync()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        if (!ValidateBeforeSubmit())
+        {
+            return;
+        }
+
+        IsSubmitting = true;
+
+        try
+        {
+            await LegacyCustomerPortalService.RegisterAccountAsync(Model);
+            SuccessMessage = "Hệ thống đã tiếp nhận yêu cầu đăng ký. Quản trị viên sẽ kiểm tra hồ sơ và phản hồi qua email.";
+            Model = new RegisterAccountModel();
+            ResetUploadStatuses();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private bool ValidateBeforeSubmit()
+    {
+        if (!string.Equals(Model.Password, Model.PasswordConfirm, StringComparison.Ordinal))
+        {
+            ErrorMessage = "Mật khẩu và xác nhận mật khẩu không khớp.";
+            return false;
+        }
+
+        if (IsEnterprise &&
+            (string.IsNullOrWhiteSpace(Model.TenDoanhNghiep) ||
+             string.IsNullOrWhiteSpace(Model.DiaChi) ||
+             string.IsNullOrWhiteSpace(Model.MaSoThue) ||
+             string.IsNullOrWhiteSpace(Model.SoDienThoaiDoanhNghiep) ||
+             string.IsNullOrWhiteSpace(Model.EmailDoanhNghiep)))
+        {
+            ErrorMessage = "Vui lòng nhập đầy đủ thông tin doanh nghiệp bắt buộc.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task OnCitizenCardChanged(InputFileChangeEventArgs args)
+    {
+        Model.BanScanSoCMNDCanCuocPath = await UploadPdfAsync(args.File, "NguoiDungDoanhNghiep/CanCuoc", message => CitizenCardStatus = message);
+    }
+
+    private async Task OnBusinessLicenseChanged(InputFileChangeEventArgs args)
+    {
+        Model.BanScanGiayPhepKinhDoanhPath = await UploadPdfAsync(args.File, "NguoiDungDoanhNghiep/GiayPhepKinhDoanh", message => BusinessLicenseStatus = message);
+    }
+
+    private async Task OnEportFormChanged(InputFileChangeEventArgs args)
+    {
+        Model.BanDangKyEPortChuKySoPath = await UploadPdfAsync(args.File, "NguoiDungDoanhNghiep/DangKyEPort", message => EportFormStatus = message);
+    }
+
+    private async Task OnPersonalFormChanged(InputFileChangeEventArgs args)
+    {
+        Model.BanDangKyCaNhanCoChuKyPath = await UploadPdfAsync(args.File, "KhachHangCaNhan/DangKy", message => PersonalFormStatus = message);
+    }
+
+    private async Task<string?> UploadPdfAsync(IBrowserFile file, string folder, Action<string> setStatus)
+    {
+        ErrorMessage = null;
+
+        if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            setStatus("Chỉ chấp nhận file PDF.");
+            return null;
+        }
+
+        try
+        {
+            setStatus("Đang tải file...");
+            await using var stream = file.OpenReadStream(MaxUploadSize);
+            var result = await LegacyCustomerPortalService.UploadPdfAsync(stream, file.Name, folder);
+            setStatus($"{result.OriginalFileName} đã tải thành công.");
+            return result.RelativePath;
+        }
+        catch (Exception ex)
+        {
+            setStatus("Tải file thất bại.");
+            ErrorMessage = ex.Message;
+            return null;
+        }
+    }
+
+    private void ResetUploadStatuses()
+    {
+        CitizenCardStatus = "Chưa tải tài liệu.";
+        BusinessLicenseStatus = "Chưa tải tài liệu.";
+        EportFormStatus = "Chưa tải tài liệu.";
+        PersonalFormStatus = "Chưa tải tài liệu.";
+    }
+}

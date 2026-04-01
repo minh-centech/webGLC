@@ -1,0 +1,69 @@
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<AuthorizeView>
+    <Authorized Context="authContext">
+        @{
+            var user = authContext.User;
+            var isAdmin = user.IsInRole("Admin");
+            var displayName = user.FindFirst("display_name")?.Value ?? user.Identity?.Name ?? "GLC user";
+            var accountTypeName = user.FindFirst("account_type_name")?.Value ?? (isAdmin ? "Admin" : "Người sử dụng");
+        }
+
+        <div class="portal-shell">
+            <aside class="portal-sidebar">
+                <div class="portal-logo">
+                    <div class="portal-logo-mark">G2</div>
+                    <div>
+                        <strong>webGLCv2</strong>
+                        <span>Green ledger workspace</span>
+                    </div>
+                </div>
+
+                <nav class="portal-nav">
+                    @if (isAdmin)
+                    {
+                        <a class="@GetNavClass("/admin/users")" href="/admin/users">Quản lý user</a>
+                    }
+                    else
+                    {
+                        <a class="@GetNavClass("/user/orders")" href="/user/orders">Lệnh online</a>
+                        <a class="@GetNavClass("/user/import-check")" href="/user/import-check">Kiểm tra hàng nhập</a>
+                        <a class="@GetNavClass("/user/profile")" href="/user/profile">Quản lý thông tin</a>
+                    }
+                </nav>
+
+                <div class="portal-sidebar-note">
+                    <span>Đơn vị phát triển</span>
+                    <strong>Công ty cổ phần Everlink</strong>
+                    <p>Liên hệ tư vấn, phát triển phần mềm: admin@everlink.com.vn.</p>
+                </div>
+            </aside>
+
+            <main class="portal-main">
+                <header class="portal-topbar">
+                    <div>
+                        <p class="portal-topbar-label">CÔNG TY TNHH MTV TRUNG TÂM LOGISTICS XANH</p>
+                        <h2>@accountTypeName</h2>
+                    </div>
+                    <div class="portal-topbar-user">
+                        <div>
+                            <strong>@displayName</strong>
+                            <span>@(user.Identity?.Name ?? "no-email")</span>
+                        </div>
+                        <a class="portal-secondary-action" href="/auth/logout">Đăng xuất</a>
+                    </div>
+                </header>
+
+                <div class="portal-content">
+                    @Body
+                </div>
+            </main>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private string GetNavClass(string href)
+        => NavigationManager.Uri.Contains(href, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty;
+}

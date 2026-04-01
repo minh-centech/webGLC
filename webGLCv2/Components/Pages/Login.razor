@@ -1,0 +1,144 @@
+@page "/login"
+@rendermode InteractiveServer
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+
+<PageTitle>Đăng nhập khách hàng</PageTitle>
+
+<div class="login-shell">
+    <div class="login-card">
+        <aside class="login-aside">
+            <div class="login-badge">webGLCv2</div>
+            <h1 class="login-title">Giữ nguyên luồng đăng nhập GLC, nâng cấp trải nghiệm vận hành xanh và gọn hơn.</h1>
+            <p class="login-description">
+                Phiên bản v2 tiếp tục dùng tài khoản hiện tại của webGLC, đồng thời gom toàn bộ thao tác quản trị và tạo lệnh
+                vào một không gian trực quan hơn cho admin lẫn người dùng cuối.
+            </p>
+
+            <div class="login-highlight">
+                <span class="login-highlight-label">Định hướng giao diện</span>
+                <strong>Green Operations Ledger</strong>
+                <p>Dark sidebar, workspace sáng, nhấn mạnh hành động chính và trạng thái xử lý.</p>
+            </div>
+
+            <ul class="login-points">
+                <li>Giữ captcha, email, mật khẩu và API xác thực từ hệ cũ.</li>
+                <li>Admin quản lý và kích hoạt user giống webGLC.</li>
+                <li>Người dùng bắt đầu từ danh sách Lệnh online và thêm mới chỉ với một thao tác.</li>
+            </ul>
+        </aside>
+
+        <section class="login-form-panel">
+            <div class="login-brandline">
+                <img class="login-brand-image" src="/images/glc-logo.png" alt="GLC logo" />
+                <div>
+                    <div class="login-brandname">GLC Portal v2</div>
+                    <div class="login-brandmeta">Customer workspace</div>
+                </div>
+            </div>
+
+            <div class="login-form-header">
+                <h2>Đăng nhập khách hàng</h2>
+                <p>Vui lòng dùng đúng tài khoản hiện có của webGLC để truy cập hệ thống mới.</p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Error))
+            {
+                <div class="portal-alert portal-alert-error">@Error</div>
+            }
+
+            <form class="login-form" method="post" action="/auth/login">
+                <input type="hidden" name="CaptchaToken" value="@Captcha.CaptchaToken" />
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+
+                <label class="portal-label" for="email">Email</label>
+                <input id="email" class="portal-input" type="email" name="Email" value="@Email" placeholder="name@company.com" required />
+
+                <label class="portal-label" for="password">Mật khẩu</label>
+                <input id="password" class="portal-input" type="password" name="Password" placeholder="Nhập mật khẩu" required />
+
+                <label class="portal-label" for="captcha">Mã captcha</label>
+                <div class="login-captcha-row">
+                    <input id="captcha" class="portal-input" type="text" name="CaptchaCode" placeholder="Nhập mã captcha" required />
+                    <div class="login-captcha-box">
+                        <span>@Captcha.CaptchaDisplayText</span>
+                        <a href="@RefreshUrl" class="login-captcha-refresh" aria-label="Tải lại captcha">↻</a>
+                    </div>
+                </div>
+                <p class="portal-help">Không phân biệt chữ hoa thường. Nếu khó đọc, hãy làm mới captcha.</p>
+
+                <button type="submit" class="portal-primary-action login-submit">Đăng nhập</button>
+            </form>
+
+            <div class="login-secondary-actions">
+                <a class="portal-secondary-action" href="/register">Đăng ký tài khoản</a>
+                <button type="button" class="portal-secondary-action portal-secondary-button" @onclick="ShowForgotPasswordPopup">Quên mật khẩu</button>
+                <a class="portal-secondary-action" href="/user/orders">Xem giao diện mẫu</a>
+                <a class="portal-secondary-action" href="/admin/users">Đi đến phân hệ admin</a>
+            </div>
+        </section>
+    </div>
+</div>
+
+@if (IsForgotPasswordPopupOpen)
+{
+    <div class="portal-modal-backdrop" @onclick="HideForgotPasswordPopup">
+        <div class="portal-modal" @onclick:stopPropagation="true">
+            <h3>Quên mật khẩu</h3>
+            <p>Vui lòng liên hệ quản trị viên để được hỗ trợ cấp lại mật khẩu tài khoản.</p>
+            <div class="portal-modal-actions">
+                <button type="button" class="portal-primary-action" @onclick="HideForgotPasswordPopup">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Email { get; set; }
+
+    private LoginCaptchaDto Captcha { get; set; } = new();
+    private bool IsForgotPasswordPopupOpen { get; set; }
+
+    private string RefreshUrl => BuildLoginUrl(includeEmail: true, bustCache: true);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Captcha = await LegacyCustomerPortalService.GetLoginCaptchaAsync();
+    }
+
+    private string BuildLoginUrl(bool includeEmail, bool bustCache)
+    {
+        var queryParts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(ReturnUrl))
+        {
+            queryParts.Add($"returnUrl={Uri.EscapeDataString(ReturnUrl)}");
+        }
+
+        if (includeEmail && !string.IsNullOrWhiteSpace(Email))
+        {
+            queryParts.Add($"email={Uri.EscapeDataString(Email)}");
+        }
+
+        if (bustCache)
+        {
+            queryParts.Add($"t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+        }
+
+        return queryParts.Count == 0 ? "/login" : $"/login?{string.Join("&", queryParts)}";
+    }
+
+    private void ShowForgotPasswordPopup()
+        => IsForgotPasswordPopupOpen = true;
+
+    private void HideForgotPasswordPopup()
+        => IsForgotPasswordPopupOpen = false;
+}

@@ -1,0 +1,177 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = "Admin")]
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+
+<PageTitle>Quản trị tài khoản</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Quản lý và kích hoạt tài khoản</h1>
+            <p class="page-subtitle">Kế thừa đúng nghiệp vụ webGLC: xem danh sách, lọc trạng thái và kích hoạt hoặc khóa user ngay tại chỗ.</p>
+        </div>
+        <button class="portal-secondary-action" @onclick="LoadAccountsAsync">Tải lại dữ liệu</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="portal-alert @(FeedbackIsError ? "portal-alert-error" : "portal-alert-success")">@FeedbackMessage</div>
+    }
+
+    <div class="stats-grid">
+        <article class="stat-card">
+            <span class="stat-label">Tổng tài khoản</span>
+            <strong>@Accounts.Count</strong>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Đang hoạt động</span>
+            <strong>@Accounts.Count(x => x.IsActive)</strong>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Chờ xử lý</span>
+            <strong>@Accounts.Count(x => !x.IsActive)</strong>
+        </article>
+    </div>
+
+    <section class="workspace-card">
+        <div class="toolbar-row">
+            <div class="toolbar-search">
+                <input class="portal-input" @bind="SearchTerm" @bind:event="oninput" placeholder="Tìm theo tên, email hoặc số điện thoại" />
+            </div>
+            <label class="toolbar-toggle">
+                <input type="checkbox" @bind="ShowInactiveOnly" />
+                <span>Chỉ hiện tài khoản chưa kích hoạt</span>
+            </label>
+        </div>
+
+        @if (IsBusy)
+        {
+            <div class="portal-empty-state compact">
+                <div class="portal-empty-icon">...</div>
+                <h2>Đang đồng bộ tài khoản</h2>
+                <p>Hệ thống đang lấy dữ liệu từ API quản trị hiện hữu.</p>
+            </div>
+        }
+        else if (FilteredAccounts.Count == 0)
+        {
+            <div class="portal-empty-state compact">
+                <div class="portal-empty-icon">0</div>
+                <h2>Không có bản ghi phù hợp</h2>
+                <p>Thử đổi bộ lọc hoặc tải lại danh sách tài khoản.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-shell">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>Tài khoản</th>
+                            <th>Loại</th>
+                            <th>Liên hệ</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var account in FilteredAccounts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="cell-title">@account.Name</div>
+                                    <div class="cell-subtitle">@account.Email</div>
+                                </td>
+                                <td>
+                                    <span class="status-chip neutral">@account.AccountTypeText</span>
+                                </td>
+                                <td>
+                                    <div class="cell-title">@account.Phone</div>
+                                    <div class="cell-subtitle">ID: @account.Id</div>
+                                </td>
+                                <td>
+                                    <span class="status-chip @(account.IsActive ? "success" : "warning")">@account.StatusText</span>
+                                </td>
+                                <td class="text-end">
+                                    <a class="portal-secondary-action table-link-btn" href="/admin/users/@account.Id/documents">Hồ sơ</a>
+                                    <button class="table-action @(account.IsActive ? "danger" : "success")"
+                                            @onclick="() => ToggleAccountAsync(account)">
+                                        @(account.IsActive ? "Khóa" : "Kích hoạt")
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</section>
+
+@code {
+    private readonly List<AccountListItem> Accounts = new();
+    private bool IsBusy = true;
+    private bool ShowInactiveOnly;
+    private string SearchTerm = string.Empty;
+    private string? FeedbackMessage;
+    private bool FeedbackIsError;
+
+    private List<AccountListItem> FilteredAccounts =>
+        Accounts
+            .Where(account =>
+                (!ShowInactiveOnly || !account.IsActive) &&
+                (string.IsNullOrWhiteSpace(SearchTerm) ||
+                 account.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 account.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 account.Phone.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(account => account.IsActive)
+            .ThenBy(account => account.Name)
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccountsAsync();
+    }
+
+    private async Task LoadAccountsAsync()
+    {
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+        IsBusy = true;
+
+        try
+        {
+            var accounts = await LegacyCustomerPortalService.GetAccountsAsync();
+            Accounts.Clear();
+            Accounts.AddRange(accounts);
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ToggleAccountAsync(AccountListItem account)
+    {
+        try
+        {
+            await LegacyCustomerPortalService.SetAccountActiveAsync(account.Id, !account.IsActive);
+            account.IsActive = !account.IsActive;
+            account.StatusText = account.IsActive ? "Đang hoạt động" : "Chờ kích hoạt";
+            FeedbackMessage = account.IsActive
+                ? $"Đã kích hoạt tài khoản {account.Email}."
+                : $"Đã khóa tài khoản {account.Email}.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+    }
+}

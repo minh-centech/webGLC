@@ -1,0 +1,127 @@
+@page "/user/orders"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject OnlineOrderService OnlineOrderService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Lệnh online</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">User Workspace</p>
+            <h1>Lệnh online</h1>
+            <p class="page-subtitle">Danh sách lệnh online được hiển thị theo thông tin House Bill, khách hàng, container và công ty để dễ tra cứu.</p>
+        </div>
+        <div class="header-actions">
+            <button class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Thêm mới</button>
+            <button class="portal-secondary-action" @onclick="SeedAsync">Nạp dữ liệu mẫu</button>
+        </div>
+    </header>
+
+    <section class="workspace-card">
+        <div class="toolbar-row toolbar-row-wide">
+            <input class="portal-input toolbar-search-input" @bind="SearchTerm" @bind:event="oninput" placeholder="Nhập mã lệnh, House Bill, số cont hoặc khách hàng để tìm" />
+            <div class="toolbar-meta">
+                <span>Khoảng ngày: <strong>@DateTime.Today.AddDays(-30):dd/MM/yyyy - @DateTime.Today:dd/MM/yyyy</strong></span>
+            </div>
+        </div>
+
+        <div class="table-shell">
+            <table class="portal-table dense">
+                <thead>
+                    <tr>
+                        <th>Mã lệnh</th>
+                        <th>Ngày làm lệnh</th>
+                        <th>House Bill</th>
+                        <th>Khách hàng</th>
+                        <th>Công ty</th>
+                        <th>Số cont</th>
+                        <th>Số tờ khai</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (FilteredOrders.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <div class="portal-empty-inline">Chưa có lệnh online nào. Hãy bấm "Thêm mới" để bắt đầu.</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in FilteredOrders)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="cell-title">@order.OrderCode</div>
+                                    <div class="cell-subtitle">@order.VehicleNumber</div>
+                                </td>
+                                <td>@order.OrderDate:dd/MM/yyyy</td>
+                                <td>@order.HouseBill</td>
+                                <td>@order.CustomerName</td>
+                                <td>@order.CompanyName</td>
+                                <td>@order.ContainerNumber</td>
+                                <td>@order.DeclarationNumber</td>
+                                <td>
+                                    <span class="status-chip @GetStatusClass(order.Status)">@order.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="workspace-footer">
+            <div class="footer-summary">
+                <span>Tổng lệnh: <strong>@FilteredOrders.Count</strong></span>
+            </div>
+            <div class="footer-pagination">
+                <span>Biểu diễn DataGrid cho luồng lệnh online phiên bản v2.</span>
+            </div>
+        </footer>
+    </section>
+</section>
+
+@code {
+    private string SearchTerm = string.Empty;
+    private string CurrentUserKey = "anonymous";
+    private List<OnlineOrderRecord> Orders = new();
+
+    private List<OnlineOrderRecord> FilteredOrders =>
+        Orders
+            .Where(order =>
+                string.IsNullOrWhiteSpace(SearchTerm) ||
+                order.OrderCode.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                order.HouseBill.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                order.ContainerNumber.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                order.CustomerName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                order.CompanyName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(order => order.OrderDate)
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        CurrentUserKey = authState.User.Identity?.Name ?? "customer";
+        Orders = await OnlineOrderService.GetOrdersAsync(CurrentUserKey);
+    }
+
+    private async Task SeedAsync()
+    {
+        await OnlineOrderService.SeedDefaultsAsync(CurrentUserKey);
+        Orders = await OnlineOrderService.GetOrdersAsync(CurrentUserKey);
+    }
+
+    private static string GetStatusClass(string status)
+        => status switch
+        {
+            "Đã xác nhận" => "success",
+            "Chờ xử lý" => "warning",
+            _ => "neutral"
+        };
+}

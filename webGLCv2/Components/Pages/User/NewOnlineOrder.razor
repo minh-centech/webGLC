@@ -1,0 +1,172 @@
+@page "/user/orders/new"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject OnlineOrderService OnlineOrderService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Thêm lệnh online</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">User Workspace</p>
+            <h1>Thêm mới lệnh online</h1>
+            <p class="page-subtitle">Nhập đầy đủ thông tin khách hàng, công ty và thông tin lệnh để tạo lệnh online mới.</p>
+        </div>
+        <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lại danh sách</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(InfoMessage))
+    {
+        <div class="portal-alert portal-alert-success">@InfoMessage</div>
+    }
+
+    <EditForm Model="Draft" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-grid">
+            <section class="workspace-card">
+                <div class="section-heading">
+                    <h2>Thông tin khách hàng</h2>
+                    <p>Thông tin người trực tiếp tạo lệnh và điều phối nhận hàng.</p>
+                </div>
+
+                <div class="field-grid">
+                    <div>
+                        <label class="portal-label">Họ và tên</label>
+                        <InputText class="portal-input" @bind-Value="Draft.CustomerName" />
+                        <ValidationMessage For="@(() => Draft.CustomerName)" class="validation-message" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Số điện thoại</label>
+                        <InputText class="portal-input" @bind-Value="Draft.PhoneNumber" />
+                        <ValidationMessage For="@(() => Draft.PhoneNumber)" class="validation-message" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Số CMND</label>
+                        <InputText class="portal-input" @bind-Value="Draft.IdentityNumber" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Số xe</label>
+                        <InputText class="portal-input" @bind-Value="Draft.VehicleNumber" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace-card">
+                <div class="section-heading">
+                    <h2>Thông tin công ty</h2>
+                    <p>Mã số thuế có thể dùng để điền nhanh thông tin công ty.</p>
+                </div>
+
+                <div class="field-grid">
+                    <div>
+                        <label class="portal-label">Mã số thuế</label>
+                        <div class="toolbar-row">
+                            <InputText class="portal-input" @bind-Value="Draft.TaxCode" />
+                            <button type="button" class="portal-secondary-action" @onclick="LookupCompanyAsync">Lấy thông tin</button>
+                        </div>
+                        <ValidationMessage For="@(() => Draft.TaxCode)" class="validation-message" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Tên công ty</label>
+                        <InputText class="portal-input" @bind-Value="Draft.CompanyName" />
+                    </div>
+                    <div class="field-span-3">
+                        <label class="portal-label">Địa chỉ</label>
+                        <InputText class="portal-input" @bind-Value="Draft.CompanyAddress" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Email</label>
+                        <InputText class="portal-input" @bind-Value="Draft.CompanyEmail" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace-card">
+                <div class="section-heading">
+                    <h2>Thông tin lệnh</h2>
+                    <p>Ngày làm lệnh được cố định theo ngày hệ thống để đảm bảo đồng bộ nghiệp vụ.</p>
+                </div>
+
+                <div class="field-grid">
+                    <div>
+                        <label class="portal-label">House Bill</label>
+                        <InputText class="portal-input" @bind-Value="Draft.HouseBill" />
+                        <ValidationMessage For="@(() => Draft.HouseBill)" class="validation-message" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Ngày làm lệnh</label>
+                        <input class="portal-input" value="@Draft.OrderDate.ToString("dd/MM/yyyy")" readonly />
+                    </div>
+                    <div>
+                        <label class="portal-label">Nhập số Cont</label>
+                        <InputText class="portal-input" @bind-Value="Draft.ContainerNumber" />
+                        <ValidationMessage For="@(() => Draft.ContainerNumber)" class="validation-message" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Ngày lấy hàng</label>
+                        <InputDate class="portal-input" @bind-Value="Draft.PickupDate" />
+                        <ValidationMessage For="@(() => Draft.PickupDate)" class="validation-message" />
+                    </div>
+                    <div>
+                        <label class="portal-label">Số tờ khai</label>
+                        <InputText class="portal-input" @bind-Value="Draft.DeclarationNumber" />
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="portal-primary-action">Lưu lệnh</button>
+            <button type="button" class="portal-secondary-action" @onclick="ResetForm">Reset thông tin</button>
+        </div>
+    </EditForm>
+</section>
+
+@code {
+    private OnlineOrderDraft Draft { get; set; } = new();
+    private string CurrentUserKey { get; set; } = "customer";
+    private string CurrentUserEmail { get; set; } = string.Empty;
+    private string? InfoMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Draft.OrderDate = DateTime.Today;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        CurrentUserKey = authState.User.Identity?.Name ?? "customer";
+        CurrentUserEmail = authState.User.Identity?.Name ?? string.Empty;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        Draft.OrderDate = DateTime.Today;
+        await OnlineOrderService.AddOrderAsync(CurrentUserKey, Draft);
+        NavigationManager.NavigateTo("/user/orders", forceLoad: false);
+    }
+
+    private async Task LookupCompanyAsync()
+    {
+        var result = await OnlineOrderService.LookupCompanyAsync(Draft.TaxCode, CurrentUserEmail);
+        InfoMessage = result.Message;
+
+        if (result.Success)
+        {
+            Draft.CompanyName = result.CompanyName;
+            Draft.CompanyAddress = result.CompanyAddress;
+            Draft.CompanyEmail = result.CompanyEmail;
+        }
+    }
+
+    private void ResetForm()
+    {
+        Draft = new OnlineOrderDraft
+        {
+            OrderDate = DateTime.Today
+        };
+        InfoMessage = null;
+    }
+}

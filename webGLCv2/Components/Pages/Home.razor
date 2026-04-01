@@ -1,0 +1,22 @@
+@page "/"
+@attribute [Authorize]
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Điều hướng</PageTitle>
+
+<section class="portal-empty-state">
+    <div class="portal-empty-icon">GLC</div>
+    <h1>Đang mở đúng phân hệ cho bạn...</h1>
+    <p>Hệ thống sẽ chuyển hướng dựa trên quyền tài khoản ngay khi hoàn tất kiểm tra phiên đăng nhập.</p>
+</section>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+        var target = user.IsInRole("Admin") ? "/admin/users" : "/user/orders";
+        NavigationManager.NavigateTo(target, forceLoad: false);
+    }
+}

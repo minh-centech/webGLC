@@ -1,0 +1,287 @@
+@page "/admin/users/{Id}/documents"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Components.Forms
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Hồ sơ tài liệu</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Hồ sơ tài liệu người dùng</h1>
+            <p class="page-subtitle">Admin có thể bổ sung tài liệu còn thiếu, đối chiếu hồ sơ và kích hoạt tài khoản ngay trên phân hệ mới.</p>
+        </div>
+        <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/admin/users"))">Quay lại quản lý</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="portal-alert portal-alert-error">@ErrorMessage</div>
+    }
+    else if (Details is null)
+    {
+        <div class="portal-empty-state compact">
+            <div class="portal-empty-icon">...</div>
+            <h2>Đang tải hồ sơ</h2>
+            <p>Hệ thống đang lấy thông tin upload từ dữ liệu hiện tại.</p>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+        {
+            <div class="portal-alert @(FeedbackIsError ? "portal-alert-error" : "portal-alert-success")">@FeedbackMessage</div>
+        }
+
+        <section class="workspace-card">
+            <div class="stats-grid docs-summary-grid">
+                <article class="stat-card">
+                    <span class="stat-label">Người dùng</span>
+                    <strong>@Details.Name</strong>
+                    <div class="cell-subtitle">@Details.Email</div>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Loại tài khoản</span>
+                    <strong>@Details.AccountTypeText</strong>
+                    <div class="cell-subtitle">@Details.Phone</div>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Trạng thái hồ sơ</span>
+                    <strong>@(Details.HasAllRequiredDocuments ? "Đủ điều kiện" : "Thiếu tài liệu")</strong>
+                    <div class="cell-subtitle">@(Details.IsActive ? "Tài khoản đang hoạt động" : "Tài khoản chưa kích hoạt")</div>
+                </article>
+            </div>
+
+            @if (Details.AccountType == 2)
+            {
+                <div class="docs-company-grid">
+                    <div class="docs-info-card">
+                        <span class="stat-label">Doanh nghiệp</span>
+                        <strong>@Details.CompanyName</strong>
+                    </div>
+                    <div class="docs-info-card">
+                        <span class="stat-label">Mã số thuế</span>
+                        <strong>@Details.TaxCode</strong>
+                    </div>
+                    <div class="docs-info-card">
+                        <span class="stat-label">Email doanh nghiệp</span>
+                        <strong>@Details.CompanyEmail</strong>
+                    </div>
+                </div>
+            }
+
+            <div class="docs-list">
+                @foreach (var file in Details.Documents)
+                {
+                    <article class="docs-item">
+                        <div>
+                            <h2>@file.Name</h2>
+                            <p>@(file.HasFile ? file.RelativePath : "Chưa có file được upload")</p>
+                        </div>
+                        <div class="docs-item-actions">
+                            <span class="status-chip @(file.HasFile ? "success" : "warning")">
+                                @(file.HasFile ? "Đã upload" : "Thiếu tài liệu")
+                            </span>
+                            @if (file.HasFile)
+                            {
+                                <a class="portal-primary-action docs-open-btn" href="@file.ViewUrl" target="_blank" rel="noopener">Xem PDF</a>
+                            }
+                            else
+                            {
+                                <label for="@GetUploadInputId(file)" class="portal-secondary-action">Upload bổ sung</label>
+                                <InputFile id="@GetUploadInputId(file)"
+                                           class="admin-upload-input"
+                                           OnChange="@(args => UploadMissingDocumentAsync(file, args))"
+                                           accept=".pdf,application/pdf" />
+                                <span class="upload-status admin-upload-status">@GetUploadStatus(file)</span>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <div class="form-actions">
+                @if (!Details.IsActive)
+                {
+                    <button class="portal-primary-action"
+                            disabled="@(!Details.HasAllRequiredDocuments || IsSubmitting)"
+                            @onclick="ApproveAsync">
+                        Phê duyệt và kích hoạt
+                    </button>
+                }
+                else
+                {
+                    <button class="portal-secondary-action" disabled="@IsSubmitting" @onclick="LockAsync">Khóa tài khoản</button>
+                }
+
+                @if (!Details.HasAllRequiredDocuments && !Details.IsActive)
+                {
+                    <span class="docs-warning-text">Chỉ có thể phê duyệt khi hồ sơ đã đủ tài liệu bắt buộc.</span>
+                }
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    private const long MaxUploadSize = 20 * 1024 * 1024;
+
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private readonly Dictionary<string, string> UploadStatuses = new();
+    private AccountDocumentDetails? Details;
+    private string? ErrorMessage;
+    private string? FeedbackMessage;
+    private bool FeedbackIsError;
+    private bool IsSubmitting;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        ErrorMessage = null;
+        FeedbackMessage = null;
+
+        try
+        {
+            Details = await LegacyCustomerPortalService.GetAccountDocumentsAsync(Id);
+            if (Details is not null)
+            {
+                foreach (var document in Details.Documents)
+                {
+                    UploadStatuses[document.FieldKey] = document.HasFile ? "Đã có tài liệu." : "Sẵn sàng bổ sung.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task UploadMissingDocumentAsync(DocumentFileItem document, InputFileChangeEventArgs args)
+    {
+        if (Details is null)
+        {
+            return;
+        }
+
+        var file = args.File;
+        FeedbackMessage = null;
+        ErrorMessage = null;
+
+        if (!file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            UploadStatuses[document.FieldKey] = "Chỉ chấp nhận file PDF.";
+            return;
+        }
+
+        IsSubmitting = true;
+        UploadStatuses[document.FieldKey] = "Đang tải và cập nhật...";
+
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxUploadSize);
+            var uploadResult = await LegacyCustomerPortalService.UploadPdfAsync(stream, file.Name, document.UploadFolder);
+
+            if (Details.AccountType == 2)
+            {
+                await LegacyCustomerPortalService.UpdateEnterpriseDocumentAsync(Details.Id, document.FieldKey, uploadResult.RelativePath);
+            }
+            else
+            {
+                await LegacyCustomerPortalService.UpdatePersonalDocumentsAsync(
+                    Details.Id,
+                    GetCurrentDocumentPath("BanScanSoCMNDCanCuocPathCaNhan"),
+                    GetCurrentDocumentPath("BanDangKyCaNhanCoChuKyPath"),
+                    document.FieldKey,
+                    uploadResult.RelativePath);
+            }
+
+            UploadStatuses[document.FieldKey] = "Đã bổ sung tài liệu thành công.";
+            FeedbackMessage = $"Đã bổ sung tài liệu: {document.Name}.";
+            FeedbackIsError = false;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            UploadStatuses[document.FieldKey] = "Tải file thất bại.";
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private async Task ApproveAsync()
+    {
+        if (Details is null || !Details.HasAllRequiredDocuments)
+        {
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            await LegacyCustomerPortalService.SetAccountActiveAsync(Details.Id, true);
+            Details.IsActive = true;
+            FeedbackMessage = "Đã phê duyệt và kích hoạt tài khoản thành công.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private async Task LockAsync()
+    {
+        if (Details is null)
+        {
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            await LegacyCustomerPortalService.SetAccountActiveAsync(Details.Id, false);
+            Details.IsActive = false;
+            FeedbackMessage = "Đã khóa tài khoản.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private string GetCurrentDocumentPath(string fieldKey)
+        => Details?.Documents.FirstOrDefault(x => x.FieldKey == fieldKey)?.RelativePath ?? string.Empty;
+
+    private string GetUploadInputId(DocumentFileItem document)
+        => $"upload-{document.FieldKey}";
+
+    private string GetUploadStatus(DocumentFileItem document)
+        => UploadStatuses.TryGetValue(document.FieldKey, out var status)
+            ? status
+            : "Sẵn sàng bổ sung.";
+}

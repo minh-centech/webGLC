@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webAPI", "webAPI\webAPI.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webGLC", "webGLC\webGLC.csproj", "{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webGLCv2", "webGLCv2\webGLCv2.csproj", "{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x64.Build.0 = Release|Any CPU
 		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x86.ActiveCfg = Release|Any CPU
 		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x86.Build.0 = Release|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|x64.Build.0 = Debug|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|x86.Build.0 = Debug|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Release|x64.ActiveCfg = Release|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Release|x64.Build.0 = Release|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Release|x86.ActiveCfg = Release|Any CPU
+		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

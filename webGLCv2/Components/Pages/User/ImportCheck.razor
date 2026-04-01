@@ -1,0 +1,111 @@
+@page "/user/import-check"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject OnlineOrderService OnlineOrderService
+
+<PageTitle>Kiểm tra hàng nhập</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">User Workspace</p>
+            <h1>Kiểm tra hàng nhập</h1>
+            <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo House Bill hoặc số container để theo dõi tiếp nhận và thông quan.</p>
+        </div>
+    </header>
+
+    <section class="workspace-card">
+        <div class="section-heading">
+            <h2>Thông tin tìm kiếm</h2>
+            <p>Nhập House Bill hoặc Số Cont để lọc dữ liệu hàng nhập.</p>
+        </div>
+
+        <div class="field-grid">
+            <div>
+                <label class="portal-label" for="houseBill">House Bill</label>
+                <input id="houseBill" class="portal-input" @bind="HouseBill" @bind:event="oninput" placeholder="Nhập House Bill" />
+            </div>
+            <div>
+                <label class="portal-label" for="containerNumber">Số Cont</label>
+                <input id="containerNumber" class="portal-input" @bind="ContainerNumber" @bind:event="oninput" placeholder="Nhập Số Cont" />
+            </div>
+            <div class="search-actions-block">
+                <button class="portal-primary-action" @onclick="SearchAsync">Tìm kiếm</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="workspace-card">
+        <div class="table-shell">
+            <table class="portal-table dense">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Ngày nhận</th>
+                        <th>Số MasterBill</th>
+                        <th>Số HouseBill</th>
+                        <th>Số lượng</th>
+                        <th>Số khối</th>
+                        <th>Trọng lượng</th>
+                        <th>Số Container</th>
+                        <th>Forwarder</th>
+                        <th>Status</th>
+                        <th>TK Hải quan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Results.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="11">
+                                <div class="portal-empty-inline">Chưa có kết quả phù hợp. Hãy nhập House Bill hoặc Số Cont để tìm kiếm.</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (var index = 0; index < Results.Count; index++)
+                        {
+                            var item = Results[index];
+                            <tr>
+                                <td>@(index + 1)</td>
+                                <td>@item.ReceivedDate.ToString("dd/MM/yyyy")</td>
+                                <td>@item.MasterBill</td>
+                                <td>@item.HouseBill</td>
+                                <td>@item.Quantity</td>
+                                <td>@item.Volume.ToString("N1")</td>
+                                <td>@item.Weight.ToString("N0")</td>
+                                <td>@item.ContainerNumber</td>
+                                <td>@item.Forwarder</td>
+                                <td>
+                                    <span class="status-chip @GetStatusClass(item.Status)">@item.Status</span>
+                                </td>
+                                <td>@item.CustomsDeclaration</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+
+@code {
+    private string HouseBill { get; set; } = string.Empty;
+    private string ContainerNumber { get; set; } = string.Empty;
+    private List<ImportCheckRecord> Results { get; set; } = [];
+
+    private async Task SearchAsync()
+    {
+        Results = await OnlineOrderService.SearchImportChecksAsync(HouseBill, ContainerNumber);
+    }
+
+    private static string GetStatusClass(string status)
+        => status switch
+        {
+            "Đã nhận hàng" => "success",
+            "Đã thông quan" => "success",
+            "Chờ thông quan" => "warning",
+            _ => "neutral"
+        };
+}

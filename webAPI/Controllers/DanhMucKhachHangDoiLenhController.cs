@@ -16,6 +16,7 @@ using System.Globalization;
 using coreCommon;
 using System.Configuration;
 using System.Data.SqlClient;
+using webAPI.Models;
 namespace webAPI.Controllers
 {
     [EnableCors(origins: "*", headers: "*", methods: "*")]
@@ -513,6 +514,64 @@ namespace webAPI.Controllers
                 else
                 {
                     throw new Exception("Cập nhật trạng thái tài khoản không thành công.");
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Status = 1;
+                response.Data = string.Empty;
+                response.ErrorMsg = ex.Message;
+            }
+
+            return response;
+        }
+
+        [HttpPost]
+        public webAPIresponse SaveTaiLieuCaNhan(DanhMucKhachHangDoiLenhSavePersonalDocumentsRequest request)
+        {
+            webAPIresponse response = new webAPIresponse();
+
+            try
+            {
+                coreCommon.GlobalVariables.IDDonVi = Code.GlobalVariables.IDDanhMucDonVi;
+
+                if (request == null || coreCommon.coreCommon.IsNull(request.ID))
+                {
+                    throw new Exception("Khong tim thay tai khoan can cap nhat.");
+                }
+
+                DataTable dtDanhMucKhachHangDoiLenh = DanhMucKhachHangDoiLenhBUS.List(
+                    GlobalVariables.ConnectionString,
+                    GlobalVariables.IDDanhMucDonVi,
+                    GlobalVariables.IDDanhMucKhachHangDoiLenh,
+                    request.ID);
+
+                if (dtDanhMucKhachHangDoiLenh == null || dtDanhMucKhachHangDoiLenh.Rows.Count != 1)
+                {
+                    throw new Exception("Tai khoan khong ton tai hoac da bi xoa.");
+                }
+
+                DataRow drDanhMucKhachHangDoiLenh = dtDanhMucKhachHangDoiLenh.Rows[0];
+                drDanhMucKhachHangDoiLenh["BanScanSoCMNDCanCuocPath"] = string.IsNullOrWhiteSpace(request.BanScanSoCMNDCanCuocPath)
+                    ? (object)DBNull.Value
+                    : request.BanScanSoCMNDCanCuocPath.Trim();
+                drDanhMucKhachHangDoiLenh["BanDangKyCaNhanCoChuKyPath"] = string.IsNullOrWhiteSpace(request.BanDangKyCaNhanCoChuKyPath)
+                    ? (object)DBNull.Value
+                    : request.BanDangKyCaNhanCoChuKyPath.Trim();
+                drDanhMucKhachHangDoiLenh["IDDanhMucNguoiSuDungEdit"] = GlobalVariables.IDDanhMucNguoiSuDungGuest;
+
+                if (DanhMucKhachHangDoiLenhBUS.Update(GlobalVariables.ConnectionString, drDanhMucKhachHangDoiLenh, out object updatedId))
+                {
+                    response.Status = 0;
+                    response.Data = JsonConvert.SerializeObject(new
+                    {
+                        ID = updatedId ?? request.ID
+                    });
+                    response.ErrorMsg = string.Empty;
+                }
+                else
+                {
+                    throw new Exception("Cap nhat tai lieu ca nhan khong thanh cong.");
                 }
             }
             catch (Exception ex)

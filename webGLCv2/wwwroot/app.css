@@ -112,6 +112,19 @@ select {
     font-weight: 800;
 }
 
+.portal-logo-mark {
+    padding: 6px;
+    background: rgb(255, 255, 255);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+}
+
+.portal-logo-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
 .login-brand-image {
     width: 130px;
     max-width: 100%;
@@ -158,6 +171,12 @@ select {
     font-weight: 700;
 }
 
+.portal-topbar-label {
+    letter-spacing: normal;
+    font-size: 1.1rem;
+    color: #03833a;
+}
+
 .portal-sidebar-note strong {
     display: block;
     margin: 6px 0;
@@ -181,8 +200,15 @@ select {
 }
 
 .portal-topbar h2,
+.portal-topbar h6,
 .login-form-header h2 {
     margin: 0;
+}
+
+.portal-topbar h6 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--portal-text-soft);
 }
 
 .portal-content {
@@ -240,6 +266,21 @@ select {
 .search-actions-block {
     display: flex;
     align-items: end;
+}
+
+.input-action-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.input-action-field {
+    flex: 1 1 auto;
+}
+
+.input-action-row .portal-secondary-action {
+    min-width: 118px;
+    white-space: nowrap;
 }
 
 .stat-card,

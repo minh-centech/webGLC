@@ -12,7 +12,7 @@
         <div>
             <p class="page-kicker">User Workspace</p>
             <h1>Thêm mới lệnh online</h1>
-            <p class="page-subtitle">Nhập đầy đủ thông tin khách hàng, công ty và thông tin lệnh để tạo lệnh online mới.</p>
+            <p class="page-subtitle">Nhập đầy đủ thông tin để tạo lệnh online mới trên một màn hình tập trung, liền mạch hơn.</p>
         </div>
         <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lại danh sách</button>
     </header>
@@ -28,11 +28,6 @@
 
         <div class="form-grid">
             <section class="workspace-card">
-                <div class="section-heading">
-                    <h2>Thông tin khách hàng</h2>
-                    <p>Thông tin người trực tiếp tạo lệnh và điều phối nhận hàng.</p>
-                </div>
-
                 <div class="field-grid">
                     <div>
                         <label class="portal-label">Họ và tên</label>
@@ -52,20 +47,11 @@
                         <label class="portal-label">Số xe</label>
                         <InputText class="portal-input" @bind-Value="Draft.VehicleNumber" />
                     </div>
-                </div>
-            </section>
 
-            <section class="workspace-card">
-                <div class="section-heading">
-                    <h2>Thông tin công ty</h2>
-                    <p>Mã số thuế có thể dùng để điền nhanh thông tin công ty.</p>
-                </div>
-
-                <div class="field-grid">
                     <div>
                         <label class="portal-label">Mã số thuế</label>
-                        <div class="toolbar-row">
-                            <InputText class="portal-input" @bind-Value="Draft.TaxCode" />
+                        <div class="input-action-row">
+                            <InputText class="portal-input input-action-field" @bind-Value="Draft.TaxCode" />
                             <button type="button" class="portal-secondary-action" @onclick="LookupCompanyAsync">Lấy thông tin</button>
                         </div>
                         <ValidationMessage For="@(() => Draft.TaxCode)" class="validation-message" />
@@ -82,16 +68,7 @@
                         <label class="portal-label">Email</label>
                         <InputText class="portal-input" @bind-Value="Draft.CompanyEmail" />
                     </div>
-                </div>
-            </section>
 
-            <section class="workspace-card">
-                <div class="section-heading">
-                    <h2>Thông tin lệnh</h2>
-                    <p>Ngày làm lệnh được cố định theo ngày hệ thống để đảm bảo đồng bộ nghiệp vụ.</p>
-                </div>
-
-                <div class="field-grid">
                     <div>
                         <label class="portal-label">House Bill</label>
                         <InputText class="portal-input" @bind-Value="Draft.HouseBill" />

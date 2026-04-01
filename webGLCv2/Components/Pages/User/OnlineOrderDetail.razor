@@ -1,0 +1,149 @@
+@page "/user/orders/{OrderId:long}"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject OnlineOrderService OnlineOrderService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@using System.Security.Claims
+
+<PageTitle>Chi tiet lenh online</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">User Workspace</p>
+            <h1>Chi tiet lenh online</h1>
+            <p class="page-subtitle">Xem lai thong tin da nhap va truy van nhanh theo House Bill hoac so cont.</p>
+        </div>
+        <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lai danh sach</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="portal-alert portal-alert-error">@ErrorMessage</div>
+    }
+    else if (Order is null)
+    {
+        <div class="portal-empty-inline">Dang tai chi tiet lenh...</div>
+    }
+    else
+    {
+        <section class="workspace-card">
+            <div class="section-heading">
+                <h2>@Order.OrderCode</h2>
+                <p>Trang thai hien tai: <span class="status-chip @GetStatusClass(Order.StatusCode)">@Order.Status</span></p>
+            </div>
+
+            <div class="field-grid">
+                <div>
+                    <label class="portal-label">Ho va ten</label>
+                    <input class="portal-input" value="@Order.CustomerName" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">So dien thoai</label>
+                    <input class="portal-input" value="@Order.PhoneNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">So CMND</label>
+                    <input class="portal-input" value="@Order.IdentityNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">So xe</label>
+                    <input class="portal-input" value="@Order.VehicleNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Ma so thue</label>
+                    <input class="portal-input" value="@Order.TaxCode" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Ten cong ty</label>
+                    <input class="portal-input" value="@Order.CompanyName" readonly />
+                </div>
+                <div class="field-span-3">
+                    <label class="portal-label">Dia chi</label>
+                    <input class="portal-input" value="@Order.CompanyAddress" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Email</label>
+                    <input class="portal-input" value="@Order.CompanyEmail" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">House Bill</label>
+                    <input class="portal-input" value="@Order.HouseBill" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Ngay lam lenh</label>
+                    <input class="portal-input" value="@Order.OrderDate.ToString("dd/MM/yyyy HH:mm")" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">So cont</label>
+                    <input class="portal-input" value="@Order.ContainerNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Ngay lay hang</label>
+                    <input class="portal-input" value="@(Order.PickupDate?.ToString("dd/MM/yyyy") ?? string.Empty)" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">So to khai</label>
+                    <input class="portal-input" value="@Order.DeclarationNumber" readonly />
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="portal-primary-action" @onclick="Query">Truy van</button>
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public long OrderId { get; set; }
+
+    private long CurrentUserId;
+    private OnlineOrderRecord? Order;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
+
+        if (CurrentUserId <= 0)
+        {
+            ErrorMessage = "Khong xac dinh duoc tai khoan dang nhap.";
+            return;
+        }
+
+        Order = await OnlineOrderService.GetOrderByIdAsync(CurrentUserId, OrderId);
+
+        if (Order is null)
+        {
+            ErrorMessage = "Khong tim thay lenh online.";
+        }
+    }
+
+    private void Query()
+    {
+        if (Order is null)
+        {
+            return;
+        }
+
+        var houseBill = Uri.EscapeDataString(Order.HouseBill ?? string.Empty);
+        var containerNumber = Uri.EscapeDataString(Order.ContainerNumber ?? string.Empty);
+        NavigationManager.NavigateTo($"/user/import-check?houseBill={houseBill}&containerNumber={containerNumber}");
+    }
+
+    private static string GetStatusClass(int statusCode)
+        => statusCode switch
+        {
+            5 => "success",
+            3 => "success",
+            4 => "warning",
+            2 => "warning",
+            1 => "pending",
+            0 => "neutral",
+            _ => "neutral"
+        };
+}

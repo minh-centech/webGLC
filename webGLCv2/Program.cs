@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using webGLCv2.Components;
+using webGLCv2.Models;
 using webGLCv2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var legacyApiSection = builder.Configuration.GetSection(LegacyApiOptions.SectionName);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
@@ -16,16 +18,33 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 builder.Services.AddAuthorization();
+builder.Services.Configure<LegacyApiOptions>(legacyApiSection);
 
-builder.Services.AddHttpClient<LegacyCustomerPortalService>((serviceProvider, client) =>
+builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
 {
-    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["LegacyApi:BaseUrl"] ?? "https://localhost:44304";
-    client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+    var options = legacyApiSection.Get<LegacyApiOptions>() ?? new LegacyApiOptions();
+
+    if (string.IsNullOrWhiteSpace(options.BaseUrl))
+    {
+        throw new InvalidOperationException("Missing configuration: LegacyApi:BaseUrl");
+    }
+
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-builder.Services.AddSingleton<OnlineOrderService>();
+builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>
+{
+    var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+    return new LegacyCustomerPortalService(httpClientFactory.CreateClient("LegacyApi"));
+});
+
+builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
+{
+    var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+    return new OnlineOrderService(httpClientFactory.CreateClient("LegacyApi"));
+});
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 

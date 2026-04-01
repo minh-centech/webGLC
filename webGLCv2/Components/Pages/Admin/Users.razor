@@ -30,17 +30,22 @@
         </article>
         <article class="stat-card">
             <span class="stat-label">Chờ xử lý</span>
-            <strong>@Accounts.Count(x => !x.IsActive)</strong>
+            <strong>@Accounts.Count(x => !x.ActivatedFlag)</strong>
         </article>
     </div>
 
     <section class="workspace-card">
         <div class="toolbar-row">
             <div class="toolbar-search">
-                <input class="portal-input" @bind="SearchTerm" @bind:event="oninput" placeholder="Tìm theo tên, email hoặc số điện thoại" />
+                <div class="input-action-row">
+                    <div class="input-action-field">
+                        <input class="portal-input" @bind="SearchDraft" placeholder="Tìm theo tên, email hoặc số điện thoại" />
+                    </div>
+                    <button class="portal-primary-action" @onclick="ApplyFilters">Tìm kiếm</button>
+                </div>
             </div>
             <label class="toolbar-toggle">
-                <input type="checkbox" @bind="ShowInactiveOnly" />
+                <input type="checkbox" @bind="ShowPendingActivationOnly" @bind:after="ApplyFilters" />
                 <span>Chỉ hiện tài khoản chưa kích hoạt</span>
             </label>
         </div>
@@ -111,7 +116,8 @@
 @code {
     private readonly List<AccountListItem> Accounts = new();
     private bool IsBusy = true;
-    private bool ShowInactiveOnly;
+    private bool ShowPendingActivationOnly;
+    private string SearchDraft = string.Empty;
     private string SearchTerm = string.Empty;
     private string? FeedbackMessage;
     private bool FeedbackIsError;
@@ -119,7 +125,7 @@
     private List<AccountListItem> FilteredAccounts =>
         Accounts
             .Where(account =>
-                (!ShowInactiveOnly || !account.IsActive) &&
+                (!ShowPendingActivationOnly || !account.ActivatedFlag) &&
                 (string.IsNullOrWhiteSpace(SearchTerm) ||
                  account.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
@@ -131,6 +137,11 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadAccountsAsync();
+    }
+
+    private void ApplyFilters()
+    {
+        SearchTerm = SearchDraft.Trim();
     }
 
     private async Task LoadAccountsAsync()

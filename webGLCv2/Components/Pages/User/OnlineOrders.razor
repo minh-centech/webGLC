@@ -4,27 +4,49 @@
 @inject OnlineOrderService OnlineOrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@using System.Security.Claims
 
-<PageTitle>Lệnh online</PageTitle>
+<PageTitle>Lenh online</PageTitle>
 
 <section class="page-shell">
     <header class="page-header">
         <div>
             <p class="page-kicker">User Workspace</p>
-            <h1>Lệnh online</h1>
-            <p class="page-subtitle">Danh sách lệnh online được hiển thị theo thông tin House Bill, khách hàng, container và công ty để dễ tra cứu.</p>
+            <h1>Lenh online</h1>
+            <p class="page-subtitle">Danh sach lenh online duoc hien thi theo dung tai khoan dang nhap, co bo loc ngay va tim nhanh theo House Bill, container, khach hang, cong ty.</p>
         </div>
         <div class="header-actions">
-            <button class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Thêm mới</button>
-            <button class="portal-secondary-action" @onclick="SeedAsync">Nạp dữ liệu mẫu</button>
+            <button class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Them moi</button>
+            <button class="portal-secondary-action" @onclick="RefreshDataAsync">Lam moi du lieu</button>
         </div>
     </header>
 
     <section class="workspace-card">
-        <div class="toolbar-row toolbar-row-wide">
-            <input class="portal-input toolbar-search-input" @bind="SearchTerm" @bind:event="oninput" placeholder="Nhập mã lệnh, House Bill, số cont hoặc khách hàng để tìm" />
-            <div class="toolbar-meta">
-                <span>Khoảng ngày: <strong>@DateTime.Today.AddDays(-30):dd/MM/yyyy - @DateTime.Today:dd/MM/yyyy</strong></span>
+        <div class="order-filter-panel">
+            <div class="order-filter-grid">
+                <div class="order-filter-field">
+                    <label class="portal-label">House Bill</label>
+                    <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhap House Bill" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">So cont</label>
+                    <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhap so cont" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Ma so thue</label>
+                    <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhap ma so thue" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Tu ngay</label>
+                    <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Den ngay</label>
+                    <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
+                </div>
+                <div class="order-filter-actions">
+                    <button class="portal-primary-action order-filter-button" @onclick="SearchAsync">Tim kiem</button>
+                </div>
             </div>
         </div>
 
@@ -32,42 +54,46 @@
             <table class="portal-table dense">
                 <thead>
                     <tr>
-                        <th>Mã lệnh</th>
-                        <th>Ngày làm lệnh</th>
+                        <th>Ma lenh</th>
+                        <th>Ngay lam lenh</th>
                         <th>House Bill</th>
-                        <th>Khách hàng</th>
-                        <th>Công ty</th>
-                        <th>Số cont</th>
-                        <th>Số tờ khai</th>
-                        <th>Trạng thái</th>
+                        <th>Khach hang</th>
+                        <th>Cong ty</th>
+                        <th>So cont</th>
+                        <th>So to khai</th>
+                        <th>Trang thai</th>
+                        <th>Hanh dong</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (FilteredOrders.Count == 0)
+                    @if (Orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="8">
-                                <div class="portal-empty-inline">Chưa có lệnh online nào. Hãy bấm "Thêm mới" để bắt đầu.</div>
+                            <td colspan="9">
+                                <div class="portal-empty-inline">Chua co lenh online nao trong khoang ngay da chon. Hay bam "Them moi" de bat dau.</div>
                             </td>
                         </tr>
                     }
                     else
                     {
-                        @foreach (var order in FilteredOrders)
+                        @foreach (var order in Orders)
                         {
                             <tr>
                                 <td>
                                     <div class="cell-title">@order.OrderCode</div>
                                     <div class="cell-subtitle">@order.VehicleNumber</div>
                                 </td>
-                                <td>@order.OrderDate:dd/MM/yyyy</td>
+                                <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>@order.HouseBill</td>
                                 <td>@order.CustomerName</td>
                                 <td>@order.CompanyName</td>
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
                                 <td>
-                                    <span class="status-chip @GetStatusClass(order.Status)">@order.Status</span>
+                                    <span class="status-chip @GetStatusClass(order.StatusCode)">@order.Status</span>
+                                </td>
+                                <td>
+                                    <button class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">Xem chi tiet</button>
                                 </td>
                             </tr>
                         }
@@ -78,50 +104,132 @@
 
         <footer class="workspace-footer">
             <div class="footer-summary">
-                <span>Tổng lệnh: <strong>@FilteredOrders.Count</strong></span>
+                <span>Tong lenh: <strong>@TotalCount</strong></span>
+                <label class="portal-label pager-label">So dong</label>
+                <select class="portal-input pager-size-select" @bind="PageSize" @bind:after="HandlePageSizeChangedAsync">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
             </div>
             <div class="footer-pagination">
-                <span>Biểu diễn DataGrid cho luồng lệnh online phiên bản v2.</span>
+                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Truoc</button>
+                <span>Trang <strong>@CurrentPage</strong>/@TotalPages</span>
+                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Sau</button>
             </div>
         </footer>
     </section>
 </section>
 
 @code {
-    private string SearchTerm = string.Empty;
     private string CurrentUserKey = "anonymous";
+    private long CurrentUserId;
+    private DateTime FromDate = DateTime.Today.AddDays(-7);
+    private DateTime ToDate = DateTime.Today;
+    private string HouseBillFilter = string.Empty;
+    private string ContainerNumberFilter = string.Empty;
+    private string TaxCodeFilter = string.Empty;
     private List<OnlineOrderRecord> Orders = new();
+    private int TotalCount;
+    private int PageSize = 10;
+    private int CurrentPage = 1;
 
-    private List<OnlineOrderRecord> FilteredOrders =>
-        Orders
-            .Where(order =>
-                string.IsNullOrWhiteSpace(SearchTerm) ||
-                order.OrderCode.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                order.HouseBill.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                order.ContainerNumber.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                order.CustomerName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                order.CompanyName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(order => order.OrderDate)
-            .ToList();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+    private bool IsFirstPage => CurrentPage <= 1;
+    private bool IsLastPage => CurrentPage >= TotalPages;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         CurrentUserKey = authState.User.Identity?.Name ?? "customer";
-        Orders = await OnlineOrderService.GetOrdersAsync(CurrentUserKey);
+        CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
+        await LoadOrdersAsync();
     }
 
-    private async Task SeedAsync()
+    private async Task RefreshDataAsync()
     {
-        await OnlineOrderService.SeedDefaultsAsync(CurrentUserKey);
-        Orders = await OnlineOrderService.GetOrdersAsync(CurrentUserKey);
+        if (CurrentUserId <= 0)
+        {
+            return;
+        }
+
+        await OnlineOrderService.SeedDefaultsAsync(CurrentUserId);
+        await LoadOrdersAsync();
     }
 
-    private static string GetStatusClass(string status)
-        => status switch
+    private async Task SearchAsync()
+    {
+        if (ToDate < FromDate)
         {
-            "Đã xác nhận" => "success",
-            "Chờ xử lý" => "warning",
+            ToDate = FromDate;
+        }
+
+        CurrentPage = 1;
+        await LoadOrdersAsync();
+    }
+
+    private async Task HandlePageSizeChangedAsync()
+    {
+        CurrentPage = 1;
+        await LoadOrdersAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (!IsFirstPage)
+        {
+            CurrentPage--;
+            await LoadOrdersAsync();
+        }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (!IsLastPage)
+        {
+            CurrentPage++;
+            await LoadOrdersAsync();
+        }
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        if (CurrentUserId <= 0)
+        {
+            Orders = new List<OnlineOrderRecord>();
+            TotalCount = 0;
+            return;
+        }
+
+        var result = await OnlineOrderService.GetOrdersAsync(
+            CurrentUserId,
+            FromDate,
+            ToDate,
+            HouseBillFilter,
+            ContainerNumberFilter,
+            TaxCodeFilter,
+            CurrentPage,
+            PageSize);
+
+        Orders = result.Items;
+        TotalCount = result.TotalCount;
+        CurrentPage = result.Page <= 0 ? 1 : result.Page;
+    }
+
+    private static string GetStatusClass(int statusCode)
+        => statusCode switch
+        {
+            5 => "success",
+            3 => "success",
+            4 => "warning",
+            2 => "warning",
+            1 => "pending",
+            0 => "neutral",
             _ => "neutral"
         };
+
+    private void ViewDetail(string orderId)
+    {
+        NavigationManager.NavigateTo($"/user/orders/{orderId}");
+    }
 }

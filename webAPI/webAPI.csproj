@@ -119,11 +119,14 @@
   <ItemGroup>
     <Content Include="Global.asax" />
     <Content Include="Scripts\reset_pass.sql" />
+    <Content Include="Scripts\spLenhOnlines.sql" />
+    <Content Include="Scripts\altLenhOnlines.sql" />
     <Content Include="Scripts\spDanhMucKhachHangDoiLenh.sql" />
     <Content Include="Scripts\altDanhMucKhachHangDoiLenh.sql" />
     <Content Include="Scripts\altNguoiDungDoanhNghiep.sql" />
     <Content Include="Scripts\altNguoiDungDoanhNghiep_RemoveUniqueKhachHang.sql" />
     <Content Include="Scripts\tblDanhMucLoaiTaiKhoanKhachHangDoiLenh.sql" />
+    <Content Include="Scripts\tblLenhOnlines.sql" />
     <Content Include="Scripts\tblDanhMucKhachHangDoiLenh.sql" />
     <Content Include="Scripts\tblNguoiDungDoanhNghiep.sql" />
     <Content Include="Web.config" />
@@ -134,10 +137,12 @@
     <Compile Include="Code\DocumentStorageHelper.cs" />
     <Compile Include="Controllers\DanhMucKhachHangDoiLenhController.cs" />
     <Compile Include="Controllers\StatusController.cs" />
+    <Compile Include="Controllers\LenhOnlinesController.cs" />
     <Compile Include="Controllers\TaiLieuController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\DanhMucKhachHangDoiLenhSavePersonalDocumentsRequest.cs" />
     <Compile Include="Models\TaiLieuModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

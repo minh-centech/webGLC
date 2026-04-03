@@ -2,9 +2,13 @@
 @rendermode InteractiveServer
 @layout EmptyLayout
 @attribute [AllowAnonymous]
-@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Dang nhap khach hang</PageTitle>
+<HeadContent>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+</HeadContent>
 
 <div class="login-shell">
     <div class="login-card">
@@ -37,7 +41,7 @@
 
             <div class="login-form-header">
                 <h2>Dang nhap he thong</h2>
-                <p>Vui long nhap email, mat khau va ma captcha de truy cap he thong.</p>
+                <p>Vui long nhap email, mat khau va xac thuc bao mat de truy cap he thong.</p>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(Error))
@@ -45,8 +49,14 @@
                 <div class="portal-alert portal-alert-error">@Error</div>
             }
 
+            @if (!HasTurnstileConfiguration)
+            {
+                <div class="portal-alert portal-alert-error">
+                    Chua cau hinh Cloudflare Turnstile. Vui long cap nhat CloudflareTurnstile:SiteKey va CloudflareTurnstile:SecretKey.
+                </div>
+            }
+
             <form class="login-form" method="post" action="/auth/login">
-                <input type="hidden" name="CaptchaToken" value="@Captcha.CaptchaToken" />
                 <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
 
                 <label class="portal-label" for="email">Email</label>
@@ -55,17 +65,13 @@
                 <label class="portal-label" for="password">Mat khau</label>
                 <input id="password" class="portal-input" type="password" name="Password" placeholder="Nhap mat khau" required />
 
-                <label class="portal-label" for="captcha">Ma captcha</label>
-                <div class="login-captcha-row">
-                    <input id="captcha" class="portal-input" type="text" name="CaptchaCode" placeholder="Nhap ma captcha" required />
-                    <div class="login-captcha-box">
-                        <span>@Captcha.CaptchaDisplayText</span>
-                        <a href="@RefreshUrl" class="login-captcha-refresh" aria-label="Tai lai captcha">↻</a>
-                    </div>
+                <label class="portal-label">Xac thuc bao mat</label>
+                <div class="login-turnstile-wrap">
+                    <div id="login-turnstile"></div>
                 </div>
-                <p class="portal-help">Khong phan biet chu hoa thuong. Neu kho doc, hay lam moi captcha.</p>
+                <p class="portal-help"></p>
 
-                <button type="submit" class="portal-primary-action login-submit">Dang nhap</button>
+                <button type="submit" class="portal-primary-action login-submit" disabled="@(!HasTurnstileConfiguration)">Dang nhap</button>
             </form>
 
             <div class="login-secondary-actions">
@@ -100,36 +106,18 @@
     [SupplyParameterFromQuery]
     public string? Email { get; set; }
 
-    private LoginCaptchaDto Captcha { get; set; } = new();
     private bool IsForgotPasswordPopupOpen { get; set; }
+    private string SiteKey => TurnstileConfiguration.Value.SiteKey;
+    private bool HasTurnstileConfiguration =>
+        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
+        && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
 
-    private string RefreshUrl => BuildLoginUrl(includeEmail: true, bustCache: true);
-
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Captcha = await LegacyCustomerPortalService.GetLoginCaptchaAsync();
-    }
-
-    private string BuildLoginUrl(bool includeEmail, bool bustCache)
-    {
-        var queryParts = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(ReturnUrl))
+        if (firstRender && HasTurnstileConfiguration)
         {
-            queryParts.Add($"returnUrl={Uri.EscapeDataString(ReturnUrl)}");
+            await JSRuntime.InvokeVoidAsync("glcTurnstile.renderLogin", "login-turnstile", SiteKey);
         }
-
-        if (includeEmail && !string.IsNullOrWhiteSpace(Email))
-        {
-            queryParts.Add($"email={Uri.EscapeDataString(Email)}");
-        }
-
-        if (bustCache)
-        {
-            queryParts.Add($"t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
-        }
-
-        return queryParts.Count == 0 ? "/login" : $"/login?{string.Join("&", queryParts)}";
     }
 
     private void ShowForgotPasswordPopup()

@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,28 +12,43 @@ namespace webGLCv2.Controllers;
 public sealed class AuthController : Controller
 {
     private readonly LegacyCustomerPortalService _legacyCustomerPortalService;
+    private readonly TurnstileValidationService _turnstileValidationService;
 
-    public AuthController(LegacyCustomerPortalService legacyCustomerPortalService)
+    public AuthController(
+        LegacyCustomerPortalService legacyCustomerPortalService,
+        TurnstileValidationService turnstileValidationService)
     {
         _legacyCustomerPortalService = legacyCustomerPortalService;
+        _turnstileValidationService = turnstileValidationService;
     }
 
     [AllowAnonymous]
     [HttpPost("/auth/login")]
-    public async Task<IActionResult> Login([FromForm] LoginPostModel model)
+    public async Task<IActionResult> Login(
+        [FromForm] LoginPostModel model,
+        [FromForm(Name = "cf-turnstile-response")] string turnstileToken)
     {
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid || string.IsNullOrWhiteSpace(turnstileToken))
         {
-            return RedirectToLogin(model.ReturnUrl, "Vui lòng nhập đầy đủ thông tin đăng nhập.", model.Email);
+            return RedirectToLogin(model.ReturnUrl, "Vui long nhap day du thong tin dang nhap va xac thuc bao mat.", model.Email);
         }
 
         try
         {
+            var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var turnstilePassed = await _turnstileValidationService.ValidateAsync(
+                turnstileToken,
+                remoteIp,
+                HttpContext.RequestAborted);
+
+            if (!turnstilePassed)
+            {
+                return RedirectToLogin(model.ReturnUrl, "Xac thuc Turnstile khong thanh cong. Vui long thu lai.", model.Email);
+            }
+
             var loginResult = await _legacyCustomerPortalService.LoginAsync(
                 model.Email.Trim(),
-                model.Password,
-                model.CaptchaCode.Trim().ToUpperInvariant(),
-                model.CaptchaToken);
+                model.Password);
 
             var claims = new List<Claim>
             {

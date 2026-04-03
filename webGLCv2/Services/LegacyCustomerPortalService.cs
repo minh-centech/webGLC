@@ -18,24 +18,12 @@ public sealed class LegacyCustomerPortalService
     {
         _httpClient = httpClient;
     }
-
-    public async Task<LoginCaptchaDto> GetLoginCaptchaAsync()
-    {
-        var envelope = await _httpClient.GetFromJsonAsync<ApiEnvelope>("api/DanhMucKhachHangDoiLenh/GetLoginCaptcha", JsonOptions);
-        EnsureSuccess(envelope, "Không thể tạo captcha đăng nhập.");
-
-        var result = JsonSerializer.Deserialize<LoginCaptchaDto>(envelope!.Data, JsonOptions);
-        return result ?? new LoginCaptchaDto();
-    }
-
-    public async Task<AuthenticatedUserDto> LoginAsync(string email, string password, string captchaCode, string captchaToken)
+    public async Task<AuthenticatedUserDto> LoginAsync(string email, string password)
     {
         var payload = new
         {
             Email = email,
-            Password = password,
-            CaptchaCode = captchaCode,
-            CaptchaToken = captchaToken
+            Password = password
         };
 
         var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/Login", payload, JsonOptions);
@@ -404,3 +392,4 @@ public sealed class LegacyCustomerPortalService
         return isActive ? "Đang hoạt động" : "Đã khóa";
     }
 }
+

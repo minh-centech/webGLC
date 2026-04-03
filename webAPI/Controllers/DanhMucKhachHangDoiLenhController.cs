@@ -231,19 +231,7 @@ namespace webAPI.Controllers
             try
             {
                 coreCommon.GlobalVariables.IDDonVi = GlobalVariables.IDDanhMucDonVi;
-                var captchaSecretKey = ConfigurationManager.AppSettings["CaptchaSecretKey"];
 
-                if (string.IsNullOrWhiteSpace(captchaSecretKey))
-                    throw new Exception("Thiếu cấu hình CaptchaSecretKey.");
-
-                if (coreCommon.coreCommon.IsNull(objLogin.CaptchaCode))
-                    throw new Exception("Mã captcha không được bỏ trống.");
-
-                if (coreCommon.coreCommon.IsNull(objLogin.CaptchaToken))
-                    throw new Exception("Phiên captcha không hợp lệ.");
-
-                if (!CaptchaTokenHelper.ValidateToken(objLogin.CaptchaCode, objLogin.CaptchaToken, captchaSecretKey))
-                    throw new Exception("Mã captcha không đúng hoặc đã hết hạn.");
 
                 //if (objLogin.Email.ToString().ToUpper().Trim() != "ADMIN@EVERLINK.COM.VN") throw new Exception("Hệ thống đang nâng cấp, mời bạn quay lại sau ít phút!");
 

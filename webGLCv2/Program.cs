@@ -5,6 +5,7 @@ using webGLCv2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var legacyApiSection = builder.Configuration.GetSection(LegacyApiOptions.SectionName);
+var turnstileSection = builder.Configuration.GetSection(TurnstileOptions.SectionName);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
@@ -19,6 +20,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 builder.Services.Configure<LegacyApiOptions>(legacyApiSection);
+builder.Services.Configure<TurnstileOptions>(turnstileSection);
 
 builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
 {
@@ -44,6 +46,8 @@ builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
     return new OnlineOrderService(httpClientFactory.CreateClient("LegacyApi"));
 });
+
+builder.Services.AddHttpClient<TurnstileValidationService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

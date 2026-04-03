@@ -11,11 +11,5 @@ public sealed class LoginPostModel
     [Required]
     public string Password { get; set; } = string.Empty;
 
-    [Required]
-    public string CaptchaCode { get; set; } = string.Empty;
-
-    [Required]
-    public string CaptchaToken { get; set; } = string.Empty;
-
     public string? ReturnUrl { get; set; }
 }

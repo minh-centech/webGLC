@@ -6,14 +6,14 @@
 @inject NavigationManager NavigationManager
 @using System.Security.Claims
 
-<PageTitle>Chi tiet lenh online</PageTitle>
+<PageTitle>Chi tiết lệnh online</PageTitle>
 
 <section class="page-shell">
     <header class="page-header">
         <div>
             <p class="page-kicker">User Workspace</p>
-            <h1>Chi tiet lenh online</h1>
-            <p class="page-subtitle">Xem lai thong tin da nhap va truy van nhanh theo House Bill hoac so cont.</p>
+            <h1>Chi tiết lệnh online</h1>
+            <p class="page-subtitle">Hãy rà soát thông tin chính xác trước khi truy vấn theo số House Bill (HBL) hoặc số hiệu Container.</p>
         </div>
         <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lai danh sach</button>
     </header>
@@ -24,7 +24,7 @@
     }
     else if (Order is null)
     {
-        <div class="portal-empty-inline">Dang tai chi tiet lenh...</div>
+        <div class="portal-empty-inline">Đang tải dữ liệu...</div>
     }
     else
     {
@@ -36,55 +36,55 @@
 
             <div class="field-grid">
                 <div>
-                    <label class="portal-label">Ho va ten</label>
+                    <label class="portal-label">Họ và tên</label>
                     <input class="portal-input" value="@Order.CustomerName" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">So dien thoai</label>
+                    <label class="portal-label">Số điện thoại</label>
                     <input class="portal-input" value="@Order.PhoneNumber" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">So CMND</label>
+                    <label class="portal-label">Số CMND/CCCD</label>
                     <input class="portal-input" value="@Order.IdentityNumber" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">So xe</label>
+                    <label class="portal-label">Biển số xe</label>
                     <input class="portal-input" value="@Order.VehicleNumber" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">Ma so thue</label>
+                    <label class="portal-label">Mã số thuế</label>
                     <input class="portal-input" value="@Order.TaxCode" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">Ten cong ty</label>
+                    <label class="portal-label">Tên công ty</label>
                     <input class="portal-input" value="@Order.CompanyName" readonly />
                 </div>
                 <div class="field-span-3">
-                    <label class="portal-label">Dia chi</label>
+                    <label class="portal-label">Địa chỉ doanh nghiệp</label>
                     <input class="portal-input" value="@Order.CompanyAddress" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">Email</label>
+                    <label class="portal-label">Email liên hệ</label>
                     <input class="portal-input" value="@Order.CompanyEmail" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">House Bill</label>
+                    <label class="portal-label">Số House Bill</label>
                     <input class="portal-input" value="@Order.HouseBill" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">Ngay lam lenh</label>
+                    <label class="portal-label">Ngày làm lệnh</label>
                     <input class="portal-input" value="@Order.OrderDate.ToString("dd/MM/yyyy HH:mm")" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">So cont</label>
+                    <label class="portal-label">Số hiệu Container</label>
                     <input class="portal-input" value="@Order.ContainerNumber" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">Ngay lay hang</label>
+                    <label class="portal-label">Ngày dự kiến lấy hàng</label>
                     <input class="portal-input" value="@(Order.PickupDate?.ToString("dd/MM/yyyy") ?? string.Empty)" readonly />
                 </div>
                 <div>
-                    <label class="portal-label">So to khai</label>
+                    <label class="portal-label">Số tờ khai hải quan</label>
                     <input class="portal-input" value="@Order.DeclarationNumber" readonly />
                 </div>
             </div>

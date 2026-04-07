@@ -6,18 +6,18 @@
 @inject NavigationManager NavigationManager
 @using System.Security.Claims
 
-<PageTitle>Lenh online</PageTitle>
+<PageTitle>Lệnh online</PageTitle>
 
 <section class="page-shell">
     <header class="page-header">
         <div>
             <p class="page-kicker">User Workspace</p>
-            <h1>Lenh online</h1>
-            <p class="page-subtitle">Danh sach lenh online duoc hien thi theo dung tai khoan dang nhap, co bo loc ngay va tim nhanh theo House Bill, container, khach hang, cong ty.</p>
+            <h1>Lệnh online</h1>
+            <p class="page-subtitle">Theo dõi và quản lý tập trung các lệnh trực tuyến. Dễ dàng tra cứu dữ liệu bằng bộ lọc ngày và công cụ tìm kiếm đa năng (HBL, Cont).</p>
         </div>
         <div class="header-actions">
-            <button class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Them moi</button>
-            <button class="portal-secondary-action" @onclick="RefreshDataAsync">Lam moi du lieu</button>
+            <button class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Thêm mới</button>
+            <button class="portal-secondary-action" @onclick="RefreshDataAsync">Làm mới dữ liệu</button>
         </div>
     </header>
 
@@ -25,27 +25,29 @@
         <div class="order-filter-panel">
             <div class="order-filter-grid">
                 <div class="order-filter-field">
-                    <label class="portal-label">House Bill</label>
-                    <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhap House Bill" />
+                    <label class="portal-label">Số House Bill</label>
+                    <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhập số House Bill..." />
                 </div>
                 <div class="order-filter-field">
-                    <label class="portal-label">So cont</label>
-                    <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhap so cont" />
+                    <label class="portal-label">Số hiệu Container</label>
+                    <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhập số hiệu Cont..." />
                 </div>
                 <div class="order-filter-field">
-                    <label class="portal-label">Ma so thue</label>
-                    <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhap ma so thue" />
+                    <label class="portal-label">Mã số thuế</label>
+                    <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhập mã số thuế..." />
                 </div>
                 <div class="order-filter-field">
-                    <label class="portal-label">Tu ngay</label>
+                    <label class="portal-label">Từ ngày</label>
                     <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
                 </div>
                 <div class="order-filter-field">
-                    <label class="portal-label">Den ngay</label>
+                    <label class="portal-label">Đến ngày</label>
                     <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
                 </div>
                 <div class="order-filter-actions">
-                    <button class="portal-primary-action order-filter-button" @onclick="SearchAsync">Tim kiem</button>
+                    <button class="portal-primary-action order-filter-button" @onclick="SearchAsync">
+                        <i class="icon-search"></i> Tìm kiếm
+                    </button>
                 </div>
             </div>
         </div>
@@ -54,15 +56,15 @@
             <table class="portal-table dense">
                 <thead>
                     <tr>
-                        <th>Ma lenh</th>
-                        <th>Ngay lam lenh</th>
+                        <th>Mã lệnh / Biển số</th>
+                        <th>Ngày lập lệnh</th>
                         <th>House Bill</th>
-                        <th>Khach hang</th>
-                        <th>Cong ty</th>
-                        <th>So cont</th>
-                        <th>So to khai</th>
-                        <th>Trang thai</th>
-                        <th>Hanh dong</th>
+                        <th>Khách hàng</th>
+                        <th>Tên doanh nghiệp</th>
+                        <th>Số hiệu Cont</th>
+                        <th>Số tờ khai</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,7 +72,10 @@
                     {
                         <tr>
                             <td colspan="9">
-                                <div class="portal-empty-inline">Chua co lenh online nao trong khoang ngay da chon. Hay bam "Them moi" de bat dau.</div>
+                                <div class="portal-empty-inline">
+                                    Không tìm thấy lệnh trực tuyến nào trong khoảng thời gian đã chọn.
+                                    <br />Vui lòng bấm <strong>"Thêm mới"</strong> để khởi tạo.
+                                </div>
                             </td>
                         </tr>
                     }
@@ -93,7 +98,9 @@
                                     <span class="status-chip @GetStatusClass(order.StatusCode)">@order.Status</span>
                                 </td>
                                 <td>
-                                    <button class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">Xem chi tiet</button>
+                                    <button class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
+                                        Xem chi tiết
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -104,18 +111,18 @@
 
         <footer class="workspace-footer">
             <div class="footer-summary">
-                <span>Tong lenh: <strong>@TotalCount</strong></span>
-                <label class="portal-label pager-label">So dong</label>
+                <span>Tổng cộng: <strong>@TotalCount</strong> lệnh</span>
+                <label class="portal-label pager-label">Hiển thị</label>
                 <select class="portal-input pager-size-select" @bind="PageSize" @bind:after="HandlePageSizeChangedAsync">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
+                    <option value="10">10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
                 </select>
             </div>
             <div class="footer-pagination">
-                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Truoc</button>
-                <span>Trang <strong>@CurrentPage</strong>/@TotalPages</span>
-                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Sau</button>
+                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
+                <span>Trang <strong>@CurrentPage</strong> / @TotalPages</span>
+                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
             </div>
         </footer>
     </section>

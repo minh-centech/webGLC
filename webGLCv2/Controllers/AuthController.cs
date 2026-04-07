@@ -30,7 +30,7 @@ public sealed class AuthController : Controller
     {
         if (!ModelState.IsValid || string.IsNullOrWhiteSpace(turnstileToken))
         {
-            return RedirectToLogin(model.ReturnUrl, "Vui long nhap day du thong tin dang nhap va xac thuc bao mat.", model.Email);
+            return RedirectToLogin(model.ReturnUrl, "Để truy cập hệ thống, vui lòng nhập email, mật khẩu và mã xác thực bảo mật của bạn.", model.Email);
         }
 
         try

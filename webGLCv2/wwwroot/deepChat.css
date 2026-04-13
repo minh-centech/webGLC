@@ -1,9 +1,4 @@
-﻿:root {
-    --primary-green: #0b6b36;
-    --primary-green-hover: #0d7f40;
-    --primary-green-light: #1fa463;
-}
-
+﻿
 /* ===== NÚT CHAT FLOAT ===== */
 .chat-toggle-btn {
     position: fixed;
@@ -101,6 +96,7 @@
     letter-spacing: 0.3px;
 }
 
+
 /* Nút đóng */
 .chat-close-btn {
     border: none;
@@ -114,9 +110,9 @@
     transition: all 0.2s;
 }
 
-    .chat-close-btn:hover {
-        background: rgba(255,255,255,0.3);
-    }
+.chat-close-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
 
 /* ===== DEEP CHAT ===== */
 deep-chat {

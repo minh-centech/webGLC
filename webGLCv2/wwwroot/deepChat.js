@@ -113,6 +113,9 @@
         display: none !important;
         width: 0 !important;
     }
+    .message-bubble {
+         max-width: 90% !important;
+    }
 `;
 
         sr.appendChild(style);

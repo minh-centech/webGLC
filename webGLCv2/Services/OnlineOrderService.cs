@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using webGLCv2.Models;
 
@@ -68,6 +68,73 @@ public sealed class OnlineOrderService
         };
     }
 
+
+    public Task<OnlineOrderPageResult> GetOrdersForAdminAsync(
+        DateTime? tuNgay = null,
+        DateTime? denNgay = null,
+        string? houseBill = null,
+        string? soCont = null,
+        string? maSoThue = null,
+        int page = 1,
+        int pageSize = 10)
+        => GetOrdersInternalAsync(
+            null,
+            tuNgay,
+            denNgay,
+            houseBill,
+            soCont,
+            maSoThue,
+            page,
+            pageSize);
+
+    private async Task<OnlineOrderPageResult> GetOrdersInternalAsync(
+        long? idDanhMucKhachHangDoiLenh,
+        DateTime? tuNgay,
+        DateTime? denNgay,
+        string? houseBill,
+        string? soCont,
+        string? maSoThue,
+        int page,
+        int pageSize)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh,
+                TuNgay = tuNgay,
+                DenNgay = denNgay,
+                HouseBill = NullIfEmpty(houseBill),
+                SoCont = NullIfEmpty(soCont),
+                MaSoThue = NullIfEmpty(maSoThue),
+                Page = page,
+                PageSize = pageSize
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tai danh sach lenh online.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+        var orders = new List<OnlineOrderRecord>();
+
+        foreach (var item in itemsElement.EnumerateArray())
+        {
+            orders.Add(MapOnlineOrder(item));
+        }
+
+        return new OnlineOrderPageResult
+        {
+            Items = orders,
+            TotalCount = root.TryGetProperty("TotalCount", out var totalCountValue) && totalCountValue.TryGetInt32(out var totalCount) ? totalCount : orders.Count,
+            Page = root.TryGetProperty("Page", out var pageValue) && pageValue.TryGetInt32(out var currentPage) ? currentPage : page,
+            PageSize = root.TryGetProperty("PageSize", out var pageSizeValue) && pageSizeValue.TryGetInt32(out var currentPageSize) ? currentPageSize : pageSize
+        };
+    }
     public async Task<OnlineOrderRecord?> GetOrderByIdAsync(long idDanhMucKhachHangDoiLenh, long orderId)
     {
         var response = await _httpClient.PostAsJsonAsync(
@@ -98,6 +165,36 @@ public sealed class OnlineOrderService
         return MapOnlineOrder(itemsElement[0]);
     }
 
+
+    public async Task<OnlineOrderRecord?> GetOrderByIdForAdminAsync(long orderId)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                ID = orderId,
+                IDDanhMucKhachHangDoiLenh = (long?)null,
+                Page = 1,
+                PageSize = 1
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tai chi tiet lenh online.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+
+        if (itemsElement.ValueKind != JsonValueKind.Array || itemsElement.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        return MapOnlineOrder(itemsElement[0]);
+    }
     public async Task SeedDefaultsAsync(long idDanhMucKhachHangDoiLenh)
     {
         foreach (var draft in CreateSeedData())
@@ -224,6 +321,8 @@ public sealed class OnlineOrderService
         return new OnlineOrderRecord
         {
             Id = id.ToString(),
+            UserId = GetLong(item, "IDDanhMucKhachHangDoiLenh"),
+            UserEmail = GetString(item, "EmailUser"),
             SequenceNumber = soThuTuLenh,
             OrderCode = GetOrderCode(soThuTuLenh, id),
             OrderDate = GetDateTime(item, "NgayLamLenh") ?? DateTime.Today,
@@ -354,3 +453,5 @@ public sealed class OnlineOrderService
         ];
     }
 }
+
+

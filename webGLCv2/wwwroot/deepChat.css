@@ -64,14 +64,14 @@
     position: fixed;
     right: 24px;
     bottom: 96px;
-    width: 380px;
+    width: min(350px, calc(100vw - 24px)); /* 🔥 chuẩn nhất */
+
     height: 560px;
     background: #fff;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 18px 50px rgba(0,0,0,0.3);
     z-index: 9999;
-    /* ✅ QUAN TRỌNG */
     display: flex;
     flex-direction: column;
     transform: translateY(20px) scale(0.95);
@@ -80,11 +80,11 @@
     transition: all 0.25s ease;
 }
 
-    .chat-popup.open {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-        pointer-events: auto;
-    }
+.chat-popup.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
 
 
 /* ===== HEADER ===== */
@@ -124,28 +124,21 @@ deep-chat {
     min-height: 0; /* cực kỳ quan trọng */
 }
 
-
-/* 🔥 nút send */
-/*deep-chat::part(send-button) {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: var(--primary-green);
-}*/
-
-    /* hover nút gửi */
-    /*deep-chat::part(send-button):hover {
-        background: var(--primary-green-hover);
-    }*/
-
 /* ===== MOBILE ===== */
 @@media (max-width: 576px) {
+
     .chat-popup {
-        right: 12px;
-        left: 12px;
-        bottom: 84px;
-        width: auto;
-        height: 70vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0 !important;
+        bottom: 0;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 0; /* bỏ bo góc cho full screen */
+        margin: 0;
+        padding: 0;
+        z-index: 9999;
     }
 
     .chat-toggle-btn {

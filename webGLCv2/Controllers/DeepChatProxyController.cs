@@ -6,6 +6,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace webGLCv2.Controllers
 {
@@ -16,6 +18,8 @@ namespace webGLCv2.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly AiProxyOptions _aiOptions;
         private readonly ILogger<DeepChatProxyController> _logger;
+        private static int _activeChatSessions;
+        private const int MaxConcurrentChatSessions = 3;
 
         public DeepChatProxyController(
             IHttpClientFactory httpClientFactory,
@@ -32,8 +36,21 @@ namespace webGLCv2.Controllers
         [HttpPost("Send")]
         public async Task<IActionResult> Send([FromBody] DeepChatRequest request, CancellationToken cancellationToken)
         {
+            var acquiredSlot = false;
             try
             {
+                var currentSessions = Interlocked.Increment(ref _activeChatSessions);
+                if (currentSessions > MaxConcurrentChatSessions)
+                {
+                    Interlocked.Decrement(ref _activeChatSessions);
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new DeepChatResponse
+                    {
+                        Text = "Hệ thống đang thử nghiệm, đang có nhiều phiên làm việc, bạn thử lại sau."
+                    });
+                }
+
+                acquiredSlot = true;
+
                 if (request == null || request.Messages == null || request.Messages.Count == 0)
                 {
                     return BadRequest(new DeepChatResponse
@@ -55,9 +72,9 @@ namespace webGLCv2.Controllers
 
                 var userMessage = lastUserMessage.Text.Trim();
 
-                //var replyText = await CallOpenAiCompatibleApiAsync(userMessage, cancellationToken);
+                var replyText = await CallOpenAiCompatibleApiAsync(userMessage, cancellationToken);
                 //Test
-                var replyText = await CallOpenAiCompatibleApiAsyncTest(userMessage, cancellationToken);
+                //var replyText = await CallOpenAiCompatibleApiAsyncTest(userMessage, cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(replyText))
                 {
@@ -78,13 +95,19 @@ namespace webGLCv2.Controllers
                     Text = "Đã xảy ra lỗi trong quá trình xử lý yêu cầu."
                 });
             }
+            finally
+            {
+                if (acquiredSlot)
+                {
+                    Interlocked.Decrement(ref _activeChatSessions);
+                }
+            }
         }
 
         private Task<string> CallOpenAiCompatibleApiAsyncTest(string userMessage, CancellationToken cancellationToken)
         {
             return Task.FromResult("Hệ thống đang phát triển! Vui lòng thử lại sau");
         }
-
         private async Task<string> CallOpenAiCompatibleApiAsync(string userMessage, CancellationToken cancellationToken)
         {
             
@@ -119,7 +142,7 @@ namespace webGLCv2.Controllers
                         Content = userMessage
                     }
                 },
-                Temperature = 0.7
+                Temperature = 0
             };
 
             var json = JsonSerializer.Serialize(payload);
@@ -129,15 +152,20 @@ namespace webGLCv2.Controllers
                 ? "/v1/chat/completions"
                 : _aiOptions.ChatEndpoint;
 
+            var requestUri = client.BaseAddress is null
+                ? endpoint
+                : new Uri(client.BaseAddress, endpoint).ToString();
+
             using var response = await client.PostAsync(endpoint, content, cancellationToken);
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("AI API lỗi. Status: {StatusCode}, Body: {Body}",
-                    (int)response.StatusCode, responseContent);
+                _logger.LogWarning("AI API lỗi. Status: {StatusCode}, Url: {Url}, Body: {Body}",
+                    (int)response.StatusCode, requestUri, responseContent);
 
-                return $"AI API lỗi: {(int)response.StatusCode}";
+                //return $"AI API lỗi: {(int)response.StatusCode}. URL: {requestUri}";
+                return $"Hệ thống đang gặp vấn đề! Vui lòng thử lại sau 1 phút nữa";
             }
 
             var aiResponse = JsonSerializer.Deserialize<OpenAiChatCompletionResponse>(
@@ -147,7 +175,22 @@ namespace webGLCv2.Controllers
                     PropertyNameCaseInsensitive = true
                 });
 
-            return aiResponse?.Choices?.FirstOrDefault()?.Message?.Content?.Trim() ?? string.Empty;
+            var rawContent = aiResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
+            return SanitizeAssistantContent(rawContent);
+        }
+
+        private static string SanitizeAssistantContent(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return string.Empty;
+            }
+
+            // Remove hidden reasoning blocks if the upstream model includes <think>...</think> tags.
+            var cleaned = Regex.Replace(content, "<think>[\\s\\S]*?</think>", string.Empty, RegexOptions.IgnoreCase)
+                .Trim();
+
+            return cleaned;
         }
     }
 
@@ -237,3 +280,10 @@ namespace webGLCv2.Controllers
 
     #endregion
 }
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-﻿window.addEventListener("load", () => {
+window.addEventListener("load", () => {
     const toggleBtn = document.getElementById("chat-toggle-btn");
     const closeBtn = document.getElementById("chat-close-btn");
     const popup = document.getElementById("chat-popup");
@@ -7,13 +7,23 @@
     if (toggleBtn && popup) {
         toggleBtn.addEventListener("click", () => {
             popup.classList.toggle("open");
+            if (chat) {
+                chat.style.display = popup.classList.contains("open") ? "block" : "none";
+            }
         });
     }
 
     if (closeBtn && popup) {
         closeBtn.addEventListener("click", () => {
             popup.classList.remove("open");
+            if (chat) {
+                chat.style.display = "none";
+            }
         });
+    }
+
+    if (chat) {
+        chat.style.display = "none";
     }
 
     const applyDeepChatStyle = () => {
@@ -57,7 +67,7 @@
         align-items: center !important;
     }
 
-    /* khung ngoài đã đúng, chỉ giữ center */
+    /* khung ngo�i d� d�ng, ch? gi? center */
     .input-button-container.inner-button-container {
         position: absolute !important;
         right: 14px !important;
@@ -73,7 +83,7 @@
         z-index: 3 !important;
     }
 
-    /* sửa đúng nút con bị lệch */
+    /* s?a d�ng n�t con b? l?ch */
     .input-button.inside-end.submit-button.input-button-svg,
     .input-button.inside-end.input-button-svg {
         position: static !important;

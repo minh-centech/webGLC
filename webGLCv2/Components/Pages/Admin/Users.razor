@@ -1,4 +1,4 @@
-@page "/admin/users"
+﻿@page "/admin/users"
 @attribute [Authorize(Roles = "Admin")]
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 
@@ -9,7 +9,7 @@
         <div>
             <p class="page-kicker">Admin Workspace</p>
             <h1>Quản lý và kích hoạt tài khoản</h1>
-            <p class="page-subtitle">Kế thừa đúng nghiệp vụ webGLC: xem danh sách, lọc trạng thái và kích hoạt hoặc khóa user ngay tại chỗ.</p>
+            <p class="page-subtitle">Chức năng xem danh sách, lọc trạng thái và kích hoạt hoặc khóa user.</p>
         </div>
         <button class="portal-secondary-action" @onclick="LoadAccountsAsync">Tải lại dữ liệu</button>
     </header>
@@ -98,7 +98,11 @@
                                     <span class="status-chip @(account.IsActive ? "success" : "warning")">@account.StatusText</span>
                                 </td>
                                 <td class="text-end">
-                                    <a class="portal-secondary-action table-link-btn" href="/admin/users/@account.Id/documents">Hồ sơ</a>
+                                    <a class="portal-secondary-action table-link-btn me-1" href="/admin/users/@account.Id/documents">Hồ sơ</a>
+                                    @if (account.AccountType == 1 && account.HasPendingEnterpriseApproval)
+                                    {
+                                        <a class="portal-primary-action table-link-btn" style="margin:0 4px;" href="/admin/users/@account.Id/documents">Duyệt doanh nghiệp</a>
+                                    }
                                     <button class="table-action @(account.IsActive ? "danger" : "success")"
                                             @onclick="() => ToggleAccountAsync(account)">
                                         @(account.IsActive ? "Khóa" : "Kích hoạt")
@@ -153,6 +157,19 @@
         try
         {
             var accounts = await LegacyCustomerPortalService.GetAccountsAsync();
+            foreach (var account in accounts.Where(x => x.AccountType == 1))
+            {
+                try
+                {
+                    var companies = await LegacyCustomerPortalService.GetCompaniesByCustomerAsync(account.Id);
+                    account.HasPendingEnterpriseApproval = companies.Any(c => !c.IsActive);
+                }
+                catch
+                {
+                    account.HasPendingEnterpriseApproval = false;
+                }
+            }
+
             Accounts.Clear();
             Accounts.AddRange(accounts);
         }
@@ -186,3 +203,10 @@
         }
     }
 }
+
+
+
+
+
+
+

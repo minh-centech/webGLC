@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using webGLCv2.Models;
@@ -165,7 +165,7 @@ public sealed class LegacyCustomerPortalService
         var payload = new
         {
             ID = accountId,
-            BanScanSoCMNDCanCuocPath = fieldKey == "BanScanSoCMNDCanCuocPathCaNhan" ? relativePath : NullIfEmpty(currentCitizenCardPath),
+            BanScanSoCMNDCanCuocPathCaNhan = fieldKey == "BanScanSoCMNDCanCuocPathCaNhan" ? relativePath : NullIfEmpty(currentCitizenCardPath),
             BanDangKyCaNhanCoChuKyPath = fieldKey == "BanDangKyCaNhanCoChuKyPath" ? relativePath : NullIfEmpty(currentSignedFormPath)
         };
 
@@ -265,7 +265,7 @@ public sealed class LegacyCustomerPortalService
             BanScanGiayPhepKinhDoanhPath = (string?)null,
             BanScanSoCMNDCanCuocPath = (string?)null,
             BanDangKyEPortChuKySoPath = (string?)null,
-            IsActive = true
+            IsActive = false
         };
 
         var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/SaveDoanhNghiep", payload, JsonOptions);
@@ -278,6 +278,40 @@ public sealed class LegacyCustomerPortalService
         return GetLong(document.RootElement, "ID");
     }
 
+
+    public async Task SetEnterpriseApprovalAsync(LegacyCompanyProfile company, bool isApproved)
+    {
+        var payload = new
+        {
+            ID = company.ID,
+            IDDanhMucKhachHangDoiLenh = company.IDDanhMucKhachHangDoiLenh,
+            TenDoanhNghiep = company.TenDoanhNghiep,
+            MaSoThue = company.MaSoThue,
+            DiaChi = company.DiaChi,
+            SoDienThoaiDoanhNghiep = company.SoDienThoaiDoanhNghiep,
+            EmailDoanhNghiep = company.EmailDoanhNghiep,
+            SoFax = NullIfEmpty(company.SoFax),
+            GiayPhepKinhDoanh = NullIfEmpty(company.GiayPhepKinhDoanh),
+            NgayCap = company.NgayCap,
+            NoiCap = NullIfEmpty(company.NoiCap),
+            DaiDienCoThamQuyen = NullIfEmpty(company.DaiDienCoThamQuyen),
+            ChucVu = NullIfEmpty(company.ChucVu),
+            DoanhNghiepCongTyDuocUyQuyen = NullIfEmpty(company.DoanhNghiepCongTyDuocUyQuyen),
+            TenDangNhapDangKyDichVu = NullIfEmpty(company.TenDangNhapDangKyDichVu),
+            EmailXuatHoaDon = NullIfEmpty(company.EmailXuatHoaDon),
+            SoCMNDCanCuoc = NullIfEmpty(company.SoCMNDCanCuoc),
+            BanScanGiayPhepKinhDoanhPath = NullIfEmpty(company.BanScanGiayPhepKinhDoanhPath),
+            BanScanSoCMNDCanCuocPath = NullIfEmpty(company.BanScanSoCMNDCanCuocPath),
+            BanDangKyEPortChuKySoPath = NullIfEmpty(company.BanDangKyEPortChuKySoPath),
+            IsActive = isApproved
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/SaveDoanhNghiep", payload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật trạng thái duyệt doanh nghiệp.");
+    }
     public async Task RegisterAccountAsync(RegisterAccountModel model)
     {
         var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/RegisterTaiKhoan", model, JsonOptions);
@@ -392,4 +426,5 @@ public sealed class LegacyCustomerPortalService
         return isActive ? "Đang hoạt động" : "Đã khóa";
     }
 }
+
 

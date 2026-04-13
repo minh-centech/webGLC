@@ -22,5 +22,6 @@ public sealed class LegacyCompanyProfile
     public string BanScanGiayPhepKinhDoanhPath { get; set; } = string.Empty;
     public string BanScanSoCMNDCanCuocPath { get; set; } = string.Empty;
     public string BanDangKyEPortChuKySoPath { get; set; } = string.Empty;
+    public int TrangThai { get; set; }
     public bool IsActive { get; set; }
 }

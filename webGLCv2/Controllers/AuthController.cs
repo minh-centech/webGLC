@@ -36,14 +36,17 @@ public sealed class AuthController : Controller
         try
         {
             var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var turnstilePassed = await _turnstileValidationService.ValidateAsync(
+            var turnstileResult = await _turnstileValidationService.ValidateDetailedAsync(
                 turnstileToken,
                 remoteIp,
                 HttpContext.RequestAborted);
 
-            if (!turnstilePassed)
+            if (!turnstileResult.Success)
             {
-                return RedirectToLogin(model.ReturnUrl, "Xac thuc Turnstile khong thanh cong. Vui long thu lai.", model.Email);
+                var errorDetail = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
+                    ? "unknown-turnstile-error"
+                    : turnstileResult.ErrorDetail;
+                return RedirectToLogin(model.ReturnUrl, $"Xac thuc Turnstile khong thanh cong. Vui long thu lai. ({errorDetail})", model.Email);
             }
 
             var loginResult = await _legacyCustomerPortalService.LoginAsync(
@@ -118,3 +121,5 @@ public sealed class AuthController : Controller
             ? "/admin/users"
             : "/user/orders";
 }
+
+

@@ -1189,3 +1189,18 @@ select {
         width: 100%;
     }
 }
+
+.upload-inline-label {
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-inline-label .admin-upload-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: auto;
+    cursor: pointer;
+}

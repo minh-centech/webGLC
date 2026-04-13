@@ -1,4 +1,4 @@
-@page "/admin/users/{Id}/documents"
+﻿@page "/admin/users/{Id}/documents"
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @using Microsoft.AspNetCore.Components.Forms
@@ -73,10 +73,65 @@
                 </div>
             }
 
-            <div class="docs-list">
+            @if (Details.AccountType == 1)
+            {
+                <section class="workspace-card">
+                    <div class="section-heading">
+                        <h2>Doanh nghiệp theo tài khoản cá nhân</h2>
+                        <p>Dữ liệu lấy từ bảng NguoiDungDoanhNghiep theo IDDanhMucKhachHangDoiLenh = @Details.Id.</p>
+                    </div>
+
+                    @if (EnterpriseCompanies.Count == 0)
+                    {
+                        <div class="portal-empty-state compact">
+                            <div class="portal-empty-icon">0</div>
+                            <h2>Chưa có doanh nghiệp nào</h2>
+                            <p>Tài khoản này chưa tạo doanh nghiệp để duyệt.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-shell">
+                            <table class="portal-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tên doanh nghiệp</th>
+                                        <th>Mã số thuế</th>
+                                        <th>Email</th>
+                                        <th>Trạng thái duyệt</th>
+                                        <th class="text-end">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var company in EnterpriseCompanies)
+                                    {
+                                        <tr>
+                                            <td>@company.TenDoanhNghiep</td>
+                                            <td>@company.MaSoThue</td>
+                                            <td>@company.EmailDoanhNghiep</td>
+                                            <td>
+                                                <span class="status-chip @(company.IsActive ? "success" : "warning")">@(company.IsActive ? "Đã duyệt" : "Chờ duyệt")</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="table-action success"
+                                                        disabled="@(company.IsActive || IsSubmitting)"
+                                                        @onclick="() => ApproveEnterpriseAsync(company)">
+                                                    Phê duyệt doanh nghiệp
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+            }
+
+            <div class="docs-list" style="margin-top:15px;">
                 @foreach (var file in Details.Documents)
                 {
-                    <article class="docs-item">
+                    <article class="docs-item" @key="file.FieldKey">
                         <div>
                             <h2>@file.Name</h2>
                             <p>@(file.HasFile ? file.RelativePath : "Chưa có file được upload")</p>
@@ -91,11 +146,12 @@
                             }
                             else
                             {
-                                <label for="@GetUploadInputId(file)" class="portal-secondary-action">Upload bổ sung</label>
-                                <InputFile id="@GetUploadInputId(file)"
-                                           class="admin-upload-input"
-                                           OnChange="@(args => UploadMissingDocumentAsync(file, args))"
-                                           accept=".pdf,application/pdf" />
+                                <label class="portal-secondary-action upload-inline-label">
+                                    Tải tài liệu bổ sung
+                                    <InputFile class="admin-upload-input"
+                                               OnChange="@(args => UploadMissingDocumentAsync(file, args))"
+                                               accept=".pdf,application/pdf" />
+                                </label>
                                 <span class="upload-status admin-upload-status">@GetUploadStatus(file)</span>
                             }
                         </div>
@@ -133,6 +189,7 @@
     public string Id { get; set; } = string.Empty;
 
     private readonly Dictionary<string, string> UploadStatuses = new();
+    private readonly List<LegacyCompanyProfile> EnterpriseCompanies = new();
     private AccountDocumentDetails? Details;
     private string? ErrorMessage;
     private string? FeedbackMessage;
@@ -152,11 +209,17 @@
         try
         {
             Details = await LegacyCustomerPortalService.GetAccountDocumentsAsync(Id);
+            EnterpriseCompanies.Clear();
             if (Details is not null)
             {
                 foreach (var document in Details.Documents)
                 {
                     UploadStatuses[document.FieldKey] = document.HasFile ? "Đã có tài liệu." : "Sẵn sàng bổ sung.";
+                }
+
+                if (Details.AccountType == 1)
+                {
+                    EnterpriseCompanies.AddRange(await LegacyCustomerPortalService.GetCompaniesByCustomerAsync(Details.Id));
                 }
             }
         }
@@ -274,14 +337,37 @@
         }
     }
 
+    private async Task ApproveEnterpriseAsync(LegacyCompanyProfile company)
+    {
+        IsSubmitting = true;
+        FeedbackMessage = null;
+
+        try
+        {
+            await LegacyCustomerPortalService.SetEnterpriseApprovalAsync(company, true);
+            company.IsActive = true;
+            FeedbackMessage = $"Đã phê duyệt doanh nghiệp: {company.TenDoanhNghiep}.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
     private string GetCurrentDocumentPath(string fieldKey)
         => Details?.Documents.FirstOrDefault(x => x.FieldKey == fieldKey)?.RelativePath ?? string.Empty;
-
-    private string GetUploadInputId(DocumentFileItem document)
-        => $"upload-{document.FieldKey}";
 
     private string GetUploadStatus(DocumentFileItem document)
         => UploadStatuses.TryGetValue(document.FieldKey, out var status)
             ? status
             : "Sẵn sàng bổ sung.";
 }
+
+
+
+

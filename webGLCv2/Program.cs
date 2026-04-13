@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using webGLCv2.Components;
+using webGLCv2.Controllers;
 using webGLCv2.Models;
 using webGLCv2.Services;
 
@@ -51,6 +52,13 @@ builder.Services.AddHttpClient<TurnstileValidationService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient();
+
+builder.Services.Configure<AiProxyOptions>(
+    builder.Configuration.GetSection("AiProxy"));
 
 var app = builder.Build();
 

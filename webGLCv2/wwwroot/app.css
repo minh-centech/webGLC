@@ -13,6 +13,8 @@
     --portal-shadow: 0 24px 60px rgba(16, 54, 32, 0.12);
     --portal-radius-xl: 28px;
     --portal-radius-lg: 20px;
+    --primary-green: #0b6b36;
+    --primary-green-hover: #0d7f40;
 }
 
 html, body {
@@ -1165,5 +1167,24 @@ select {
 
     .field-card.wide {
         grid-column: span 1;
+    }
+}
+
+.support-chat-wrapper {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 5000;
+}
+
+@media (max-width: 760px) {
+    .support-chat-wrapper {
+        right: 0.5rem;
+        left: 0.5rem;
+        bottom: 0.5rem;
+    }
+
+    .support-chat-wrapper deep-chat {
+        width: 100%;
     }
 }

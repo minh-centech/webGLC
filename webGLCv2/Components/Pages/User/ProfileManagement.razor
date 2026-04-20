@@ -1,4 +1,4 @@
-@page "/user/profile"
+﻿@page "/user/profile"
 @rendermode InteractiveServer
 @attribute [Authorize]
 @using System.Security.Claims
@@ -304,6 +304,13 @@
         if (string.IsNullOrWhiteSpace(AccountId))
         {
             FeedbackMessage = "Không xác định được tài khoản hiện tại.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        if (Companies.Count > 0)
+        {
+            FeedbackMessage = "Tài khoản này đã có hồ sơ doanh nghiệp. Không thể tạo mới trùng tài khoản.";
             FeedbackIsError = true;
             return;
         }

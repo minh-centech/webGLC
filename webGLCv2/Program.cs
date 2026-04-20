@@ -1,4 +1,6 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 using webGLCv2.Components;
 using webGLCv2.Controllers;
 using webGLCv2.Models;
@@ -60,6 +62,18 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<AiProxyOptions>(
     builder.Configuration.GetSection("AiProxy"));
 
+var viVnCulture = new CultureInfo("vi-VN");
+CultureInfo.DefaultThreadCurrentCulture = viVnCulture;
+CultureInfo.DefaultThreadCurrentUICulture = viVnCulture;
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(viVnCulture);
+    options.SupportedCultures = new[] { viVnCulture };
+    options.SupportedUICultures = new[] { viVnCulture };
+});
+
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -70,6 +84,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

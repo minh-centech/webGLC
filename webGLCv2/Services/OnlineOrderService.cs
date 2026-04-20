@@ -357,16 +357,16 @@ public sealed class OnlineOrderService
     // 4 - Gia han
     // 5 - Da thong quan
     private static string GetTrangThaiText(int trangThai)
-        => trangThai switch
-        {
-            0 => "Cho cap nhat",
-            1 => "Chua thong quan",
-            2 => "Chua doi lenh",
-            3 => "Da doi lenh",
-            4 => "Gia han",
-            5 => "Da thong quan",
-            _ => "Khong xac dinh"
-        };
+      => trangThai switch
+      {
+          0 => "Mới khởi tạo",
+          1 => "Chưa thông quan",
+          2 => "Chưa đổi lệnh",
+          3 => "Đã đổi lệnh",
+          4 => "Gia hạn",
+          5 => "Đã thông quan",
+          _ => "Không xác định"
+      };
 
     private static List<OnlineOrderDraft> CreateSeedData()
     {

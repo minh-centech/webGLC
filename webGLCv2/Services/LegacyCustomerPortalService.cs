@@ -244,6 +244,12 @@ public sealed class LegacyCustomerPortalService
 
     public async Task<long> CreateCompanyAsync(string accountId, UserCompanyFormModel model)
     {
+        var existingCompany = await GetLatestEnterpriseProfileAsync(accountId);
+        if (existingCompany is not null)
+        {
+            throw new InvalidOperationException("Tài khoản này đã có hồ sơ doanh nghiệp. Không thể tạo mới trùng tài khoản.");
+        }
+
         var payload = new
         {
             IDDanhMucKhachHangDoiLenh = accountId,

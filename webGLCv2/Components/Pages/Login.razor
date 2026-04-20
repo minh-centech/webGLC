@@ -2,45 +2,46 @@
 @rendermode InteractiveServer
 @layout EmptyLayout
 @attribute [AllowAnonymous]
-@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Đăng nhập khách hàng</PageTitle>
+<PageTitle>Dang nhap khach hang</PageTitle>
+<HeadContent>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+</HeadContent>
 
 <div class="login-shell">
     <div class="login-card">
         <aside class="login-aside">
-            <div class="login-badge">Cổng EverHouse</div>
-            <h1 class="login-title">Quản lý lệnh và tra cứu thông tin hàng</h1>
+            <div class="login-badge">everWareHouse</div>
+            <h1 class="login-title">Quản lý lệnh và tra cứu trạng thái thái hàng nhập</h1>
             <p class="login-description">
-                Theo dõi trạng thái hồ sơ, tạo lệnh online và chủ động làm việc với bộ phận vận hành trong một luồng thống nhất.
+                Cổng thông tin được thiết kế nhằm mang lại trải nghiệm làm việc xuyên suốt và minh bạch cho quý khách hàng. Tại đây, bạn có thể dễ dàng tạo lệnh online, theo dõi trạng thái hồ sơ theo thời gian thực và tương tác trực tiếp với bộ phận vận hành. Tất cả thao tác được tích hợp trong một luồng quy trình thống nhất, giúp tối ưu hóa thời gian và nâng cao hiệu quả công việc
             </p>
 
             <div class="login-highlight">
-                
-                <strong>GLC </strong>
-                
+                <strong>GLC</strong>
+
                 <ul class="login-points">
-                    <li>Tạo và theo dõi lệnh online thuận tiện..</li>
-                    <li>Tra cứu thông tin hàng nhập và lịch lấy hàng nhanh.</li>
-                    <li>Giảm thao tác rời rạc, tập trung vào đúng nghiệp vụ cần xử lý.</li>
+                    <li>Tạo và quản lý lệnh trực tuyến.</li>
+                    <li>Tra cứu hàng nhập & Lịch lấy hàng nhanh.</li>
+                    <li>Tối ưu hóa quy trình xử lý.</li>
                 </ul>
             </div>
-
-          
         </aside>
 
         <section class="login-form-panel">
             <div class="login-brandline">
                 <img class="login-brand-image" src="/images/glc-logo.png" alt="GLC logo" />
                 <div>
-                    <div class="login-brandname">GLC Portal v2</div>
-                    <div class="login-brandmeta">Customer workspace</div>
+                    <div class="login-brandname">GREEN LOGISTICS CENTRE</div>
+                    <div class="login-brandmeta">everWareHouse</div>
                 </div>
             </div>
 
             <div class="login-form-header">
-                <h2>Đăng nhập hệ thống</h2>
-                <p>Vui lòng nhập email, mật khẩu và mã captcha để truy cập hệ thống.</p>
+                <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
+                <p>Chào mừng bạn quay trở lại! Hãy nhập email, mật khẩu và xác thực để bắt đầu làm việc.</p>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(Error))
@@ -48,9 +49,16 @@
                 <div class="portal-alert portal-alert-error">@Error</div>
             }
 
-            <form class="login-form" method="post" action="/auth/login">
-                <input type="hidden" name="CaptchaToken" value="@Captcha.CaptchaToken" />
+            @if (!HasTurnstileConfiguration)
+            {
+                <div class="portal-alert portal-alert-error">
+                    Chua cau hinh Cloudflare Turnstile. Liên hệ quản trị viên.
+                </div>
+            }
+
+            <form id="login-form" class="login-form" method="post" action="/auth/login">
                 <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+                <input type="hidden" id="login-turnstile-token" name="cf-turnstile-response" />
 
                 <label class="portal-label" for="email">Email</label>
                 <input id="email" class="portal-input" type="email" name="Email" value="@Email" placeholder="name@company.com" required />
@@ -58,24 +66,19 @@
                 <label class="portal-label" for="password">Mật khẩu</label>
                 <input id="password" class="portal-input" type="password" name="Password" placeholder="Nhập mật khẩu" required />
 
-                <label class="portal-label" for="captcha">Mã captcha</label>
-                <div class="login-captcha-row">
-                    <input id="captcha" class="portal-input" type="text" name="CaptchaCode" placeholder="Nhập mã captcha" required />
-                    <div class="login-captcha-box">
-                        <span>@Captcha.CaptchaDisplayText</span>
-                        <a href="@RefreshUrl" class="login-captcha-refresh" aria-label="Tải lại captcha">↻</a>
-                    </div>
+                <label class="portal-label">Xác thực bảo mật</label>
+                <div class="login-turnstile-wrap">
+                    <div id="login-turnstile"></div>
                 </div>
-                <p class="portal-help">Không phân biệt chữ hoa thường. Nếu khó đọc, hãy làm mới captcha.</p>
+                <p class="portal-help"></p>
 
-                <button type="submit" class="portal-primary-action login-submit">Đăng nhập</button>
+                <button type="submit" class="portal-primary-action login-submit" disabled="@(!HasTurnstileConfiguration)">Đăng nhập</button>
             </form>
 
             <div class="login-secondary-actions">
                 <a class="portal-secondary-action" href="/register">Đăng ký tài khoản</a>
+                <a class="portal-secondary-action" href="/huong-dan-su-dung">Hướng dẫn sử dụng</a>
                 <button type="button" class="portal-secondary-action portal-secondary-button" @onclick="ShowForgotPasswordPopup">Quên mật khẩu</button>
-                <a class="portal-secondary-action" href="/user/orders">Xem giao diện mẫu</a>
-                <a class="portal-secondary-action" href="/admin/users">Đi đến phân hệ admin</a>
             </div>
         </section>
     </div>
@@ -86,9 +89,9 @@
     <div class="portal-modal-backdrop" @onclick="HideForgotPasswordPopup">
         <div class="portal-modal" @onclick:stopPropagation="true">
             <h3>Quên mật khẩu</h3>
-            <p>Vui lòng liên hệ quản trị viên để được hỗ trợ cấp lại mật khẩu tài khoản.</p>
+            <p>Quý khách vui lòng liên hệ Quản trị viên để được hỗ trợ cấp lại mật khẩu tài khoản.</p>
             <div class="portal-modal-actions">
-                <button type="button" class="portal-primary-action" @onclick="HideForgotPasswordPopup">Đã hiểu</button>
+                <button type="button" class="portal-primary-action" @onclick="HideForgotPasswordPopup">Đóng lại</button>
             </div>
         </div>
     </div>
@@ -104,36 +107,18 @@
     [SupplyParameterFromQuery]
     public string? Email { get; set; }
 
-    private LoginCaptchaDto Captcha { get; set; } = new();
     private bool IsForgotPasswordPopupOpen { get; set; }
+    private string SiteKey => TurnstileConfiguration.Value.SiteKey;
+    private bool HasTurnstileConfiguration =>
+        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
+        && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
 
-    private string RefreshUrl => BuildLoginUrl(includeEmail: true, bustCache: true);
-
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Captcha = await LegacyCustomerPortalService.GetLoginCaptchaAsync();
-    }
-
-    private string BuildLoginUrl(bool includeEmail, bool bustCache)
-    {
-        var queryParts = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(ReturnUrl))
+        if (firstRender && HasTurnstileConfiguration)
         {
-            queryParts.Add($"returnUrl={Uri.EscapeDataString(ReturnUrl)}");
+            await JSRuntime.InvokeVoidAsync("glcTurnstile.renderLogin", "login-turnstile", SiteKey);
         }
-
-        if (includeEmail && !string.IsNullOrWhiteSpace(Email))
-        {
-            queryParts.Add($"email={Uri.EscapeDataString(Email)}");
-        }
-
-        if (bustCache)
-        {
-            queryParts.Add($"t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
-        }
-
-        return queryParts.Count == 0 ? "/login" : $"/login?{string.Join("&", queryParts)}";
     }
 
     private void ShowForgotPasswordPopup()
@@ -142,3 +127,4 @@
     private void HideForgotPasswordPopup()
         => IsForgotPasswordPopupOpen = false;
 }
+

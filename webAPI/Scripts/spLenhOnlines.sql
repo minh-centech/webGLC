@@ -1,0 +1,359 @@
+if object_id(N'dbo.List_LenhOnlines', N'P') is null
+	exec('create procedure dbo.List_LenhOnlines as begin set nocount on; end');
+go
+
+alter procedure List_LenhOnlines
+	@ID		bigint = null,
+	@IDDanhMucKhachHangDoiLenh	bigint = null,
+	@TuNgay	datetime = null,
+	@DenNgay	datetime = null,
+	@HouseBill	nvarchar(100) = null,
+	@SoCont		nvarchar(50) = null,
+	@MaSoThue	nvarchar(50) = null,
+	@Page		int = 1,
+	@PageSize	int = 10
+as
+begin
+	set nocount on;
+
+	set @HouseBill = dbo.ChuanHoaChuoi(@HouseBill);
+	set @SoCont = dbo.ChuanHoaChuoi(@SoCont);
+	set @MaSoThue = dbo.ChuanHoaChuoi(@MaSoThue);
+	set @Page = isnull(nullif(@Page, 0), 1);
+	set @PageSize = isnull(nullif(@PageSize, 0), 10);
+
+	if @Page < 1 set @Page = 1;
+	if @PageSize < 1 set @PageSize = 10;
+
+	;with Filtered as
+	(
+		select
+			ID,
+			SoThuTuLenh,
+			HoVaTen,
+			SoDienThoai,
+			SoCMND,
+			SoXe,
+			MaSoThue,
+			TenCongTy,
+			DiaChi,
+			Email,
+			HouseBill,
+			NgayLamLenh,
+			SoCont,
+			NgayLayHang,
+			SoToKhai,
+			TrangThai,
+			IDDanhMucKhachHangDoiLenh,
+			CreateDate,
+			EditDate
+		from LenhOnlines
+		where
+			(@ID is null or ID = @ID)
+			and (@IDDanhMucKhachHangDoiLenh is null or IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh)
+			and (@TuNgay is null or convert(date, NgayLamLenh) >= convert(date, @TuNgay))
+			and (@DenNgay is null or convert(date, NgayLamLenh) <= convert(date, @DenNgay))
+			and (@HouseBill is null or HouseBill like N'%' + @HouseBill + N'%')
+			and (@SoCont is null or SoCont like N'%' + @SoCont + N'%')
+			and (@MaSoThue is null or MaSoThue like N'%' + @MaSoThue + N'%')
+	)
+	select
+		ID,
+		SoThuTuLenh,
+		HoVaTen,
+		SoDienThoai,
+		SoCMND,
+		SoXe,
+		MaSoThue,
+		TenCongTy,
+		DiaChi,
+		Email,
+		HouseBill,
+		NgayLamLenh,
+		SoCont,
+		NgayLayHang,
+		SoToKhai,
+		TrangThai,
+		IDDanhMucKhachHangDoiLenh,
+		CreateDate,
+		EditDate,
+		count(1) over() as TotalCount
+	from Filtered
+	order by ID desc
+	offset (@Page - 1) * @PageSize rows
+	fetch next @PageSize rows only;
+end
+go
+
+if object_id(N'dbo.Insert_LenhOnlines', N'P') is null
+	exec('create procedure dbo.Insert_LenhOnlines as begin set nocount on; end');
+go
+
+alter procedure Insert_LenhOnlines
+	@ID				bigint = null out,
+	@SoThuTuLenh	bigint = null out,
+	@HoVaTen		nvarchar(255),
+	@SoDienThoai	nvarchar(50) = null,
+	@SoCMND			nvarchar(50) = null,
+	@SoXe			nvarchar(50) = null,
+	@MaSoThue		nvarchar(50) = null,
+	@TenCongTy		nvarchar(255) = null,
+	@DiaChi			nvarchar(500) = null,
+	@Email			nvarchar(255) = null,
+	@HouseBill		nvarchar(100) = null,
+	@NgayLamLenh	datetime = null out,
+	@SoCont			nvarchar(50) = null,
+	@NgayLayHang	datetime = null,
+	@SoToKhai		nvarchar(100) = null,
+	@TrangThai		int = 0,
+	@IDDanhMucKhachHangDoiLenh	bigint,
+	@CreateDate		datetime = null out
+as
+begin
+	set nocount on;
+
+	declare @ErrMsg nvarchar(max);
+
+	set @HoVaTen = dbo.ChuanHoaChuoi(@HoVaTen);
+	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
+	set @SoCMND = dbo.ChuanHoaChuoi(@SoCMND);
+	set @SoXe = dbo.ChuanHoaChuoi(@SoXe);
+	set @MaSoThue = dbo.ChuanHoaChuoi(@MaSoThue);
+	set @TenCongTy = dbo.ChuanHoaChuoi(@TenCongTy);
+	set @DiaChi = dbo.ChuanHoaChuoi(@DiaChi);
+	set @Email = dbo.ChuanHoaChuoi(@Email);
+	set @HouseBill = dbo.ChuanHoaChuoi(@HouseBill);
+	set @SoCont = dbo.ChuanHoaChuoi(@SoCont);
+	set @SoToKhai = dbo.ChuanHoaChuoi(@SoToKhai);
+	set @TrangThai = isnull(@TrangThai, 0);
+
+	if @HoVaTen is null or len(ltrim(rtrim(@HoVaTen))) = 0 or len(ltrim(rtrim(@HoVaTen))) > 255
+	begin
+		raiserror(N'HoVaTen khong duoc bo trong hoac dai hon 255 ky tu!', 16, 1);
+		return;
+	end;
+
+	if @IDDanhMucKhachHangDoiLenh is null
+	begin
+		raiserror(N'IDDanhMucKhachHangDoiLenh khong duoc bo trong!', 16, 1);
+		return;
+	end;
+
+	if @HouseBill is null or len(ltrim(rtrim(@HouseBill))) = 0 or len(ltrim(rtrim(@HouseBill))) > 100
+	begin
+		raiserror(N'HouseBill khong duoc bo trong hoac dai hon 100 ky tu!', 16, 1);
+		return;
+	end;
+
+	if not exists (select 1 from DanhMucKhachHangDoiLenh where ID = @IDDanhMucKhachHangDoiLenh)
+	begin
+		raiserror(N'IDDanhMucKhachHangDoiLenh khong ton tai!', 16, 1);
+		return;
+	end;
+
+	if @TrangThai not between 0 and 5
+	begin
+		raiserror(N'TrangThai khong hop le!', 16, 1);
+		return;
+	end;
+
+	if exists (select 1 from LenhOnlines where HouseBill = @HouseBill)
+	begin
+		raiserror(N'HouseBill da ton tai!', 16, 1);
+		return;
+	end;
+
+	begin tran
+	begin try
+		select @ID = isnull(max(ID), 0) + 1 from LenhOnlines with (updlock, holdlock);
+		select @SoThuTuLenh = isnull(max(SoThuTuLenh), 0) + 1 from LenhOnlines with (updlock, holdlock);
+		set @NgayLamLenh = getdate();
+		set @CreateDate = @NgayLamLenh;
+
+		insert into LenhOnlines
+		(
+			ID,
+			SoThuTuLenh,
+			HoVaTen,
+			SoDienThoai,
+			SoCMND,
+			SoXe,
+			MaSoThue,
+			TenCongTy,
+			DiaChi,
+			Email,
+			HouseBill,
+			NgayLamLenh,
+			SoCont,
+			NgayLayHang,
+			SoToKhai,
+			TrangThai,
+			IDDanhMucKhachHangDoiLenh,
+			CreateDate
+		)
+		values
+		(
+			@ID,
+			@SoThuTuLenh,
+			@HoVaTen,
+			@SoDienThoai,
+			@SoCMND,
+			@SoXe,
+			@MaSoThue,
+			@TenCongTy,
+			@DiaChi,
+			@Email,
+			@HouseBill,
+			@NgayLamLenh,
+			@SoCont,
+			@NgayLayHang,
+			@SoToKhai,
+			@TrangThai,
+			@IDDanhMucKhachHangDoiLenh,
+			@CreateDate
+		);
+
+		commit tran;
+	end try
+	begin catch
+		if @@trancount > 0 rollback tran;
+		select @ErrMsg = error_message();
+		raiserror(@ErrMsg, 16, 1);
+	end catch;
+end
+go
+
+if object_id(N'dbo.Update_LenhOnlines', N'P') is null
+	exec('create procedure dbo.Update_LenhOnlines as begin set nocount on; end');
+go
+
+alter procedure Update_LenhOnlines
+	@ID				bigint,
+	@HoVaTen		nvarchar(255),
+	@SoDienThoai	nvarchar(50) = null,
+	@SoCMND			nvarchar(50) = null,
+	@SoXe			nvarchar(50) = null,
+	@MaSoThue		nvarchar(50) = null,
+	@TenCongTy		nvarchar(255) = null,
+	@DiaChi			nvarchar(500) = null,
+	@Email			nvarchar(255) = null,
+	@HouseBill		nvarchar(100) = null,
+	@SoCont			nvarchar(50) = null,
+	@NgayLayHang	datetime = null,
+	@SoToKhai		nvarchar(100) = null,
+	@TrangThai		int = 0,
+	@IDDanhMucKhachHangDoiLenh	bigint,
+	@EditDate		datetime = null out
+as
+begin
+	set nocount on;
+
+	declare @ErrMsg nvarchar(max);
+
+	set @HoVaTen = dbo.ChuanHoaChuoi(@HoVaTen);
+	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
+	set @SoCMND = dbo.ChuanHoaChuoi(@SoCMND);
+	set @SoXe = dbo.ChuanHoaChuoi(@SoXe);
+	set @MaSoThue = dbo.ChuanHoaChuoi(@MaSoThue);
+	set @TenCongTy = dbo.ChuanHoaChuoi(@TenCongTy);
+	set @DiaChi = dbo.ChuanHoaChuoi(@DiaChi);
+	set @Email = dbo.ChuanHoaChuoi(@Email);
+	set @HouseBill = dbo.ChuanHoaChuoi(@HouseBill);
+	set @SoCont = dbo.ChuanHoaChuoi(@SoCont);
+	set @SoToKhai = dbo.ChuanHoaChuoi(@SoToKhai);
+	set @TrangThai = isnull(@TrangThai, 0);
+
+	if not exists (select 1 from LenhOnlines where ID = @ID)
+	begin
+		raiserror(N'Ban ghi khong ton tai!', 16, 1);
+		return;
+	end;
+
+	if @HoVaTen is null or len(ltrim(rtrim(@HoVaTen))) = 0 or len(ltrim(rtrim(@HoVaTen))) > 255
+	begin
+		raiserror(N'HoVaTen khong duoc bo trong hoac dai hon 255 ky tu!', 16, 1);
+		return;
+	end;
+
+	if @IDDanhMucKhachHangDoiLenh is null
+	begin
+		raiserror(N'IDDanhMucKhachHangDoiLenh khong duoc bo trong!', 16, 1);
+		return;
+	end;
+
+	if @HouseBill is null or len(ltrim(rtrim(@HouseBill))) = 0 or len(ltrim(rtrim(@HouseBill))) > 100
+	begin
+		raiserror(N'HouseBill khong duoc bo trong hoac dai hon 100 ky tu!', 16, 1);
+		return;
+	end;
+
+	if not exists (select 1 from DanhMucKhachHangDoiLenh where ID = @IDDanhMucKhachHangDoiLenh)
+	begin
+		raiserror(N'IDDanhMucKhachHangDoiLenh khong ton tai!', 16, 1);
+		return;
+	end;
+
+	if @TrangThai not between 0 and 5
+	begin
+		raiserror(N'TrangThai khong hop le!', 16, 1);
+		return;
+	end;
+
+	if exists (select 1 from LenhOnlines where HouseBill = @HouseBill and ID <> @ID)
+	begin
+		raiserror(N'HouseBill da ton tai!', 16, 1);
+		return;
+	end;
+
+	begin tran
+	begin try
+		set @EditDate = getdate();
+
+		update LenhOnlines
+		set
+			HoVaTen = @HoVaTen,
+			SoDienThoai = @SoDienThoai,
+			SoCMND = @SoCMND,
+			SoXe = @SoXe,
+			MaSoThue = @MaSoThue,
+			TenCongTy = @TenCongTy,
+			DiaChi = @DiaChi,
+			Email = @Email,
+			HouseBill = @HouseBill,
+			SoCont = @SoCont,
+			NgayLayHang = @NgayLayHang,
+			SoToKhai = @SoToKhai,
+			TrangThai = @TrangThai,
+			IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh,
+			EditDate = @EditDate
+		where ID = @ID;
+
+		commit tran;
+	end try
+	begin catch
+		if @@trancount > 0 rollback tran;
+		select @ErrMsg = error_message();
+		raiserror(@ErrMsg, 16, 1);
+	end catch;
+end
+go
+
+if object_id(N'dbo.Delete_LenhOnlines', N'P') is null
+	exec('create procedure dbo.Delete_LenhOnlines as begin set nocount on; end');
+go
+
+alter procedure Delete_LenhOnlines
+	@ID bigint
+as
+begin
+	set nocount on;
+
+	if not exists (select 1 from LenhOnlines where ID = @ID)
+	begin
+		raiserror(N'Ban ghi khong ton tai!', 16, 1);
+		return;
+	end;
+
+	delete from LenhOnlines where ID = @ID;
+end
+go

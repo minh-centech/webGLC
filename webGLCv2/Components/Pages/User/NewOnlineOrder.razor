@@ -1,9 +1,12 @@
-@page "/user/orders/new"
+﻿@page "/user/orders/new"
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@using System.Security.Claims
+@using System.Globalization
 
 <PageTitle>Thêm lệnh online</PageTitle>
 
@@ -22,7 +25,7 @@
         <div class="portal-alert portal-alert-success">@InfoMessage</div>
     }
 
-    <EditForm Model="Draft" OnValidSubmit="HandleSubmitAsync">
+    <EditForm Model="Draft" OnValidSubmit="HandleSubmitAsync" FormName="new-online-order-form">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -85,7 +88,7 @@
                     </div>
                     <div>
                         <label class="portal-label">Ngày lấy hàng</label>
-                        <InputDate class="portal-input" @bind-Value="Draft.PickupDate" />
+                        <input id="pickupDateInput" class="portal-input" value="@PickupDateText" @oninput="OnPickupDateInput" @onchange="OnPickupDateInput" placeholder="dd/MM/yyyy" />
                         <ValidationMessage For="@(() => Draft.PickupDate)" class="validation-message" />
                     </div>
                     <div>
@@ -107,21 +110,49 @@
     private OnlineOrderDraft Draft { get; set; } = new();
     private string CurrentUserKey { get; set; } = "customer";
     private string CurrentUserEmail { get; set; } = string.Empty;
+    private long CurrentUserId { get; set; }
     private string? InfoMessage { get; set; }
+    private string PickupDateText { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         Draft.OrderDate = DateTime.Today;
+        PickupDateText = string.Empty;
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         CurrentUserKey = authState.User.Identity?.Name ?? "customer";
         CurrentUserEmail = authState.User.Identity?.Name ?? string.Empty;
+        CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "pickupDateInput");
     }
 
     private async Task HandleSubmitAsync()
     {
+        if (CurrentUserId <= 0)
+        {
+            InfoMessage = "Khong xac dinh duoc tai khoan dang nhap.";
+            return;
+        }
+
         Draft.OrderDate = DateTime.Today;
-        await OnlineOrderService.AddOrderAsync(CurrentUserKey, Draft);
+        SyncPickupDateFromText();
+
+        if (Draft.PickupDate.HasValue && Draft.PickupDate.Value.Date < DateTime.Today)
+        {
+            InfoMessage = "Ngay lay hang phai tu ngay hien tai tro di.";
+            return;
+        }
+
+        await OnlineOrderService.AddOrderAsync(CurrentUserId, Draft);
         NavigationManager.NavigateTo("/user/orders", forceLoad: false);
     }
 
@@ -138,12 +169,30 @@
         }
     }
 
+    private void OnPickupDateInput(ChangeEventArgs args)
+    {
+        PickupDateText = args.Value?.ToString() ?? string.Empty;
+        SyncPickupDateFromText();
+    }
+
+    private void SyncPickupDateFromText()
+    {
+        if (DateTime.TryParseExact(PickupDateText, "dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"), DateTimeStyles.None, out var parsedDate))
+        {
+            Draft.PickupDate = parsedDate;
+            return;
+        }
+
+        Draft.PickupDate = null;
+    }
+
     private void ResetForm()
     {
         Draft = new OnlineOrderDraft
         {
             OrderDate = DateTime.Today
         };
+        PickupDateText = string.Empty;
         InfoMessage = null;
     }
 }

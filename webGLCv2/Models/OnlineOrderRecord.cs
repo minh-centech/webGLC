@@ -1,8 +1,11 @@
-namespace webGLCv2.Models;
+﻿namespace webGLCv2.Models;
 
 public sealed class OnlineOrderRecord
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public long UserId { get; set; }
+    public string UserEmail { get; set; } = string.Empty;
+    public long SequenceNumber { get; set; }
     public string OrderCode { get; set; } = string.Empty;
     public DateTime OrderDate { get; set; }
     public string CustomerName { get; set; } = string.Empty;
@@ -17,5 +20,7 @@ public sealed class OnlineOrderRecord
     public string ContainerNumber { get; set; } = string.Empty;
     public DateTime? PickupDate { get; set; }
     public string DeclarationNumber { get; set; } = string.Empty;
+    public int StatusCode { get; set; }
     public string Status { get; set; } = string.Empty;
 }
+

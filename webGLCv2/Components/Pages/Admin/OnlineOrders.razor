@@ -1,0 +1,238 @@
+﻿@page "/admin/orders"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@inject OnlineOrderService OnlineOrderService
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Quản lý lệnh online</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Quản lý lệnh online</h1>
+            <p class="page-subtitle">Theo dõi toàn bộ lệnh online của tất cả người dùng, lọc theo thời gian và thông tin vận đơn.</p>
+        </div>
+        <button class="portal-secondary-action" @onclick="RefreshDataAsync">Làm mới dữ liệu</button>
+    </header>
+
+    <section class="workspace-card">
+        <div class="order-filter-panel">
+            <div class="order-filter-grid">
+                <div class="order-filter-field">
+                    <label class="portal-label">Số House Bill</label>
+                    <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhập số House Bill..." />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Số hiệu Container</label>
+                    <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhập số hiệu Cont..." />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Mã số thuế</label>
+                    <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhập mã số thuế..." />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Từ ngày</label>
+                    <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Đến ngày</label>
+                    <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
+                </div>
+                <div class="order-filter-actions">
+                    <button class="portal-primary-action order-filter-button" @onclick="SearchAsync">Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-shell">
+            <table class="portal-table dense">
+                <thead>
+                    <tr>
+                        <th>IDUser</th>
+                        <th>Email user</th>
+                        <th>Mã lệnh / Biển số</th>
+                        <th>Ngày lập lệnh</th>
+                        <th>House Bill</th>
+                        <th>Khách hàng</th>
+                        <th>Tên doanh nghiệp</th>
+                        <th>Số hiệu Cont</th>
+                        <th>Số tờ khai</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Orders.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="11">
+                                <div class="portal-empty-inline">Không tìm thấy lệnh online phù hợp điều kiện lọc.</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in Orders)
+                        {
+                            <tr>
+                                <td>@order.UserId</td>
+                                <td>@(string.IsNullOrWhiteSpace(order.UserEmail) ? "-" : order.UserEmail)</td>
+                                <td>
+                                    <div class="cell-title">@order.OrderCode</div>
+                                    <div class="cell-subtitle">@order.VehicleNumber</div>
+                                </td>
+                                <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@order.HouseBill</td>
+                                <td>@order.CustomerName</td>
+                                <td>@order.CompanyName</td>
+                                <td>@order.ContainerNumber</td>
+                                <td>@order.DeclarationNumber</td>
+                                <td>
+                                    <span class="status-chip @GetStatusClass(order.StatusCode)">@order.Status</span>
+                                </td>
+                                <td>
+                                    <button class="portal-secondary-action" @onclick="() => ViewDetail(order.Id)">Xem chi tiết</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="workspace-footer">
+            <div class="footer-summary">
+                <span>Tổng cộng: <strong>@TotalCount</strong> lệnh</span>
+                <label class="portal-label pager-label">Hiển thị</label>
+                <select class="portal-input pager-size-select" @bind="PageSize" @bind:after="HandlePageSizeChangedAsync">
+                    <option value="10">10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
+                </select>
+            </div>
+            <div class="footer-pagination">
+                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
+                <span>Trang <strong>@CurrentPage</strong> / @TotalPages</span>
+                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
+            </div>
+        </footer>
+    </section>
+</section>
+
+@code {
+    private DateTime FromDate = DateTime.Today.AddDays(-7);
+    private DateTime ToDate = DateTime.Today;
+    private string HouseBillFilter = string.Empty;
+    private string ContainerNumberFilter = string.Empty;
+    private string TaxCodeFilter = string.Empty;
+    private List<OnlineOrderRecord> Orders = new();
+    private int TotalCount;
+    private int PageSize = 10;
+    private int CurrentPage = 1;
+    private readonly Dictionary<long, string> UserEmails = new();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+    private bool IsFirstPage => CurrentPage <= 1;
+    private bool IsLastPage => CurrentPage >= TotalPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserMapAsync();
+        await LoadOrdersAsync();
+    }
+
+    private async Task LoadUserMapAsync()
+    {
+        var accounts = await LegacyCustomerPortalService.GetAccountsAsync();
+        UserEmails.Clear();
+        foreach (var account in accounts)
+        {
+            if (long.TryParse(account.Id, out var userId) && !UserEmails.ContainsKey(userId))
+            {
+                UserEmails[userId] = account.Email;
+            }
+        }
+    }
+
+    private async Task RefreshDataAsync()
+    {
+        await LoadUserMapAsync();
+        await LoadOrdersAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        if (ToDate < FromDate)
+        {
+            ToDate = FromDate;
+        }
+
+        CurrentPage = 1;
+        await LoadOrdersAsync();
+    }
+
+    private async Task HandlePageSizeChangedAsync()
+    {
+        CurrentPage = 1;
+        await LoadOrdersAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (!IsFirstPage)
+        {
+            CurrentPage--;
+            await LoadOrdersAsync();
+        }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (!IsLastPage)
+        {
+            CurrentPage++;
+            await LoadOrdersAsync();
+        }
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        var result = await OnlineOrderService.GetOrdersForAdminAsync(
+            FromDate,
+            ToDate,
+            HouseBillFilter,
+            ContainerNumberFilter,
+            TaxCodeFilter,
+            CurrentPage,
+            PageSize);
+
+        Orders = result.Items;
+        foreach (var order in Orders)
+        {
+            if (string.IsNullOrWhiteSpace(order.UserEmail) && UserEmails.TryGetValue(order.UserId, out var userEmail))
+            {
+                order.UserEmail = userEmail;
+            }
+        }
+
+        TotalCount = result.TotalCount;
+        CurrentPage = result.Page <= 0 ? 1 : result.Page;
+    }
+
+    private static string GetStatusClass(int statusCode)
+        => statusCode switch
+        {
+            5 => "success",
+            3 => "success",
+            4 => "warning",
+            2 => "warning",
+            1 => "pending",
+            0 => "neutral",
+            _ => "neutral"
+        };
+
+    private void ViewDetail(string orderId)
+        => NavigationManager.NavigateTo($"/admin/orders/{orderId}");
+}

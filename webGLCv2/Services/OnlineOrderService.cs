@@ -1,51 +1,233 @@
-using System.Collections.Concurrent;
+﻿using System.Net.Http.Json;
+using System.Text.Json;
 using webGLCv2.Models;
 
 namespace webGLCv2.Services;
 
 public sealed class OnlineOrderService
 {
-    private readonly ConcurrentDictionary<string, List<OnlineOrderRecord>> _ordersByOwner = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly HttpClient _httpClient;
     private readonly List<ImportCheckRecord> _importChecks = CreateImportCheckSeedData();
 
-    public Task<List<OnlineOrderRecord>> GetOrdersAsync(string owner)
+    public OnlineOrderService(HttpClient httpClient)
     {
-        var normalizedOwner = NormalizeOwner(owner);
-        var orders = _ordersByOwner.GetOrAdd(normalizedOwner, static _ => CreateSeedData());
-        return Task.FromResult(orders.OrderByDescending(order => order.OrderDate).ToList());
+        _httpClient = httpClient;
     }
 
-    public Task SeedDefaultsAsync(string owner)
+    public async Task<OnlineOrderPageResult> GetOrdersAsync(
+        long idDanhMucKhachHangDoiLenh,
+        DateTime? tuNgay = null,
+        DateTime? denNgay = null,
+        string? houseBill = null,
+        string? soCont = null,
+        string? maSoThue = null,
+        int page = 1,
+        int pageSize = 10)
     {
-        _ordersByOwner[NormalizeOwner(owner)] = CreateSeedData();
-        return Task.CompletedTask;
-    }
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh,
+                TuNgay = tuNgay,
+                DenNgay = denNgay,
+                HouseBill = NullIfEmpty(houseBill),
+                SoCont = NullIfEmpty(soCont),
+                MaSoThue = NullIfEmpty(maSoThue),
+                Page = page,
+                PageSize = pageSize
+            },
+            JsonOptions);
 
-    public Task AddOrderAsync(string owner, OnlineOrderDraft draft)
-    {
-        var normalizedOwner = NormalizeOwner(owner);
-        var orders = _ordersByOwner.GetOrAdd(normalizedOwner, static _ => CreateSeedData());
+        response.EnsureSuccessStatusCode();
 
-        orders.Insert(0, new OnlineOrderRecord
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tai danh sach lenh online.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+        var orders = new List<OnlineOrderRecord>();
+
+        foreach (var item in itemsElement.EnumerateArray())
         {
-            OrderCode = $"LO-{DateTime.UtcNow:yyMMddHHmmss}",
-            OrderDate = draft.OrderDate,
-            CustomerName = draft.CustomerName.Trim(),
-            PhoneNumber = draft.PhoneNumber.Trim(),
-            IdentityNumber = draft.IdentityNumber.Trim(),
-            VehicleNumber = draft.VehicleNumber.Trim(),
-            TaxCode = draft.TaxCode.Trim(),
-            CompanyName = draft.CompanyName.Trim(),
-            CompanyAddress = draft.CompanyAddress.Trim(),
-            CompanyEmail = draft.CompanyEmail.Trim(),
-            HouseBill = draft.HouseBill.Trim(),
-            ContainerNumber = draft.ContainerNumber.Trim(),
-            PickupDate = draft.PickupDate,
-            DeclarationNumber = draft.DeclarationNumber.Trim(),
-            Status = "Chờ xử lý"
-        });
+            orders.Add(MapOnlineOrder(item));
+        }
 
-        return Task.CompletedTask;
+        return new OnlineOrderPageResult
+        {
+            Items = orders,
+            TotalCount = root.TryGetProperty("TotalCount", out var totalCountValue) && totalCountValue.TryGetInt32(out var totalCount) ? totalCount : orders.Count,
+            Page = root.TryGetProperty("Page", out var pageValue) && pageValue.TryGetInt32(out var currentPage) ? currentPage : page,
+            PageSize = root.TryGetProperty("PageSize", out var pageSizeValue) && pageSizeValue.TryGetInt32(out var currentPageSize) ? currentPageSize : pageSize
+        };
+    }
+
+
+    public Task<OnlineOrderPageResult> GetOrdersForAdminAsync(
+        DateTime? tuNgay = null,
+        DateTime? denNgay = null,
+        string? houseBill = null,
+        string? soCont = null,
+        string? maSoThue = null,
+        int page = 1,
+        int pageSize = 10)
+        => GetOrdersInternalAsync(
+            null,
+            tuNgay,
+            denNgay,
+            houseBill,
+            soCont,
+            maSoThue,
+            page,
+            pageSize);
+
+    private async Task<OnlineOrderPageResult> GetOrdersInternalAsync(
+        long? idDanhMucKhachHangDoiLenh,
+        DateTime? tuNgay,
+        DateTime? denNgay,
+        string? houseBill,
+        string? soCont,
+        string? maSoThue,
+        int page,
+        int pageSize)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh,
+                TuNgay = tuNgay,
+                DenNgay = denNgay,
+                HouseBill = NullIfEmpty(houseBill),
+                SoCont = NullIfEmpty(soCont),
+                MaSoThue = NullIfEmpty(maSoThue),
+                Page = page,
+                PageSize = pageSize
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tai danh sach lenh online.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+        var orders = new List<OnlineOrderRecord>();
+
+        foreach (var item in itemsElement.EnumerateArray())
+        {
+            orders.Add(MapOnlineOrder(item));
+        }
+
+        return new OnlineOrderPageResult
+        {
+            Items = orders,
+            TotalCount = root.TryGetProperty("TotalCount", out var totalCountValue) && totalCountValue.TryGetInt32(out var totalCount) ? totalCount : orders.Count,
+            Page = root.TryGetProperty("Page", out var pageValue) && pageValue.TryGetInt32(out var currentPage) ? currentPage : page,
+            PageSize = root.TryGetProperty("PageSize", out var pageSizeValue) && pageSizeValue.TryGetInt32(out var currentPageSize) ? currentPageSize : pageSize
+        };
+    }
+    public async Task<OnlineOrderRecord?> GetOrderByIdAsync(long idDanhMucKhachHangDoiLenh, long orderId)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                ID = orderId,
+                IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh,
+                Page = 1,
+                PageSize = 1
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tai chi tiet lenh online.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+
+        if (itemsElement.ValueKind != JsonValueKind.Array || itemsElement.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        return MapOnlineOrder(itemsElement[0]);
+    }
+
+
+    public async Task<OnlineOrderRecord?> GetOrderByIdForAdminAsync(long orderId)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                ID = orderId,
+                IDDanhMucKhachHangDoiLenh = (long?)null,
+                Page = 1,
+                PageSize = 1
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tai chi tiet lenh online.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+
+        if (itemsElement.ValueKind != JsonValueKind.Array || itemsElement.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        return MapOnlineOrder(itemsElement[0]);
+    }
+    public async Task SeedDefaultsAsync(long idDanhMucKhachHangDoiLenh)
+    {
+        foreach (var draft in CreateSeedData())
+        {
+            await AddOrderAsync(idDanhMucKhachHangDoiLenh, draft);
+        }
+    }
+
+    public async Task AddOrderAsync(long idDanhMucKhachHangDoiLenh, OnlineOrderDraft draft)
+    {
+        var payload = new
+        {
+            HoVaTen = draft.CustomerName.Trim(),
+            SoDienThoai = draft.PhoneNumber.Trim(),
+            SoCMND = NullIfEmpty(draft.IdentityNumber),
+            SoXe = NullIfEmpty(draft.VehicleNumber),
+            MaSoThue = NullIfEmpty(draft.TaxCode),
+            TenCongTy = NullIfEmpty(draft.CompanyName),
+            DiaChi = NullIfEmpty(draft.CompanyAddress),
+            Email = NullIfEmpty(draft.CompanyEmail),
+            HouseBill = NullIfEmpty(draft.HouseBill),
+            SoCont = NullIfEmpty(draft.ContainerNumber),
+            NgayLayHang = draft.PickupDate,
+            SoToKhai = NullIfEmpty(draft.DeclarationNumber),
+            TrangThai = 0,
+            IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("api/LenhOnlines/Insert", payload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the luu lenh online.");
     }
 
     public Task<(bool Success, string Message, string CompanyName, string CompanyAddress, string CompanyEmail)> LookupCompanyAsync(
@@ -55,25 +237,25 @@ public sealed class OnlineOrderService
         var normalized = string.IsNullOrWhiteSpace(taxCode) ? string.Empty : taxCode.Trim();
         if (string.IsNullOrWhiteSpace(normalized))
         {
-            return Task.FromResult((false, "Vui lòng nhập mã số thuế trước khi lấy thông tin.", string.Empty, string.Empty, string.Empty));
+            return Task.FromResult((false, "Vui long nhap ma so thue truoc khi lay thong tin.", string.Empty, string.Empty, string.Empty));
         }
 
         var samples = new Dictionary<string, (string Name, string Address, string Email)>(StringComparer.OrdinalIgnoreCase)
         {
-            ["0201930936"] = ("CÔNG TY CỔ PHẦN ĐẦU TƯ CÔNG NGHỆ CENTECH", "Hải An, Hải Phòng", "info@centech.vn"),
-            ["0301464823"] = ("CÔNG TY TNHH THƯƠNG MẠI EVERLINK", "Quận 1, TP. Hồ Chí Minh", "admin@everlink.com.vn")
+            ["0201930936"] = ("CONG TY CO PHAN DAU TU CONG NGHE CENTECH", "Hai An, Hai Phong", "info@centech.vn"),
+            ["0301464823"] = ("CONG TY TNHH THUONG MAI EVERLINK", "Quan 1, TP. Ho Chi Minh", "admin@everlink.com.vn")
         };
 
         if (samples.TryGetValue(normalized, out var match))
         {
-            return Task.FromResult((true, "Đã lấy thông tin công ty theo mã số thuế.", match.Name, match.Address, match.Email));
+            return Task.FromResult((true, "Da lay thong tin cong ty theo ma so thue.", match.Name, match.Address, match.Email));
         }
 
         return Task.FromResult((
             true,
-            "Chưa có dữ liệu đồng bộ tự động. Hệ thống đã điền mẫu tham khảo, bạn có thể chỉnh lại trước khi lưu.",
-            $"Công ty theo MST {normalized}",
-            "Địa chỉ công ty cần được cập nhật",
+            "Chua co du lieu dong bo tu dong. He thong da dien mau tham khao, ban co the chinh lai truoc khi luu.",
+            $"Cong ty theo MST {normalized}",
+            "Dia chi cong ty can duoc cap nhat",
             string.IsNullOrWhiteSpace(currentEmail) ? "contact@company.vn" : currentEmail.Trim()));
     }
 
@@ -97,48 +279,130 @@ public sealed class OnlineOrderService
         return Task.FromResult(query.OrderByDescending(item => item.ReceivedDate).ToList());
     }
 
-    private static string NormalizeOwner(string owner)
-        => string.IsNullOrWhiteSpace(owner) ? "anonymous" : owner.Trim().ToLowerInvariant();
+    private static void EnsureSuccess(ApiEnvelope? envelope, string fallbackMessage)
+    {
+        if (envelope is null)
+        {
+            throw new InvalidOperationException(fallbackMessage);
+        }
 
-    private static List<OnlineOrderRecord> CreateSeedData()
+        if (envelope.Status != 0)
+        {
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(envelope.ErrorMsg) ? fallbackMessage : envelope.ErrorMsg);
+        }
+    }
+
+    private static string GetString(JsonElement element, string propertyName)
+        => element.TryGetProperty(propertyName, out var value)
+            ? value.ToString() ?? string.Empty
+            : string.Empty;
+
+    private static long GetLong(JsonElement element, string propertyName)
+        => long.TryParse(GetString(element, propertyName), out var parsed) ? parsed : 0;
+
+    private static int GetInt(JsonElement element, string propertyName)
+        => int.TryParse(GetString(element, propertyName), out var parsed) ? parsed : 0;
+
+    private static DateTime? GetDateTime(JsonElement element, string propertyName)
+    {
+        var value = GetString(element, propertyName);
+        return DateTime.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private static string? NullIfEmpty(string value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static OnlineOrderRecord MapOnlineOrder(JsonElement item)
+    {
+        var id = GetLong(item, "ID");
+        var soThuTuLenh = GetLong(item, "SoThuTuLenh");
+        var trangThai = GetInt(item, "TrangThai");
+
+        return new OnlineOrderRecord
+        {
+            Id = id.ToString(),
+            UserId = GetLong(item, "IDDanhMucKhachHangDoiLenh"),
+            UserEmail = GetString(item, "EmailUser"),
+            SequenceNumber = soThuTuLenh,
+            OrderCode = GetOrderCode(soThuTuLenh, id),
+            OrderDate = GetDateTime(item, "NgayLamLenh") ?? DateTime.Today,
+            CustomerName = GetString(item, "HoVaTen"),
+            PhoneNumber = GetString(item, "SoDienThoai"),
+            IdentityNumber = GetString(item, "SoCMND"),
+            VehicleNumber = GetString(item, "SoXe"),
+            TaxCode = GetString(item, "MaSoThue"),
+            CompanyName = GetString(item, "TenCongTy"),
+            CompanyAddress = GetString(item, "DiaChi"),
+            CompanyEmail = GetString(item, "Email"),
+            HouseBill = GetString(item, "HouseBill"),
+            ContainerNumber = GetString(item, "SoCont"),
+            PickupDate = GetDateTime(item, "NgayLayHang"),
+            DeclarationNumber = GetString(item, "SoToKhai"),
+            StatusCode = trangThai,
+            Status = GetTrangThaiText(trangThai)
+        };
+    }
+
+    private static string GetOrderCode(long soThuTuLenh, long fallbackId)
+    {
+        var value = soThuTuLenh > 0 ? soThuTuLenh : fallbackId;
+        return $"LO-{value:000000000}";
+    }
+
+    // Cau hinh map trang thai LenhOnlines tu database:
+    // 0 - Cho cap nhat
+    // 1 - Chua thong quan
+    // 2 - Chua doi lenh
+    // 3 - Da doi lenh
+    // 4 - Gia han
+    // 5 - Da thong quan
+    private static string GetTrangThaiText(int trangThai)
+      => trangThai switch
+      {
+          0 => "Mới khởi tạo",
+          1 => "Chưa thông quan",
+          2 => "Chưa đổi lệnh",
+          3 => "Đã đổi lệnh",
+          4 => "Gia hạn",
+          5 => "Đã thông quan",
+          _ => "Không xác định"
+      };
+
+    private static List<OnlineOrderDraft> CreateSeedData()
     {
         return
         [
-            new OnlineOrderRecord
+            new OnlineOrderDraft
             {
-                OrderCode = "LO-260401-001",
                 OrderDate = DateTime.Today,
-                CustomerName = "Nguyễn Văn A",
+                CustomerName = "Nguyen Van A",
                 PhoneNumber = "0909123456",
                 IdentityNumber = "001203456789",
                 VehicleNumber = "51D-123.45",
                 TaxCode = "0201930936",
-                CompanyName = "CÔNG TY CỔ PHẦN ĐẦU TƯ CÔNG NGHỆ CENTECH",
-                CompanyAddress = "Hải An, Hải Phòng",
+                CompanyName = "CONG TY CO PHAN DAU TU CONG NGHE CENTECH",
+                CompanyAddress = "Hai An, Hai Phong",
                 CompanyEmail = "info@centech.vn",
                 HouseBill = "HB-000009",
                 ContainerNumber = "TCLU1234567",
                 PickupDate = DateTime.Today.AddDays(1),
-                DeclarationNumber = "TK-99887766",
-                Status = "Đã xác nhận"
+                DeclarationNumber = "TK-99887766"
             },
-            new OnlineOrderRecord
+            new OnlineOrderDraft
             {
-                OrderCode = "LO-260329-004",
                 OrderDate = DateTime.Today.AddDays(-3),
-                CustomerName = "Trần Thị B",
+                CustomerName = "Tran Thi B",
                 PhoneNumber = "0911222333",
                 IdentityNumber = "079203456789",
                 VehicleNumber = "61C-888.99",
                 TaxCode = "0301464823",
-                CompanyName = "CÔNG TY TNHH THƯƠNG MẠI EVERLINK",
-                CompanyAddress = "Quận 1, TP. Hồ Chí Minh",
+                CompanyName = "CONG TY TNHH THUONG MAI EVERLINK",
+                CompanyAddress = "Quan 1, TP. Ho Chi Minh",
                 CompanyEmail = "admin@everlink.com.vn",
                 HouseBill = "HB-000008",
                 ContainerNumber = "OOLU7654321",
                 PickupDate = DateTime.Today,
-                DeclarationNumber = "TK-11223344",
-                Status = "Chờ xử lý"
+                DeclarationNumber = "TK-11223344"
             }
         ];
     }
@@ -157,7 +421,7 @@ public sealed class OnlineOrderService
                 Weight = 10000m,
                 ContainerNumber = "TCLU1234567",
                 Forwarder = "Everlink Logistics",
-                Status = "Đã nhận hàng",
+                Status = "Da nhan hang",
                 CustomsDeclaration = "TK-99887766"
             },
             new ImportCheckRecord
@@ -170,7 +434,7 @@ public sealed class OnlineOrderService
                 Weight = 7200m,
                 ContainerNumber = "OOLU7654321",
                 Forwarder = "Centech Forwarding",
-                Status = "Chờ thông quan",
+                Status = "Cho thong quan",
                 CustomsDeclaration = "TK-11223344"
             },
             new ImportCheckRecord
@@ -183,9 +447,11 @@ public sealed class OnlineOrderService
                 Weight = 4300m,
                 ContainerNumber = "SEGU5566778",
                 Forwarder = "Everlink Logistics",
-                Status = "Đã thông quan",
+                Status = "Da thong quan",
                 CustomsDeclaration = "TK-44332211"
             }
         ];
     }
 }
+
+

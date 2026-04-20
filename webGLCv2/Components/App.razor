@@ -8,16 +8,52 @@
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["deepChat.css"]" />
     <link rel="stylesheet" href="@Assets["webGLCv2.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <HeadOutlet />
 </head>
 
 <body>
     <Routes />
+
+    <div id="chat-toggle-btn" class="chat-toggle-btn">
+        <i class="fa-solid fa-comments"></i>
+    </div>
+
+    <div id="chat-popup" class="chat-popup">
+        <div class="chat-header">
+            <span>Hỗ trợ trực tuyến (Thử nghiệm)</span>
+            <button type="button" id="chat-close-btn" class="chat-close-btn">✕</button>
+        </div>
+        <deep-chat id="deepchat"
+                   style="border: none; height: 100%; width: 100%; display:none"
+                   connect='{
+            "url": "api/DeepChatProxy/Send",
+            "method": "POST",
+            "headers": {
+            "Content-Type": "application/json"
+            }
+            }'
+                   requestBodyLimits='{
+            "maxMessages": 1
+            }'
+                   textInput='{"placeholder": {"text": "Nhập câu hỏi của bạn..."}}'
+                   introMessage='{"text":"Xin chào, tôi có thể hỗ trợ gì cho bạn?"}'>
+
+        </deep-chat>
+    </div>
     <ReconnectModal />
+    <script type="module" src="https://unpkg.com/deep-chat@2.4.2/dist/deepChat.bundle.js"></script>
+    <script src="@Assets["turnstile-login.js"]"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    <script src="@Assets["order-date-picker.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["deepChat.js"]"></script>
 </body>
 
 </html>

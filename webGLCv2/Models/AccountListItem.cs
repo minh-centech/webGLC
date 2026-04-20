@@ -1,4 +1,4 @@
-namespace webGLCv2.Models;
+﻿namespace webGLCv2.Models;
 
 public sealed class AccountListItem
 {
@@ -10,5 +10,7 @@ public sealed class AccountListItem
     public string AccountTypeText { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public bool ActivatedFlag { get; set; }
+    public bool HasPendingEnterpriseApproval { get; set; }
     public string StatusText { get; set; } = string.Empty;
 }
+

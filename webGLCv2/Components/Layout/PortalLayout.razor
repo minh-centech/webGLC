@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
 <AuthorizeView>
@@ -17,7 +17,7 @@
                         <img src="/images/EVERLINK.png" alt="Everlink" class="portal-logo-image" />
                     </div>
                     <div>
-                        <strong>Cổng ewarehouse</strong>
+                        <strong>Cổng everWareHouse</strong>
                         <span>Everlink Company</span>
                     </div>
                 </div>
@@ -25,12 +25,14 @@
                 <nav class="portal-nav">
                     @if (isAdmin)
                     {
+                        <a class="@GetNavClass("/admin/orders")" href="/admin/orders">Quản lý lệnh online</a>
                         <a class="@GetNavClass("/admin/users")" href="/admin/users">Quản lý user</a>
                     }
                     else
                     {
-                        <a class="@GetNavClass("/user/orders")" href="/user/orders">Lệnh online</a>
                         <a class="@GetNavClass("/user/import-check")" href="/user/import-check">Kiểm tra hàng nhập</a>
+                        <a class="@GetNavClass("/user/orders")" href="/user/orders">Lệnh online</a>
+                        
                         <a class="@GetNavClass("/user/profile")" href="/user/profile">Quản lý thông tin</a>
                     }
                 </nav>
@@ -69,3 +71,4 @@
     private string GetNavClass(string href)
         => NavigationManager.Uri.Contains(href, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty;
 }
+

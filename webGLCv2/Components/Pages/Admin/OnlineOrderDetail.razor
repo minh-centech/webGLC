@@ -1,0 +1,138 @@
+﻿@page "/admin/orders/{OrderId:long}"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@inject OnlineOrderService OnlineOrderService
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Chi tiết lệnh online</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Chi tiết lệnh online</h1>
+            <p class="page-subtitle">Xem chi tiết lệnh của người dùng trong chế độ quản trị.</p>
+        </div>
+        <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/admin/orders"))">Quay lại danh sách</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="portal-alert portal-alert-error">@ErrorMessage</div>
+    }
+    else if (Order is null)
+    {
+        <div class="portal-empty-inline">Đang tải dữ liệu...</div>
+    }
+    else
+    {
+        <section class="workspace-card">
+            <div class="section-heading">
+                <h2>@Order.OrderCode</h2>
+                <p>Trạng thái hiện tại: <span class="status-chip @GetStatusClass(Order.StatusCode)">@Order.Status</span></p>
+            </div>
+
+            <div class="field-grid">
+                <div>
+                    <label class="portal-label">IDUser</label>
+                    <input class="portal-input" value="@Order.UserId" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Email user</label>
+                    <input class="portal-input" value="@Order.UserEmail" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Họ và tên</label>
+                    <input class="portal-input" value="@Order.CustomerName" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Số điện thoại</label>
+                    <input class="portal-input" value="@Order.PhoneNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Số CMND/CCCD</label>
+                    <input class="portal-input" value="@Order.IdentityNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Biển số xe</label>
+                    <input class="portal-input" value="@Order.VehicleNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Mã số thuế</label>
+                    <input class="portal-input" value="@Order.TaxCode" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Tên công ty</label>
+                    <input class="portal-input" value="@Order.CompanyName" readonly />
+                </div>
+                <div class="field-span-3">
+                    <label class="portal-label">Địa chỉ doanh nghiệp</label>
+                    <input class="portal-input" value="@Order.CompanyAddress" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Email liên hệ</label>
+                    <input class="portal-input" value="@Order.CompanyEmail" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Số House Bill</label>
+                    <input class="portal-input" value="@Order.HouseBill" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Ngày làm lệnh</label>
+                    <input class="portal-input" value="@Order.OrderDate.ToString("dd/MM/yyyy HH:mm")" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Số hiệu Container</label>
+                    <input class="portal-input" value="@Order.ContainerNumber" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Ngày dự kiến lấy hàng</label>
+                    <input class="portal-input" value="@(Order.PickupDate?.ToString("dd/MM/yyyy") ?? string.Empty)" readonly />
+                </div>
+                <div>
+                    <label class="portal-label">Số tờ khai hải quan</label>
+                    <input class="portal-input" value="@Order.DeclarationNumber" readonly />
+                </div>
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    [Parameter]
+    public long OrderId { get; set; }
+
+    private OnlineOrderRecord? Order;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Order = await OnlineOrderService.GetOrderByIdForAdminAsync(OrderId);
+
+        if (Order is null)
+        {
+            ErrorMessage = "Không tìm thấy lệnh online.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Order.UserEmail))
+        {
+            var accounts = await LegacyCustomerPortalService.GetAccountsAsync();
+            var matched = accounts.FirstOrDefault(a => long.TryParse(a.Id, out var userId) && userId == Order.UserId);
+            Order.UserEmail = matched?.Email ?? string.Empty;
+        }
+    }
+
+    private static string GetStatusClass(int statusCode)
+        => statusCode switch
+        {
+            5 => "success",
+            3 => "success",
+            4 => "warning",
+            2 => "warning",
+            1 => "pending",
+            0 => "neutral",
+            _ => "neutral"
+        };
+}

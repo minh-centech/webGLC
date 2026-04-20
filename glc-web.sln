@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11626.88 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cenBUS", "cenBUS\cenBUS.csproj", "{77F92A5E-8A88-47CC-9156-DFF2A5B444E3}"
 EndProject
@@ -10,8 +10,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cenCommon", "cenCommon\cenCommon.csproj", "{476E2C80-019F-4C8A-B8ED-3DB8D209661B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webAPI", "webAPI\webAPI.csproj", "{EF58DD2D-7287-4898-ABC7-1E2D7B03C352}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webGLC", "webGLC\webGLC.csproj", "{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webGLCv2", "webGLCv2\webGLCv2.csproj", "{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}"
 EndProject
@@ -73,18 +71,6 @@ Global
 		{EF58DD2D-7287-4898-ABC7-1E2D7B03C352}.Release|x64.Build.0 = Release|Any CPU
 		{EF58DD2D-7287-4898-ABC7-1E2D7B03C352}.Release|x86.ActiveCfg = Release|Any CPU
 		{EF58DD2D-7287-4898-ABC7-1E2D7B03C352}.Release|x86.Build.0 = Release|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|x64.Build.0 = Debug|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Debug|x86.Build.0 = Debug|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x64.ActiveCfg = Release|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x64.Build.0 = Release|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x86.ActiveCfg = Release|Any CPU
-		{89A6539F-FC6E-4FC3-A953-F3BCECB535EB}.Release|x86.Build.0 = Release|Any CPU
 		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9DD8BD2-E9A3-4037-89A9-2D55C80DB3D2}.Debug|x64.ActiveCfg = Debug|Any CPU

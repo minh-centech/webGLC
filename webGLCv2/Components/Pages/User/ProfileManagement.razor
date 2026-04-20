@@ -1,4 +1,4 @@
-@page "/user/profile"
+﻿@page "/user/profile"
 @rendermode InteractiveServer
 @attribute [Authorize]
 @using System.Security.Claims
@@ -227,6 +227,7 @@
                                 <th>Mã số thuế</th>
                                 <th>Điện thoại</th>
                                 <th>Email</th>
+                                <th>Trang thai duyet</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -237,6 +238,9 @@
                                     <td>@company.MaSoThue</td>
                                     <td>@company.SoDienThoaiDoanhNghiep</td>
                                     <td>@company.EmailDoanhNghiep</td>
+                                    <td>
+                                        <span class="status-chip @GetCompanyApprovalStatusClass(company)">@GetCompanyApprovalStatusText(company)</span>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -304,6 +308,13 @@
             return;
         }
 
+        if (Companies.Count > 0)
+        {
+            FeedbackMessage = "Tài khoản này đã có hồ sơ doanh nghiệp. Không thể tạo mới trùng tài khoản.";
+            FeedbackIsError = true;
+            return;
+        }
+
         IsSubmitting = true;
         FeedbackMessage = null;
 
@@ -347,4 +358,16 @@
 
     private static string DisplayValue(string? value)
         => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
+
+    private static string GetCompanyApprovalStatusText(LegacyCompanyProfile company)
+        => company.IsActive ? "Đã duyệt" : "Chờ duyệt";
+
+    private static string GetCompanyApprovalStatusClass(LegacyCompanyProfile company)
+        => company.TrangThai switch
+        {
+            1 => "success",
+            -1 => "neutral",
+            0 => "pending",
+            _ => company.IsActive ? "success" : "pending"
+        };
 }

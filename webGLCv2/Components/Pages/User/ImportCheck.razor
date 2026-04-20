@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
+@using Microsoft.AspNetCore.Components
 
 <PageTitle>Kiểm tra hàng nhập</PageTitle>
 
@@ -91,9 +92,26 @@
 </section>
 
 @code {
+    [SupplyParameterFromQuery]
     private string HouseBill { get; set; } = string.Empty;
+    [SupplyParameterFromQuery]
     private string ContainerNumber { get; set; } = string.Empty;
     private List<ImportCheckRecord> Results { get; set; } = [];
+    private bool AutoLoaded;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AutoLoaded)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(HouseBill) || !string.IsNullOrWhiteSpace(ContainerNumber))
+        {
+            AutoLoaded = true;
+            await SearchAsync();
+        }
+    }
 
     private async Task SearchAsync()
     {

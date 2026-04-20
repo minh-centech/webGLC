@@ -231,19 +231,7 @@ namespace webAPI.Controllers
             try
             {
                 coreCommon.GlobalVariables.IDDonVi = GlobalVariables.IDDanhMucDonVi;
-                var captchaSecretKey = ConfigurationManager.AppSettings["CaptchaSecretKey"];
 
-                if (string.IsNullOrWhiteSpace(captchaSecretKey))
-                    throw new Exception("Thiếu cấu hình CaptchaSecretKey.");
-
-                if (coreCommon.coreCommon.IsNull(objLogin.CaptchaCode))
-                    throw new Exception("Mã captcha không được bỏ trống.");
-
-                if (coreCommon.coreCommon.IsNull(objLogin.CaptchaToken))
-                    throw new Exception("Phiên captcha không hợp lệ.");
-
-                if (!CaptchaTokenHelper.ValidateToken(objLogin.CaptchaCode, objLogin.CaptchaToken, captchaSecretKey))
-                    throw new Exception("Mã captcha không đúng hoặc đã hết hạn.");
 
                 //if (objLogin.Email.ToString().ToUpper().Trim() != "ADMIN@EVERLINK.COM.VN") throw new Exception("Hệ thống đang nâng cấp, mời bạn quay lại sau ít phút!");
 
@@ -540,39 +528,54 @@ namespace webAPI.Controllers
                     throw new Exception("Khong tim thay tai khoan can cap nhat.");
                 }
 
-                DataTable dtDanhMucKhachHangDoiLenh = DanhMucKhachHangDoiLenhBUS.List(
-                    GlobalVariables.ConnectionString,
-                    GlobalVariables.IDDanhMucDonVi,
-                    GlobalVariables.IDDanhMucKhachHangDoiLenh,
-                    request.ID);
+                long customerId;
+                if (!long.TryParse(request.ID.ToString(), out customerId) || customerId <= 0)
+                {
+                    throw new Exception("Ma tai khoan khong hop le.");
+                }
 
-                if (dtDanhMucKhachHangDoiLenh == null || dtDanhMucKhachHangDoiLenh.Rows.Count != 1)
+                const string sql = @"
+                    update DanhMucKhachHangDoiLenh
+                    set
+                        BanScanSoCMNDCanCuocPath = @BanScanSoCMNDCanCuocPath,
+                        BanDangKyCaNhanCoChuKyPath = @BanDangKyCaNhanCoChuKyPath,
+                        IDDanhMucNguoiSuDungEdit = @IDDanhMucNguoiSuDungEdit,
+                        EditDate = @EditDate
+                    where IDDanhMucDonVi = @IDDanhMucDonVi
+                        and IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong
+                        and ID = @ID";
+
+                int affectedRows;
+                string citizenCardPath = string.IsNullOrWhiteSpace(request.BanScanSoCMNDCanCuocPath)
+                    ? request.BanScanSoCMNDCanCuocPathCaNhan
+                    : request.BanScanSoCMNDCanCuocPath;
+                using (SqlConnection sqlConnection = new SqlConnection(GlobalVariables.ConnectionString))
+                {
+                    sqlConnection.Open();
+                    using (SqlCommand command = new SqlCommand(sql, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@BanScanSoCMNDCanCuocPath", (object)(string.IsNullOrWhiteSpace(citizenCardPath) ? null : citizenCardPath.Trim()) ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@BanDangKyCaNhanCoChuKyPath", (object)(string.IsNullOrWhiteSpace(request.BanDangKyCaNhanCoChuKyPath) ? null : request.BanDangKyCaNhanCoChuKyPath.Trim()) ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@IDDanhMucNguoiSuDungEdit", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucNguoiSuDungGuest));
+                        command.Parameters.AddWithValue("@EditDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@IDDanhMucDonVi", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucDonVi));
+                        command.Parameters.AddWithValue("@IDDanhMucLoaiDoiTuong", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucKhachHangDoiLenh));
+                        command.Parameters.AddWithValue("@ID", customerId);
+                        affectedRows = command.ExecuteNonQuery();
+                    }
+                }
+
+                if (affectedRows <= 0)
                 {
                     throw new Exception("Tai khoan khong ton tai hoac da bi xoa.");
                 }
 
-                DataRow drDanhMucKhachHangDoiLenh = dtDanhMucKhachHangDoiLenh.Rows[0];
-                drDanhMucKhachHangDoiLenh["BanScanSoCMNDCanCuocPath"] = string.IsNullOrWhiteSpace(request.BanScanSoCMNDCanCuocPath)
-                    ? (object)DBNull.Value
-                    : request.BanScanSoCMNDCanCuocPath.Trim();
-                drDanhMucKhachHangDoiLenh["BanDangKyCaNhanCoChuKyPath"] = string.IsNullOrWhiteSpace(request.BanDangKyCaNhanCoChuKyPath)
-                    ? (object)DBNull.Value
-                    : request.BanDangKyCaNhanCoChuKyPath.Trim();
-                drDanhMucKhachHangDoiLenh["IDDanhMucNguoiSuDungEdit"] = GlobalVariables.IDDanhMucNguoiSuDungGuest;
-
-                if (DanhMucKhachHangDoiLenhBUS.Update(GlobalVariables.ConnectionString, drDanhMucKhachHangDoiLenh, out object updatedId))
+                response.Status = 0;
+                response.Data = JsonConvert.SerializeObject(new
                 {
-                    response.Status = 0;
-                    response.Data = JsonConvert.SerializeObject(new
-                    {
-                        ID = updatedId ?? request.ID
-                    });
-                    response.ErrorMsg = string.Empty;
-                }
-                else
-                {
-                    throw new Exception("Cap nhat tai lieu ca nhan khong thanh cong.");
-                }
+                    ID = customerId
+                });
+                response.ErrorMsg = string.Empty;
             }
             catch (Exception ex)
             {

@@ -551,6 +551,10 @@ select {
     text-align: right !important;
 }
 
+.text-start {
+    text-align: left !important;
+}
+
 .status-chip {
     display: inline-flex;
     align-items: center;
@@ -571,6 +575,11 @@ select {
     color: #8a6113;
 }
 
+.status-chip.danger {
+    background: rgba(207, 90, 77, 0.16);
+    color: #8d2f25;
+}
+
 .status-chip.pending {
     background: rgba(74, 144, 226, 0.16);
     color: #1d5fa8;
@@ -579,6 +588,35 @@ select {
 .status-chip.neutral {
     background: rgba(90, 112, 97, 0.12);
     color: #395141;
+}
+
+.order-payment-stack {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.invoice-download-link {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(45, 178, 103, 0.12);
+    color: #14693d;
+    border: 1px solid rgba(45, 178, 103, 0.2);
+    text-decoration: none;
+    flex: 0 0 auto;
+}
+
+.invoice-download-link:hover {
+    background: rgba(45, 178, 103, 0.18);
+}
+
+.portal-text-muted {
+    color: var(--portal-text-soft);
 }
 
 .table-action.success {
@@ -1121,6 +1159,75 @@ select {
     font-size: 0.9rem;
 }
 
+.workflow-grid {
+    display: grid;
+    /*grid-template-columns: repeat(2, minmax(0, 1fr));*/
+    /* Chia tỷ lệ 3/7 cực chuẩn, không lo bị tràn do gap */
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.workflow-card {
+    padding: 16px 18px 18px;
+    border: 1px solid var(--portal-border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fcf8 100%);
+    box-shadow: 0 12px 32px rgba(16, 35, 24, 0.06);
+}
+
+.workflow-card-wide {
+    grid-column: 1 / -1;
+}
+
+.workflow-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.workflow-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 12px;
+    color: var(--portal-text-soft);
+    font-size: 0.92rem;
+}
+
+.workflow-payment-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 12px 0 14px;
+}
+
+.workflow-message {
+    margin: 0;
+    color: var(--portal-text-soft);
+    line-height: 1.65;
+}
+
+.compact-table {
+    margin-top: 12px;
+}
+
+.compact-table .portal-table th,
+.compact-table .portal-table td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.compact-fields {
+    margin-top: 12px;
+}
+
+.no-print {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
 .validation-message {
     display: block;
     color: #9f3126;
@@ -1169,6 +1276,10 @@ select {
     .field-card.wide {
         grid-column: span 1;
     }
+
+    .workflow-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .support-chat-wrapper {
@@ -1203,4 +1314,19 @@ select {
     opacity: 0;
     pointer-events: auto;
     cursor: pointer;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .page-shell {
+        padding: 0;
+    }
+
+    .workflow-card,
+    .workspace-card {
+        box-shadow: none;
+    }
 }

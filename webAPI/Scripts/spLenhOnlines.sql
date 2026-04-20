@@ -28,34 +28,39 @@ begin
 	;with Filtered as
 	(
 		select
-			ID,
-			SoThuTuLenh,
-			HoVaTen,
-			SoDienThoai,
-			SoCMND,
-			SoXe,
-			MaSoThue,
-			TenCongTy,
-			DiaChi,
-			Email,
-			HouseBill,
-			NgayLamLenh,
-			SoCont,
-			NgayLayHang,
-			SoToKhai,
-			TrangThai,
-			IDDanhMucKhachHangDoiLenh,
-			CreateDate,
-			EditDate
-		from tblLenhOnlines
+			lo.ID,
+			lo.SoThuTuLenh,
+			lo.HoVaTen,
+			lo.SoDienThoai,
+			lo.SoCMND,
+			lo.SoXe,
+			lo.MaSoThue,
+			lo.TenCongTy,
+			lo.DiaChi,
+			lo.Email,
+			lo.HouseBill,
+			lo.NgayLamLenh,
+			lo.SoCont,
+			lo.NgayLayHang,
+			lo.SoToKhai,
+			lo.TrangThai,
+			lo.IDDanhMucKhachHangDoiLenh,
+			ct.ID as ChiTietId,
+			ct.TrangThaiThanhToan,
+			ct.LinkTaiHoaDon,
+			ct.DuongDanFileHoaDon,
+			lo.CreateDate,
+			lo.EditDate
+		from tblLenhOnlines lo
+		left join tblLenhOnlineChiTiet ct on ct.IDLenhOnline = lo.ID
 		where
-			(@ID is null or ID = @ID)
-			and (@IDDanhMucKhachHangDoiLenh is null or IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh)
-			and (@TuNgay is null or convert(date, NgayLamLenh) >= convert(date, @TuNgay))
-			and (@DenNgay is null or convert(date, NgayLamLenh) <= convert(date, @DenNgay))
-			and (@HouseBill is null or HouseBill like N'%' + @HouseBill + N'%')
-			and (@SoCont is null or SoCont like N'%' + @SoCont + N'%')
-			and (@MaSoThue is null or MaSoThue like N'%' + @MaSoThue + N'%')
+			(@ID is null or lo.ID = @ID)
+			and (@IDDanhMucKhachHangDoiLenh is null or lo.IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh)
+			and (@TuNgay is null or convert(date, lo.NgayLamLenh) >= convert(date, @TuNgay))
+			and (@DenNgay is null or convert(date, lo.NgayLamLenh) <= convert(date, @DenNgay))
+			and (@HouseBill is null or lo.HouseBill like N'%' + @HouseBill + N'%')
+			and (@SoCont is null or lo.SoCont like N'%' + @SoCont + N'%')
+			and (@MaSoThue is null or lo.MaSoThue like N'%' + @MaSoThue + N'%')
 	)
 	select
 		ID,
@@ -75,6 +80,10 @@ begin
 		SoToKhai,
 		TrangThai,
 		IDDanhMucKhachHangDoiLenh,
+		ChiTietId,
+		TrangThaiThanhToan,
+		LinkTaiHoaDon,
+		DuongDanFileHoaDon,
 		CreateDate,
 		EditDate,
 		count(1) over() as TotalCount

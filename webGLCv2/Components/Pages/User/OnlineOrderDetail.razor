@@ -4,6 +4,8 @@
 @inject OnlineOrderService OnlineOrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using System.Globalization
 @using System.Security.Claims
 
 <PageTitle>Chi tiết lệnh online</PageTitle>
@@ -15,7 +17,7 @@
             <h1>Chi tiết lệnh online</h1>
             <p class="page-subtitle">Hãy rà soát thông tin chính xác trước khi truy vấn theo số House Bill (HBL) hoặc số hiệu Container.</p>
         </div>
-        <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lai danh sach</button>
+        <button class="portal-secondary-action no-print" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lai danh sach</button>
     </header>
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
@@ -73,7 +75,7 @@
                 </div>
                 <div>
                     <label class="portal-label">Ngày làm lệnh</label>
-                    <input class="portal-input" value="@Order.OrderDate.ToString("dd/MM/yyyy HH:mm")" readonly />
+                    <input class="portal-input" value="@(Order.OrderDate.ToString("dd/MM/yyyy HH:mm"))" readonly />
                 </div>
                 <div>
                     <label class="portal-label">Số hiệu Container</label>
@@ -89,9 +91,168 @@
                 </div>
             </div>
 
-            <div class="form-actions">
-                <button class="portal-primary-action" @onclick="Query">Truy van</button>
+            <div class="form-actions no-print">
+                <button class="portal-primary-action" @onclick="RunWorkflowAsync" disabled="@IsLoadingWorkflow">
+                    @(IsLoadingWorkflow ? "Đang truy vấn..." : "Truy vấn thông tin")
+                </button>
+               @*  <button class="portal-secondary-action" @onclick="Query">Tra cứu import check</button> *@
             </div>
+
+            @if (!string.IsNullOrWhiteSpace(WorkflowMessage))
+            {
+                <div class="portal-alert portal-alert-success" style="margin-top:12px;">@WorkflowMessage</div>
+            }
+
+            @if (Workflow is not null)
+            {
+                <section class="workflow-grid">
+                    <article class="workflow-card">
+                        <div class="section-heading">
+                            <h2>1. Kiểm tra thông quan</h2>
+                            <span class="status-chip @GetThongQuanClass(Workflow.ThongQuan)">@GetThongQuanLabel(Workflow.ThongQuan)</span>
+                        </div>
+                        <p class="workflow-message">@GetWorkflowMessage(Workflow.ThongQuan)</p>
+                    </article>
+
+                    <article class="workflow-card">
+                        <div class="section-heading">
+                            <h2>2. Phí lưu kho</h2>
+                            <span class="status-chip @(HasPhiLuuKho ? "success" : "neutral")">@(HasPhiLuuKho ? "Đã lấy dữ liệu" : "Chưa có dữ liệu")</span>
+                        </div>
+
+                        @if (HasPhiLuuKho)
+                        {
+                            <div class="workflow-payment-row">
+                                <span class="status-chip @GetPaymentStatusClass(Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan)">
+                                    @GetPaymentStatusLabel(Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan)
+                                </span>
+
+                                @if (Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan == 0)
+                                {
+                                    <button class="portal-primary-action" type="button" @onclick="ShowPaymentMessageAsync">
+                                        Thanh toán
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="table-shell compact-table">
+                                <table class="portal-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mô tả</th>
+                                            <th class="text-start">Số tiền</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Workflow.PhiLuuKho!.Data!.ChiTietHoaDon)
+                                        {
+                                            <tr>
+                                                <td>@item.MoTa</td>
+                                                <td class="text-start">@FormatMoney(item.SoTien)</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td><strong>Tạm tính</strong></td>
+                                            <td class="text-start">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Phí VAT (@FormatVatPercent(Workflow.PhiLuuKho!.Data!.Vat))</strong></td>
+                                            <td class="text-start">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Cộng phí + VAT</strong></td>
+                                            <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="workflow-meta">
+                                <span><strong>Tổng tiền chưa VAT:</strong> @FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</span>
+                                <span><strong>Tiền VAT:</strong> @FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</span>
+                                <span><strong>Tổng tiền đã bao gồm VAT:</strong> @FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</span>
+                                <span><strong>Đơn vị tiền tệ:</strong> @Workflow.PhiLuuKho!.Data!.DonViTienTe</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="workflow-message">@GetPhiLuuKhoMessage(Workflow)</p>
+                        }
+                    </article>
+
+                    <article class="workflow-card workflow-card-wide">
+                        <div class="section-heading">
+                            <h2>3. Thông tin truy vấn</h2>
+                            <span class="status-chip @(HasChiTietHouseBill ? "success" : "neutral")">@(HasChiTietHouseBill ? "Đã lấy dữ liệu" : "Chưa có dữ liệu")</span>
+                        </div>
+
+                        @if (HasChiTietHouseBill)
+                        {
+                            <div class="field-grid compact-fields">
+                                <div>
+                                    <label class="portal-label">Thủ kho</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.ThuKho" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Chủ hàng</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.ChuHang" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Số House Bill</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoHouseBill" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Số Cont</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoCont" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Forwarder</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.Forwarder" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Số kiện</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoKien.ToString()" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Trọng lượng</label>
+                                    <input class="portal-input" value="@(Workflow.ChiTietHouseBill!.Data!.TrongLuong.ToString("0.###"))" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Số khối</label>
+                                    <input class="portal-input" value="@(Workflow.ChiTietHouseBill!.Data!.SoKhoi.ToString("0.###"))" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Tên tàu</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.TenTau" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Số chuyến</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoChuyen" readonly />
+                                </div>
+                                <div>
+                                    <label class="portal-label">Ngày tàu cập</label>
+                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.NgayTauCap" readonly />
+                                </div>
+                            </div>
+                        }
+                    </article>
+                </section>
+
+                <div class="workflow-actions no-print">
+                    @if (HasInvoiceDownload)
+                    {
+                        <a class="portal-primary-action" href="@Order!.InvoiceDownloadUrl" target="_blank" rel="noopener noreferrer">
+                            Tải hóa đơn
+                        </a>
+                    }
+
+                    @if (Workflow?.PhiLuuKho?.Data?.TrangThaiThanhToan == 2)
+                    {
+                        <button class="portal-secondary-action" @onclick="PrintDeliverySlipAsync">In phiếu giao hàng</button>
+                    }
+                </div>
+            }
         </section>
     }
 </section>
@@ -102,6 +263,9 @@
 
     private long CurrentUserId;
     private OnlineOrderRecord? Order;
+    private OnlineOrderWorkflowResult? Workflow;
+    private bool IsLoadingWorkflow;
+    private string? WorkflowMessage;
     private string? ErrorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -120,7 +284,10 @@
         if (Order is null)
         {
             ErrorMessage = "Khong tim thay lenh online.";
+            return;
         }
+
+        await RunWorkflowAsync();
     }
 
     private void Query()
@@ -135,6 +302,51 @@
         NavigationManager.NavigateTo($"/user/import-check?houseBill={houseBill}&containerNumber={containerNumber}");
     }
 
+    private async Task RunWorkflowAsync()
+    {
+        if (Order is null || IsLoadingWorkflow)
+        {
+            return;
+        }
+
+        IsLoadingWorkflow = true;
+        WorkflowMessage = null;
+        Workflow = null;
+
+        try
+        {
+            Workflow = await OnlineOrderService.RunOrderWorkflowAsync(Order.HouseBill, Order.ContainerNumber);
+
+            if (Workflow.ThongQuan is null)
+            {
+                WorkflowMessage = "Chưa thể kiểm tra thông quan.";
+            }
+            else if (Workflow.ThongQuan.Success && Workflow.ThongQuan.IsThongQuan)
+            {
+                WorkflowMessage = "Lệnh đã thông quan. Hệ thống đã tải phí lưu kho và thông tin truy vấn.";
+            }
+            else
+            {
+                WorkflowMessage = string.IsNullOrWhiteSpace(Workflow.ThongQuan.Message)
+                    ? "Lệnh chưa thông quan."
+                    : Workflow.ThongQuan.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            WorkflowMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoadingWorkflow = false;
+        }
+    }
+
+    private async Task PrintDeliverySlipAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
     private static string GetStatusClass(int statusCode)
         => statusCode switch
         {
@@ -146,4 +358,131 @@
             0 => "neutral",
             _ => "neutral"
         };
+
+    private static string GetThongQuanClass(ThongQuanCheckResponse? response)
+        => response?.Success == true
+            ? response.IsThongQuan ? "success" : "danger"
+            : "neutral";
+
+    private static string GetThongQuanLabel(ThongQuanCheckResponse? response)
+        => response is null
+            ? "Chưa kiểm tra"
+            : response.IsThongQuan ? "Đã thông quan" : "Chưa thông quan";
+
+    private static string GetWorkflowMessage(ThongQuanCheckResponse? response)
+        => response?.Message ?? "Chưa có phản hồi từ hệ thống.";
+
+    private static string GetPaymentStatusClass(int trangThaiThanhToan)
+        => trangThaiThanhToan switch
+        {
+            0 => "warning",
+            1 => "pending",
+            2 => "success",
+            _ => "neutral"
+        };
+
+    private static string GetPaymentStatusLabel(int trangThaiThanhToan)
+        => trangThaiThanhToan switch
+        {
+            0 => "Chưa thanh toán",
+            1 => "Đang chờ xác nhận",
+            2 => "Thanh toán thành công",
+            _ => "Không xác định"
+        };
+
+    private static string GetPhiLuuKhoMessage(OnlineOrderWorkflowResult? workflow)
+    {
+        if (workflow?.ThongQuan is null)
+        {
+            return "Chưa kiểm tra thông quan nên chưa gọi API phí lưu kho.";
+        }
+
+        if (!workflow.ThongQuan.Success)
+        {
+            return string.IsNullOrWhiteSpace(workflow.ThongQuan.Message)
+                ? "Không thể kiểm tra thông quan nên chưa lấy được phí lưu kho."
+                : workflow.ThongQuan.Message;
+        }
+
+        if (!workflow.ThongQuan.IsThongQuan)
+        {
+            return "Lệnh chưa thông quan nên hệ thống chưa gọi API phí lưu kho.";
+        }
+
+        if (workflow.PhiLuuKho is null)
+        {
+            return "Lệnh đã thông quan nhưng chưa nhận được dữ liệu phí lưu kho.";
+        }
+
+        if (!workflow.PhiLuuKho.Success)
+        {
+            return string.IsNullOrWhiteSpace(workflow.PhiLuuKho.Message)
+                ? "Không lấy được dữ liệu phí lưu kho."
+                : workflow.PhiLuuKho.Message;
+        }
+
+        return "Chưa có dữ liệu phí lưu kho.";
+    }
+
+    private bool HasPhiLuuKho
+        => Workflow?.ThongQuan?.IsThongQuan == true
+           && Workflow?.PhiLuuKho?.Success == true
+           && Workflow.PhiLuuKho.Data is not null
+           && Workflow.PhiLuuKho.Data.ChiTietHoaDon.Count > 0;
+
+    private bool HasChiTietHouseBill
+        => Workflow?.ThongQuan?.IsThongQuan == true
+           && Workflow?.ChiTietHouseBill?.Success == true
+           && Workflow.ChiTietHouseBill.Data is not null;
+
+    private bool HasInvoiceDownload
+        => !string.IsNullOrWhiteSpace(Order?.InvoiceDownloadUrl);
+
+    private Task ShowPaymentMessageAsync()
+    {
+        WorkflowMessage = "Chức năng thanh toán sẽ được nối vào cổng thanh toán sau.";
+        return Task.CompletedTask;
+    }
+
+    private static decimal GetPhiTotal(PhiLuuKhoResponse response)
+    {
+        var data = response.Data;
+        if (data is null)
+        {
+            return 0m;
+        }
+
+        return data.ChiTietHoaDon.Sum(item => item.SoTien);
+    }
+
+    private static decimal GetPhiSubtotal(PhiLuuKhoResponse response)
+        => GetPhiTotal(response);
+
+    private static decimal GetPhiVatAmount(PhiLuuKhoResponse response)
+    {
+        var data = response.Data;
+        if (data is null)
+        {
+            return 0m;
+        }
+
+        return GetPhiSubtotal(response) * data.Vat / 100m;
+    }
+
+    private static decimal GetPhiGrandTotal(PhiLuuKhoResponse response)
+    {
+        var data = response.Data;
+        if (data is null)
+        {
+            return 0m;
+        }
+
+        return GetPhiSubtotal(response) + GetPhiVatAmount(response);
+    }
+
+    private static string FormatVatPercent(decimal vat)
+        => vat.ToString("0.##", CultureInfo.GetCultureInfo("vi-VN")) + "%";
+
+    private static string FormatMoney(decimal amount)
+        => string.Format(CultureInfo.GetCultureInfo("vi-VN"), "{0:N0} VND", amount);
 }

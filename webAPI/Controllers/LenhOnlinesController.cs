@@ -58,6 +58,10 @@ namespace webAPI.Controllers
                         SoToKhai = coreCommon.coreCommon.stringParse(dataRow["SoToKhai"]),
                         TrangThai = coreCommon.coreCommon.intParse(dataRow["TrangThai"]),
                         IDDanhMucKhachHangDoiLenh = coreCommon.coreCommon.longParse(dataRow["IDDanhMucKhachHangDoiLenh"]),
+                        ChiTietId = dataRow["ChiTietId"] == DBNull.Value ? null : dataRow["ChiTietId"],
+                        TrangThaiThanhToan = dataRow["TrangThaiThanhToan"] == DBNull.Value ? null : dataRow["TrangThaiThanhToan"],
+                        LinkTaiHoaDon = dataRow["LinkTaiHoaDon"] == DBNull.Value ? null : dataRow["LinkTaiHoaDon"],
+                        DuongDanFileHoaDon = dataRow["DuongDanFileHoaDon"] == DBNull.Value ? null : dataRow["DuongDanFileHoaDon"],
                         CreateDate = dataRow["CreateDate"] == DBNull.Value ? null : dataRow["CreateDate"],
                         EditDate = dataRow["EditDate"] == DBNull.Value ? null : dataRow["EditDate"]
                     });

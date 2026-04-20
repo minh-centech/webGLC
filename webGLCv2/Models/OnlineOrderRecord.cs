@@ -22,5 +22,9 @@ public sealed class OnlineOrderRecord
     public string DeclarationNumber { get; set; } = string.Empty;
     public int StatusCode { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool HasPaymentInfo { get; set; }
+    public int PaymentStatusCode { get; set; }
+    public string PaymentStatus { get; set; } = string.Empty;
+    public string InvoiceDownloadUrl { get; set; } = string.Empty;
 }
 

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 using webGLCv2.Models;
 
 namespace webGLCv2.Services;
@@ -11,12 +12,18 @@ public sealed class OnlineOrderService
         PropertyNameCaseInsensitive = true
     };
 
+    private const string ThongQuanApiPath = "m1/1263694-1261439-default/TrangThaiThongQuan";
+    private const string PhiLuuKhoApiPath = "m1/1263694-1261439-default/PhiLuuKho";
+    private const string ChiTietHouseBillApiPath = "m1/1263694-1261439-default/ChiTietHouseBill";
+
     private readonly HttpClient _httpClient;
+    private readonly OnlineOrderWorkflowOptions _workflowOptions;
     private readonly List<ImportCheckRecord> _importChecks = CreateImportCheckSeedData();
 
-    public OnlineOrderService(HttpClient httpClient)
+    public OnlineOrderService(HttpClient httpClient, IOptions<OnlineOrderWorkflowOptions> workflowOptions)
     {
         _httpClient = httpClient;
+        _workflowOptions = workflowOptions.Value;
     }
 
     public async Task<OnlineOrderPageResult> GetOrdersAsync(
@@ -195,6 +202,89 @@ public sealed class OnlineOrderService
 
         return MapOnlineOrder(itemsElement[0]);
     }
+
+    public async Task<ThongQuanCheckResponse> CheckThongQuanAsync(string houseBill, string soCont)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(ThongQuanApiPath),
+            new
+            {
+                HouseBill = houseBill,
+                SoCont = soCont
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<ThongQuanCheckResponse>(JsonOptions)
+            ?? new ThongQuanCheckResponse
+            {
+                Success = false,
+                Message = "Khong the doc ket qua kiem tra thong quan."
+            };
+    }
+
+    public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string soCont)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(PhiLuuKhoApiPath),
+            new
+            {
+                HouseBill = houseBill,
+                SoCont = soCont
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<PhiLuuKhoResponse>(JsonOptions)
+            ?? new PhiLuuKhoResponse
+            {
+                Success = false,
+                Message = "Khong the doc ket qua tinh phi luu kho."
+            };
+    }
+
+    public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(ChiTietHouseBillApiPath),
+            new
+            {
+                HouseBill = houseBill,
+                SoCont = soCont
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<ChiTietHouseBillResponse>(JsonOptions)
+            ?? new ChiTietHouseBillResponse
+            {
+                Success = false,
+                Message = "Khong the doc thong tin truy van house bill."
+            };
+    }
+
+    public async Task<OnlineOrderWorkflowResult> RunOrderWorkflowAsync(string houseBill, string soCont)
+    {
+        var thongQuan = await CheckThongQuanAsync(houseBill, soCont);
+
+        var result = new OnlineOrderWorkflowResult
+        {
+            ThongQuan = thongQuan
+        };
+
+        if (!thongQuan.Success || !thongQuan.IsThongQuan)
+        {
+            return result;
+        }
+
+        result.PhiLuuKho = await GetPhiLuuKhoAsync(houseBill, soCont);
+        result.ChiTietHouseBill = await GetChiTietHouseBillAsync(houseBill, soCont);
+        return result;
+    }
+
     public async Task SeedDefaultsAsync(long idDanhMucKhachHangDoiLenh)
     {
         foreach (var draft in CreateSeedData())
@@ -312,11 +402,23 @@ public sealed class OnlineOrderService
     private static string? NullIfEmpty(string value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+    private string BuildWorkflowUrl(string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
+        {
+            throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
+        }
+
+        return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
+    }
+
     private static OnlineOrderRecord MapOnlineOrder(JsonElement item)
     {
         var id = GetLong(item, "ID");
         var soThuTuLenh = GetLong(item, "SoThuTuLenh");
         var trangThai = GetInt(item, "TrangThai");
+        var hasPaymentInfo = GetLong(item, "ChiTietId") > 0;
+        var paymentStatusCode = GetInt(item, "TrangThaiThanhToan");
 
         return new OnlineOrderRecord
         {
@@ -339,7 +441,11 @@ public sealed class OnlineOrderService
             PickupDate = GetDateTime(item, "NgayLayHang"),
             DeclarationNumber = GetString(item, "SoToKhai"),
             StatusCode = trangThai,
-            Status = GetTrangThaiText(trangThai)
+            Status = GetTrangThaiText(trangThai),
+            HasPaymentInfo = hasPaymentInfo,
+            PaymentStatusCode = paymentStatusCode,
+            PaymentStatus = hasPaymentInfo ? GetPaymentStatusText(paymentStatusCode) : string.Empty,
+            InvoiceDownloadUrl = hasPaymentInfo ? GetInvoiceDownloadUrl(item) : string.Empty
         };
     }
 
@@ -367,6 +473,49 @@ public sealed class OnlineOrderService
           5 => "Đã thông quan",
           _ => "Không xác định"
       };
+
+    private static string GetPaymentStatusText(int trangThaiThanhToan)
+        => trangThaiThanhToan switch
+        {
+            0 => "Chưa thanh toán",
+            1 => "Đã thanh toán",
+            2 => "Đã hoàn tiền",
+            _ => "Không xác định"
+        };
+
+    private static string GetInvoiceDownloadUrl(JsonElement item)
+    {
+        var directLink = GetString(item, "LinkTaiHoaDon").Trim();
+        var filePath = GetString(item, "DuongDanFileHoaDon").Trim();
+        if (!string.IsNullOrWhiteSpace(directLink))
+        {
+            if (Uri.TryCreate(directLink, UriKind.Absolute, out var absoluteUri))
+            {
+                return absoluteUri.ToString();
+            }
+
+            return directLink.StartsWith("/")
+                ? directLink
+                : "/" + directLink;
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return string.Empty;
+        }
+
+        if (Uri.TryCreate(filePath, UriKind.Absolute, out var fileUri))
+        {
+            return fileUri.ToString();
+        }
+
+        if (filePath.StartsWith("/"))
+        {
+            return filePath;
+        }
+
+        return $"/api/TaiLieu/ViewPdf?path={Uri.EscapeDataString(filePath)}";
+    }
 
     private static List<OnlineOrderDraft> CreateSeedData()
     {

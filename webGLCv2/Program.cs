@@ -8,6 +8,7 @@ using webGLCv2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var legacyApiSection = builder.Configuration.GetSection(LegacyApiOptions.SectionName);
+var onlineOrderWorkflowSection = builder.Configuration.GetSection(OnlineOrderWorkflowOptions.SectionName);
 var turnstileSection = builder.Configuration.GetSection(TurnstileOptions.SectionName);
 
 builder.Services.AddHttpContextAccessor();
@@ -23,6 +24,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 builder.Services.Configure<LegacyApiOptions>(legacyApiSection);
+builder.Services.Configure<OnlineOrderWorkflowOptions>(onlineOrderWorkflowSection);
 builder.Services.Configure<TurnstileOptions>(turnstileSection);
 
 builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
@@ -47,7 +49,8 @@ builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>
 builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
 {
     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-    return new OnlineOrderService(httpClientFactory.CreateClient("LegacyApi"));
+    var workflowOptions = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OnlineOrderWorkflowOptions>>();
+    return new OnlineOrderService(httpClientFactory.CreateClient("LegacyApi"), workflowOptions);
 });
 
 builder.Services.AddHttpClient<TurnstileValidationService>();

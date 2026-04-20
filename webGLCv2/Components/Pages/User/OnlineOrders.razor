@@ -58,12 +58,14 @@
                     <tr>
                         <th>Mã lệnh / Biển số</th>
                         <th>Ngày lập lệnh</th>
+                        <th>Ngày dự kiến lấy</th>
                         <th>House Bill</th>
                         <th>Khách hàng</th>
                         <th>Tên doanh nghiệp</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
                         <th>Trạng thái</th>
+                        <th>Thanh toán / hóa đơn</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -71,7 +73,7 @@
                     @if (Orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="9">
+                            <td colspan="11">
                                 <div class="portal-empty-inline">
                                     Không tìm thấy lệnh trực tuyến nào trong khoảng thời gian đã chọn.
                                     <br />Vui lòng bấm <strong>"Thêm mới"</strong> để khởi tạo.
@@ -89,6 +91,7 @@
                                     <div class="cell-subtitle">@order.VehicleNumber</div>
                                 </td>
                                 <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(order.PickupDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td>@order.HouseBill</td>
                                 <td>@order.CustomerName</td>
                                 <td>@order.CompanyName</td>
@@ -96,6 +99,31 @@
                                 <td>@order.DeclarationNumber</td>
                                 <td>
                                     <span class="status-chip @GetStatusClass(order.StatusCode)">@order.Status</span>
+                                </td>
+                                <td>
+                                    @if (order.HasPaymentInfo)
+                                    {
+                                        <div class="order-payment-stack">
+                                            <span class="status-chip @GetPaymentStatusClass(order.PaymentStatusCode)">
+                                                @order.PaymentStatus
+                                            </span>
+
+                                            @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
+                                            {
+                                                <a class="invoice-download-link"
+                                                   href="@order.InvoiceDownloadUrl"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   title="Tải hóa đơn">
+                                                    <i class="icon-download"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="portal-text-muted">-</span>
+                                    }
                                 </td>
                                 <td>
                                     <button class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
@@ -232,6 +260,15 @@
             2 => "warning",
             1 => "pending",
             0 => "neutral",
+            _ => "neutral"
+        };
+
+    private static string GetPaymentStatusClass(int statusCode)
+        => statusCode switch
+        {
+            1 => "success",
+            0 => "pending",
+            2 => "warning",
             _ => "neutral"
         };
 

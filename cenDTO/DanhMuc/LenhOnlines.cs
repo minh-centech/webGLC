@@ -21,6 +21,10 @@ namespace cenDTO
         public object SoToKhai { get; set; }
         public object TrangThai { get; set; }
         public object IDDanhMucKhachHangDoiLenh { get; set; }
+        public object ChiTietId { get; set; }
+        public object TrangThaiThanhToan { get; set; }
+        public object LinkTaiHoaDon { get; set; }
+        public object DuongDanFileHoaDon { get; set; }
 
         public const string tableName = "tblLenhOnlines";
         public const string listProcedureName = "dbo.List_" + tableName;

@@ -127,7 +127,9 @@
     <Content Include="Scripts\altNguoiDungDoanhNghiep_RemoveUniqueKhachHang.sql" />
     <Content Include="Scripts\tblDanhMucLoaiTaiKhoanKhachHangDoiLenh.sql" />
     <Content Include="Scripts\tblLenhOnlines.sql" />
+    <Content Include="Scripts\altLenhOnlineChiTiet.sql" />
     <Content Include="Scripts\tblDanhMucKhachHangDoiLenh.sql" />
+    <Content Include="Scripts\tblLenhOnlineChiTiet.sql" />
     <Content Include="Scripts\tblNguoiDungDoanhNghiep.sql" />
     <Content Include="Web.config" />
   </ItemGroup>
@@ -143,6 +145,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\DanhMucKhachHangDoiLenhSavePersonalDocumentsRequest.cs" />
+    <Compile Include="Models\DanhMucKhachHangDoiLenhSavePersonalProfileRequest.cs" />
     <Compile Include="Models\TaiLieuModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

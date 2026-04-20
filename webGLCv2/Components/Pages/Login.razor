@@ -1,4 +1,4 @@
-@page "/login"
+﻿@page "/login"
 @rendermode InteractiveServer
 @layout EmptyLayout
 @attribute [AllowAnonymous]
@@ -56,7 +56,7 @@
                 </div>
             }
 
-            <form id="login-form" class="login-form" method="post" action="/auth/login">
+            <form id="login-form" class="login-form" method="post" action="/auth/login" @formname="login-form">
                 <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
                 <input type="hidden" id="login-turnstile-token" name="cf-turnstile-response" />
 
@@ -127,4 +127,5 @@
     private void HideForgotPasswordPopup()
         => IsForgotPasswordPopupOpen = false;
 }
+
 

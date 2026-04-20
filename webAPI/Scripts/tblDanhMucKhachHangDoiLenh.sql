@@ -9,6 +9,7 @@ create table DanhMucKhachHangDoiLenh
 	Email						nvarchar(128)	not null,
 	Ten							nvarchar(255)	not null,
 	SoDienThoai					nvarchar(128)	not null,
+	EmailXuatHoaDon				nvarchar(128),
 	BanScanSoCMNDCanCuocPath	nvarchar(500),
 	BanDangKyCaNhanCoChuKyPath	nvarchar(500),
 	Password					nvarchar(256)	not null,

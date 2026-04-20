@@ -1,4 +1,4 @@
----------------NGUOI DUNG DOANH NGHIEP
+﻿---------------NGUOI DUNG DOANH NGHIEP
 create table NguoiDungDoanhNghiep
 (
 	ID										bigint			not null,
@@ -31,7 +31,6 @@ create table NguoiDungDoanhNghiep
 	constraint FK_NguoiDungDoanhNghiep_DanhMucKhachHangDoiLenh foreign key (IDDanhMucKhachHangDoiLenh) references DanhMucKhachHangDoiLenh(ID),
 	constraint FK_NguoiDungDoanhNghiep_DanhMucNguoiSuDungCreate foreign key (IDDanhMucNguoiSuDungCreate) references DanhMucNguoiSuDung(ID),
 	constraint FK_NguoiDungDoanhNghiep_DanhMucNguoiSuDungEdit foreign key (IDDanhMucNguoiSuDungEdit) references DanhMucNguoiSuDung(ID),
-	constraint UQ_NguoiDungDoanhNghiep_IDDanhMucKhachHangDoiLenh unique (IDDanhMucKhachHangDoiLenh),
 	constraint UQ_NguoiDungDoanhNghiep_MaSoThue unique (MaSoThue)
 )
 go

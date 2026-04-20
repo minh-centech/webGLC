@@ -18,6 +18,7 @@ public sealed class UserCompanyFormModel
 
     [Required(ErrorMessage = "Vui lòng nhập email doanh nghiệp.")]
     [EmailAddress(ErrorMessage = "Email doanh nghiệp không đúng định dạng.")]
+
     public string EmailDoanhNghiep { get; set; } = string.Empty;
 
     public string? SoFax { get; set; }

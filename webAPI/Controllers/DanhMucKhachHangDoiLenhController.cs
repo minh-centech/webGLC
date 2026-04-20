@@ -514,6 +514,89 @@ namespace webAPI.Controllers
             return response;
         }
 
+                [HttpPost]
+        public webAPIresponse SaveThongTinCaNhan(DanhMucKhachHangDoiLenhSavePersonalProfileRequest request)
+        {
+            webAPIresponse response = new webAPIresponse();
+
+            try
+            {
+                coreCommon.GlobalVariables.IDDonVi = Code.GlobalVariables.IDDanhMucDonVi;
+
+                if (request == null || coreCommon.coreCommon.IsNull(request.ID))
+                {
+                    throw new Exception("Khong tim thay tai khoan can cap nhat.");
+                }
+
+                long customerId;
+                if (!long.TryParse(request.ID.ToString(), out customerId) || customerId <= 0)
+                {
+                    throw new Exception("Ma tai khoan khong hop le.");
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Ten))
+                {
+                    throw new Exception("Ho va ten khong duoc bo trong.");
+                }
+
+                if (string.IsNullOrWhiteSpace(request.SoDienThoai))
+                {
+                    throw new Exception("So dien thoai khong duoc bo trong.");
+                }
+
+                const string sql = @"
+                    update DanhMucKhachHangDoiLenh
+                    set
+                        Ten = @Ten,
+                        SoDienThoai = @SoDienThoai,
+                        EmailXuatHoaDon = @EmailXuatHoaDon,
+                        IDDanhMucNguoiSuDungEdit = @IDDanhMucNguoiSuDungEdit,
+                        EditDate = @EditDate
+                    where IDDanhMucDonVi = @IDDanhMucDonVi
+                        and IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong
+                        and ID = @ID";
+
+                int affectedRows;
+                using (SqlConnection sqlConnection = new SqlConnection(GlobalVariables.ConnectionString))
+                {
+                    sqlConnection.Open();
+                    using (SqlCommand command = new SqlCommand(sql, sqlConnection))
+                    {
+                        command.Parameters.AddWithValue("@Ten", request.Ten.Trim());
+                        command.Parameters.AddWithValue("@SoDienThoai", request.SoDienThoai.Trim());
+                        command.Parameters.AddWithValue("@EmailXuatHoaDon", (object)(string.IsNullOrWhiteSpace(request.EmailXuatHoaDon) ? null : request.EmailXuatHoaDon.Trim()) ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@IDDanhMucNguoiSuDungEdit", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucNguoiSuDungGuest));
+                        command.Parameters.AddWithValue("@EditDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@IDDanhMucDonVi", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucDonVi));
+                        command.Parameters.AddWithValue("@IDDanhMucLoaiDoiTuong", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucKhachHangDoiLenh));
+                        command.Parameters.AddWithValue("@ID", customerId);
+
+                        affectedRows = command.ExecuteNonQuery();
+                    }
+                }
+
+                if (affectedRows <= 0)
+                {
+                    throw new Exception("Tai khoan khong ton tai hoac da bi xoa.");
+                }
+
+                response.Status = 0;
+                response.Data = JsonConvert.SerializeObject(new
+                {
+                    ID = customerId
+                });
+                response.ErrorMsg = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                response.Status = 1;
+                response.Data = string.Empty;
+                response.ErrorMsg = ex.Message;
+            }
+
+            return response;
+        }
+
         [HttpPost]
         public webAPIresponse SaveTaiLieuCaNhan(DanhMucKhachHangDoiLenhSavePersonalDocumentsRequest request)
         {
@@ -613,6 +696,7 @@ namespace webAPI.Controllers
                         kh.KichHoat,
                         kh.BanScanSoCMNDCanCuocPath as BanScanSoCMNDCanCuocPathCaNhan,
                         kh.BanDangKyCaNhanCoChuKyPath,
+                        kh.EmailXuatHoaDon,
                         dn.TenDoanhNghiep,
                         dn.MaSoThue,
                         dn.EmailDoanhNghiep,
@@ -656,6 +740,7 @@ namespace webAPI.Controllers
                                 EmailDoanhNghiep = reader["EmailDoanhNghiep"] == DBNull.Value ? null : reader["EmailDoanhNghiep"].ToString(),
                                 BanScanSoCMNDCanCuocPathCaNhan = reader["BanScanSoCMNDCanCuocPathCaNhan"] == DBNull.Value ? null : reader["BanScanSoCMNDCanCuocPathCaNhan"].ToString(),
                                 BanDangKyCaNhanCoChuKyPath = reader["BanDangKyCaNhanCoChuKyPath"] == DBNull.Value ? null : reader["BanDangKyCaNhanCoChuKyPath"].ToString(),
+                                EmailXuatHoaDon = reader["EmailXuatHoaDon"] == DBNull.Value ? null : reader["EmailXuatHoaDon"].ToString(),
                                 BanScanGiayPhepKinhDoanhPath = reader["BanScanGiayPhepKinhDoanhPath"] == DBNull.Value ? null : reader["BanScanGiayPhepKinhDoanhPath"].ToString(),
                                 BanScanSoCMNDCanCuocPath = reader["BanScanSoCMNDCanCuocPath"] == DBNull.Value ? null : reader["BanScanSoCMNDCanCuocPath"].ToString(),
                                 BanDangKyEPortChuKySoPath = reader["BanDangKyEPortChuKySoPath"] == DBNull.Value ? null : reader["BanDangKyEPortChuKySoPath"].ToString()

@@ -77,6 +77,13 @@ begin
 end
 go
 
+if col_length('dbo.DanhMucKhachHangDoiLenh', 'EmailXuatHoaDon') is null
+begin
+    alter table dbo.DanhMucKhachHangDoiLenh
+    add EmailXuatHoaDon nvarchar(128) null;
+end
+go
+
 if not exists (
     select 1
     from sys.indexes

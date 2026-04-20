@@ -22,11 +22,11 @@ namespace cenDTO
         public object TrangThai { get; set; }
         public object IDDanhMucKhachHangDoiLenh { get; set; }
 
-        public const string tableName = "LenhOnlines";
-        public const string listProcedureName = "List_" + tableName;
-        public const string insertProcedureName = "Insert_" + tableName;
-        public const string updateProcedureName = "Update_" + tableName;
-        public const string deleteProcedureName = "Delete_" + tableName;
+        public const string tableName = "tblLenhOnlines";
+        public const string listProcedureName = "dbo.List_" + tableName;
+        public const string insertProcedureName = "dbo.Insert_" + tableName;
+        public const string updateProcedureName = "dbo.Update_" + tableName;
+        public const string deleteProcedureName = "dbo.Delete_" + tableName;
     }
 
     public class LenhOnlinesFilterRequest

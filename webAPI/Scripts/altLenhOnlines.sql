@@ -1,159 +1,139 @@
-if exists (
-    select 1
-    from sys.columns
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = 'HouseBill'
-      and is_nullable = 1
-)
-begin
-    print N'LenhOnlines.HouseBill is currently nullable. Please ensure no NULL values exist before changing to NOT NULL manually.';
-end
-go
+IF OBJECT_ID(N'dbo.tblLenhOnlines', N'U') IS NULL AND OBJECT_ID(N'dbo.LenhOnlines', N'U') IS NOT NULL
+BEGIN
+    EXEC sp_rename N'dbo.LenhOnlines', N'tblLenhOnlines', N'OBJECT';
+END
+GO
 
-if exists (
-    select 1
-    from sys.foreign_keys
-    where name = N'FK_LenhOnlines_DanhMucNguoiSuDung'
-      and parent_object_id = object_id(N'dbo.LenhOnlines')
-)
-begin
-    alter table dbo.LenhOnlines drop constraint FK_LenhOnlines_DanhMucNguoiSuDung;
-end
-go
+IF OBJECT_ID(N'dbo.tblLenhOnlines', N'U') IS NULL
+BEGIN
+    RETURN;
+END
+GO
 
-if exists (
-    select 1
-    from sys.columns
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'IDUser'
+IF EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'IDUser'
 )
-and not exists (
-    select 1
-    from sys.columns
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'IDDanhMucKhachHangDoiLenh'
+AND NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'IDDanhMucKhachHangDoiLenh'
 )
-begin
-    if exists (
-        select 1
-        from sys.foreign_keys
-        where name = N'FK_LenhOnlines_DanhMucKhachHangDoiLenh'
-          and parent_object_id = object_id(N'dbo.LenhOnlines')
-    )
-    begin
-        alter table dbo.LenhOnlines drop constraint FK_LenhOnlines_DanhMucKhachHangDoiLenh;
-    end
+BEGIN
+    EXEC sp_rename N'dbo.tblLenhOnlines.IDUser', N'IDDanhMucKhachHangDoiLenh', N'COLUMN';
+END
+GO
 
-    exec sp_rename N'dbo.LenhOnlines.IDUser', N'IDDanhMucKhachHangDoiLenh', N'COLUMN';
-end
-go
-
-if exists (
-    select 1
-    from sys.indexes
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'idx_LenhOnlines_IDUser'
+IF EXISTS (
+    SELECT 1
+    FROM sys.foreign_keys
+    WHERE name = N'FK_tblLenhOnlines_DanhMucNguoiSuDung'
+      AND parent_object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
 )
-begin
-    exec sp_rename N'dbo.LenhOnlines.idx_LenhOnlines_IDUser', N'idx_LenhOnlines_IDDanhMucKhachHangDoiLenh', N'INDEX';
-end
-go
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    DROP CONSTRAINT FK_tblLenhOnlines_DanhMucNguoiSuDung;
+END
+GO
 
-if not exists (
-    select 1
-    from sys.foreign_keys
-    where name = N'FK_LenhOnlines_DanhMucKhachHangDoiLenh'
-      and parent_object_id = object_id(N'dbo.LenhOnlines')
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.foreign_keys
+    WHERE name = N'FK_tblLenhOnlines_DanhMucKhachHangDoiLenh'
+      AND parent_object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
 )
-begin
-    alter table dbo.LenhOnlines
-    add constraint FK_LenhOnlines_DanhMucKhachHangDoiLenh
-        foreign key (IDDanhMucKhachHangDoiLenh) references dbo.DanhMucKhachHangDoiLenh(ID);
-end
-go
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    ADD CONSTRAINT FK_tblLenhOnlines_DanhMucKhachHangDoiLenh
+        FOREIGN KEY (IDDanhMucKhachHangDoiLenh) REFERENCES dbo.DanhMucKhachHangDoiLenh(ID);
+END
+GO
 
-if not exists (
-    select 1
-    from sys.indexes
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'idx_LenhOnlines_IDDanhMucKhachHangDoiLenh'
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'idx_tblLenhOnlines_IDDanhMucKhachHangDoiLenh'
 )
-begin
-    create index idx_LenhOnlines_IDDanhMucKhachHangDoiLenh
-        on dbo.LenhOnlines(IDDanhMucKhachHangDoiLenh);
-end
-go
+BEGIN
+    CREATE INDEX idx_tblLenhOnlines_IDDanhMucKhachHangDoiLenh
+        ON dbo.tblLenhOnlines(IDDanhMucKhachHangDoiLenh);
+END
+GO
 
-if not exists (
-    select 1
-    from sys.indexes
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'UX_LenhOnlines_HouseBill'
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'UX_tblLenhOnlines_HouseBill'
 )
-begin
-    create unique index UX_LenhOnlines_HouseBill
-        on dbo.LenhOnlines(HouseBill)
-        where HouseBill is not null;
-end
-go
+BEGIN
+    CREATE UNIQUE INDEX UX_tblLenhOnlines_HouseBill
+        ON dbo.tblLenhOnlines(HouseBill)
+        WHERE HouseBill IS NOT NULL;
+END
+GO
 
-if not exists (
-    select 1
-    from sys.columns
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'TrangThai'
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'TrangThai'
 )
-begin
-    alter table dbo.LenhOnlines
-    add TrangThai int not null constraint DF_LenhOnlines_TrangThai default(0);
-end
-go
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    ADD TrangThai INT NOT NULL CONSTRAINT DF_tblLenhOnlines_TrangThai DEFAULT(0);
+END
+GO
 
-if not exists (
-    select 1
-    from sys.columns
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'SoThuTuLenh'
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'SoThuTuLenh'
 )
-begin
-    alter table dbo.LenhOnlines
-    add SoThuTuLenh bigint null;
-end
-go
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    ADD SoThuTuLenh BIGINT NULL;
+END
+GO
 
-;with OrderedRows as
+;WITH OrderedRows AS
 (
-    select
+    SELECT
         ID,
-        row_number() over (order by ID) as NewSoThuTuLenh
-    from dbo.LenhOnlines
+        ROW_NUMBER() OVER (ORDER BY ID) AS NewSoThuTuLenh
+    FROM dbo.tblLenhOnlines
 )
-update lo
-set SoThuTuLenh = isnull(lo.SoThuTuLenh, o.NewSoThuTuLenh)
-from dbo.LenhOnlines lo
-inner join OrderedRows o on o.ID = lo.ID;
-go
+UPDATE lo
+SET SoThuTuLenh = ISNULL(lo.SoThuTuLenh, o.NewSoThuTuLenh)
+FROM dbo.tblLenhOnlines lo
+INNER JOIN OrderedRows o ON o.ID = lo.ID;
+GO
 
-if exists (
-    select 1
-    from sys.columns
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'SoThuTuLenh'
-      and is_nullable = 1
+IF EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'SoThuTuLenh'
+      AND is_nullable = 1
 )
-begin
-    alter table dbo.LenhOnlines alter column SoThuTuLenh bigint not null;
-end
-go
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines ALTER COLUMN SoThuTuLenh BIGINT NOT NULL;
+END
+GO
 
-if not exists (
-    select 1
-    from sys.indexes
-    where object_id = object_id(N'dbo.LenhOnlines')
-      and name = N'UX_LenhOnlines_SoThuTuLenh'
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'UX_tblLenhOnlines_SoThuTuLenh'
 )
-begin
-    create unique index UX_LenhOnlines_SoThuTuLenh
-        on dbo.LenhOnlines(SoThuTuLenh);
-end
-go
+BEGIN
+    CREATE UNIQUE INDEX UX_tblLenhOnlines_SoThuTuLenh
+        ON dbo.tblLenhOnlines(SoThuTuLenh);
+END
+GO

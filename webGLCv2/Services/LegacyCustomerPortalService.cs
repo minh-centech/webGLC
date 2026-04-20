@@ -116,7 +116,8 @@ public sealed class LegacyCustomerPortalService
             ActivatedFlag = GetBool(root, "KichHoat"),
             CompanyName = GetString(root, "TenDoanhNghiep"),
             TaxCode = GetString(root, "MaSoThue"),
-            CompanyEmail = GetString(root, "EmailDoanhNghiep")
+            CompanyEmail = GetString(root, "EmailDoanhNghiep"),
+            BillingEmail = GetString(root, "EmailXuatHoaDon")
         };
 
         if (accountType == 2)
@@ -244,11 +245,6 @@ public sealed class LegacyCustomerPortalService
 
     public async Task<long> CreateCompanyAsync(string accountId, UserCompanyFormModel model)
     {
-        var existingCompany = await GetLatestEnterpriseProfileAsync(accountId);
-        if (existingCompany is not null)
-        {
-            throw new InvalidOperationException("Tài khoản này đã có hồ sơ doanh nghiệp. Không thể tạo mới trùng tài khoản.");
-        }
 
         var payload = new
         {
@@ -318,6 +314,57 @@ public sealed class LegacyCustomerPortalService
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
         EnsureSuccess(envelope, "Không thể cập nhật trạng thái duyệt doanh nghiệp.");
     }
+    public async Task UpdateEnterpriseProfileAsync(
+        string accountId,
+        string companyName,
+        string companyEmail,
+        string companyAddress,
+        string companyPhone,
+        string? companyFax,
+        string? businessLicenseNumber,
+        DateTime? issueDate,
+        string? issuePlace,
+        string? authorizedRepresentative,
+        string? representativeTitle,
+        string? billingEmail)
+    {
+        var profile = await GetLatestEnterpriseProfileAsync(accountId);
+        if (profile is null)
+        {
+            throw new InvalidOperationException("Không tìm thấy hồ sơ doanh nghiệp để cập nhật.");
+        }
+
+        var payload = new
+        {
+            ID = profile.ID,
+            IDDanhMucKhachHangDoiLenh = profile.IDDanhMucKhachHangDoiLenh,
+            TenDoanhNghiep = companyName,
+            MaSoThue = profile.MaSoThue,
+            DiaChi = companyAddress,
+            SoDienThoaiDoanhNghiep = companyPhone,
+            EmailDoanhNghiep = companyEmail,
+            SoFax = NullIfEmpty(companyFax ?? string.Empty),
+            GiayPhepKinhDoanh = NullIfEmpty(businessLicenseNumber ?? string.Empty),
+            NgayCap = issueDate,
+            NoiCap = NullIfEmpty(issuePlace ?? string.Empty),
+            DaiDienCoThamQuyen = NullIfEmpty(authorizedRepresentative ?? string.Empty),
+            ChucVu = NullIfEmpty(representativeTitle ?? string.Empty),
+            DoanhNghiepCongTyDuocUyQuyen = NullIfEmpty(profile.DoanhNghiepCongTyDuocUyQuyen),
+            TenDangNhapDangKyDichVu = NullIfEmpty(profile.TenDangNhapDangKyDichVu),
+            EmailXuatHoaDon = NullIfEmpty(billingEmail ?? string.Empty),
+            SoCMNDCanCuoc = NullIfEmpty(profile.SoCMNDCanCuoc),
+            BanScanGiayPhepKinhDoanhPath = NullIfEmpty(profile.BanScanGiayPhepKinhDoanhPath),
+            BanScanSoCMNDCanCuocPath = NullIfEmpty(profile.BanScanSoCMNDCanCuocPath),
+            BanDangKyEPortChuKySoPath = NullIfEmpty(profile.BanDangKyEPortChuKySoPath),
+            IsActive = profile.IsActive
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/SaveDoanhNghiep", payload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật thông tin doanh nghiệp.");
+    }
     public async Task RegisterAccountAsync(RegisterAccountModel model)
     {
         var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/RegisterTaiKhoan", model, JsonOptions);
@@ -325,6 +372,41 @@ public sealed class LegacyCustomerPortalService
 
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
         EnsureSuccess(envelope, "Không thể gửi đăng ký tài khoản.");
+    }
+
+    public async Task UpdatePersonalProfileAsync(string accountId, string fullName, string phoneNumber, string? billingEmail)
+    {
+        var payload = new
+        {
+            ID = accountId,
+            Ten = fullName,
+            SoDienThoai = phoneNumber,
+            EmailXuatHoaDon = NullIfEmpty(billingEmail ?? string.Empty)
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/SaveThongTinCaNhan", payload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật thông tin cá nhân.");
+    }
+
+    public async Task ChangePasswordAsync(string email, string oldPassword, string newPassword, string newPasswordConfirm)
+    {
+        var payload = new
+        {
+            Email = email,
+            OldPassword = oldPassword,
+            NewPassword = newPassword,
+            NewPasswordConfirm = newPasswordConfirm,
+            Ten = string.Empty
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/UpdateChangePassword", payload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể đổi mật khẩu.");
     }
 
     public async Task<LegacyUploadPdfResult> UploadPdfAsync(

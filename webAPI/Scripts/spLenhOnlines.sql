@@ -1,8 +1,8 @@
-if object_id(N'dbo.List_LenhOnlines', N'P') is null
-	exec('create procedure dbo.List_LenhOnlines as begin set nocount on; end');
+﻿if object_id(N'dbo.List_tblLenhOnlines', N'P') is null
+	exec('create procedure dbo.List_tblLenhOnlines as begin set nocount on; end');
 go
 
-alter procedure List_LenhOnlines
+alter procedure dbo.List_tblLenhOnlines
 	@ID		bigint = null,
 	@IDDanhMucKhachHangDoiLenh	bigint = null,
 	@TuNgay	datetime = null,
@@ -47,7 +47,7 @@ begin
 			IDDanhMucKhachHangDoiLenh,
 			CreateDate,
 			EditDate
-		from LenhOnlines
+		from tblLenhOnlines
 		where
 			(@ID is null or ID = @ID)
 			and (@IDDanhMucKhachHangDoiLenh is null or IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh)
@@ -85,11 +85,11 @@ begin
 end
 go
 
-if object_id(N'dbo.Insert_LenhOnlines', N'P') is null
-	exec('create procedure dbo.Insert_LenhOnlines as begin set nocount on; end');
+if object_id(N'dbo.Insert_tblLenhOnlines', N'P') is null
+	exec('create procedure dbo.Insert_tblLenhOnlines as begin set nocount on; end');
 go
 
-alter procedure Insert_LenhOnlines
+alter procedure dbo.Insert_tblLenhOnlines
 	@ID				bigint = null out,
 	@SoThuTuLenh	bigint = null out,
 	@HoVaTen		nvarchar(255),
@@ -157,7 +157,7 @@ begin
 		return;
 	end;
 
-	if exists (select 1 from LenhOnlines where HouseBill = @HouseBill)
+	if exists (select 1 from tblLenhOnlines where HouseBill = @HouseBill)
 	begin
 		raiserror(N'HouseBill da ton tai!', 16, 1);
 		return;
@@ -165,12 +165,12 @@ begin
 
 	begin tran
 	begin try
-		select @ID = isnull(max(ID), 0) + 1 from LenhOnlines with (updlock, holdlock);
-		select @SoThuTuLenh = isnull(max(SoThuTuLenh), 0) + 1 from LenhOnlines with (updlock, holdlock);
+		select @ID = isnull(max(ID), 0) + 1 from tblLenhOnlines with (updlock, holdlock);
+		select @SoThuTuLenh = isnull(max(SoThuTuLenh), 0) + 1 from tblLenhOnlines with (updlock, holdlock);
 		set @NgayLamLenh = getdate();
 		set @CreateDate = @NgayLamLenh;
 
-		insert into LenhOnlines
+		insert into tblLenhOnlines
 		(
 			ID,
 			SoThuTuLenh,
@@ -223,11 +223,11 @@ begin
 end
 go
 
-if object_id(N'dbo.Update_LenhOnlines', N'P') is null
-	exec('create procedure dbo.Update_LenhOnlines as begin set nocount on; end');
+if object_id(N'dbo.Update_tblLenhOnlines', N'P') is null
+	exec('create procedure dbo.Update_tblLenhOnlines as begin set nocount on; end');
 go
 
-alter procedure Update_LenhOnlines
+alter procedure dbo.Update_tblLenhOnlines
 	@ID				bigint,
 	@HoVaTen		nvarchar(255),
 	@SoDienThoai	nvarchar(50) = null,
@@ -263,7 +263,7 @@ begin
 	set @SoToKhai = dbo.ChuanHoaChuoi(@SoToKhai);
 	set @TrangThai = isnull(@TrangThai, 0);
 
-	if not exists (select 1 from LenhOnlines where ID = @ID)
+	if not exists (select 1 from tblLenhOnlines where ID = @ID)
 	begin
 		raiserror(N'Ban ghi khong ton tai!', 16, 1);
 		return;
@@ -299,7 +299,7 @@ begin
 		return;
 	end;
 
-	if exists (select 1 from LenhOnlines where HouseBill = @HouseBill and ID <> @ID)
+	if exists (select 1 from tblLenhOnlines where HouseBill = @HouseBill and ID <> @ID)
 	begin
 		raiserror(N'HouseBill da ton tai!', 16, 1);
 		return;
@@ -309,7 +309,7 @@ begin
 	begin try
 		set @EditDate = getdate();
 
-		update LenhOnlines
+		update tblLenhOnlines
 		set
 			HoVaTen = @HoVaTen,
 			SoDienThoai = @SoDienThoai,
@@ -338,22 +338,22 @@ begin
 end
 go
 
-if object_id(N'dbo.Delete_LenhOnlines', N'P') is null
-	exec('create procedure dbo.Delete_LenhOnlines as begin set nocount on; end');
+if object_id(N'dbo.Delete_tblLenhOnlines', N'P') is null
+	exec('create procedure dbo.Delete_tblLenhOnlines as begin set nocount on; end');
 go
 
-alter procedure Delete_LenhOnlines
+alter procedure dbo.Delete_tblLenhOnlines
 	@ID bigint
 as
 begin
 	set nocount on;
 
-	if not exists (select 1 from LenhOnlines where ID = @ID)
+	if not exists (select 1 from tblLenhOnlines where ID = @ID)
 	begin
 		raiserror(N'Ban ghi khong ton tai!', 16, 1);
 		return;
 	end;
 
-	delete from LenhOnlines where ID = @ID;
+	delete from tblLenhOnlines where ID = @ID;
 end
 go

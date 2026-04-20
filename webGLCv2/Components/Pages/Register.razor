@@ -1,4 +1,4 @@
-@page "/register"
+﻿@page "/register"
 @rendermode InteractiveServer
 @layout EmptyLayout
 @attribute [AllowAnonymous]
@@ -52,7 +52,7 @@
                 <div class="portal-alert portal-alert-error">@ErrorMessage</div>
             }
 
-            <EditForm Model="@Model" OnValidSubmit="@SubmitAsync" class="register-form">
+            <EditForm Model="@Model" OnValidSubmit="@SubmitAsync" class="register-form" FormName="register-form">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
@@ -303,7 +303,43 @@
             return false;
         }
 
+        var missingDocuments = GetMissingRequiredDocuments();
+        if (missingDocuments.Count > 0)
+        {
+            ErrorMessage = $"Vui lòng tải lên đầy đủ tài liệu bắt buộc: {string.Join(", ", missingDocuments)}.";
+            return false;
+        }
+
         return true;
+    }
+
+    private List<string> GetMissingRequiredDocuments()
+    {
+        var missing = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(Model.BanScanSoCMNDCanCuocPath))
+        {
+            missing.Add("Bản scan CMND/CCCD");
+        }
+
+        if (IsEnterprise)
+        {
+            if (string.IsNullOrWhiteSpace(Model.BanScanGiayPhepKinhDoanhPath))
+            {
+                missing.Add("Bản scan giấy phép kinh doanh");
+            }
+
+            if (string.IsNullOrWhiteSpace(Model.BanDangKyEPortChuKySoPath))
+            {
+                missing.Add("Bản đăng ký ePort có chữ ký số");
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(Model.BanDangKyCaNhanCoChuKyPath))
+        {
+            missing.Add("Bản đăng ký cá nhân có chữ ký");
+        }
+
+        return missing;
     }
 
     private async Task OnCitizenCardChanged(InputFileChangeEventArgs args)
@@ -360,3 +396,4 @@
         PersonalFormStatus = "Chưa tải tài liệu.";
     }
 }
+

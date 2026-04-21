@@ -18,40 +18,41 @@
     </header>
 
     <section class="workspace-card">
-        <div class="order-filter-panel">
-            <div class="order-filter-grid">
-                <div class="order-filter-field">
-                    <label class="portal-label">Số House Bill</label>
-                    <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhập số House Bill..." />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Số hiệu Container</label>
-                    <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhập số hiệu Cont..." />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Mã số thuế</label>
-                    <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhập mã số thuế..." />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Từ ngày</label>
-                    <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Đến ngày</label>
-                    <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
-                </div>
-                <div class="order-filter-actions">
-                    <button class="portal-primary-action order-filter-button" @onclick="SearchAsync">Tìm kiếm</button>
+        <EditForm Model="@this" OnValidSubmit="SearchAsync" FormName="admin-orders-filter-form">
+            <div class="order-filter-panel">
+                <div class="order-filter-grid">
+                    <div class="order-filter-field">
+                        <label class="portal-label">Số House Bill</label>
+                        <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhập số House Bill..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Số hiệu Container</label>
+                        <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhập số hiệu Cont..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Mã số thuế</label>
+                        <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhập mã số thuế..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Từ ngày</label>
+                        <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Đến ngày</label>
+                        <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
+                    </div>
+                    <div class="order-filter-actions">
+                        <button type="submit" class="portal-primary-action order-filter-button">Tìm kiếm</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </EditForm>
 
         <div class="table-shell">
             <table class="portal-table dense">
                 <thead>
                     <tr>
-                        <th>IDUser</th>
-                        <th>Email user</th>
+                        <th>Người tạo</th>
                         <th>Mã lệnh / Biển số</th>
                         <th>Ngày lập lệnh</th>
                         <th>House Bill</th>
@@ -59,7 +60,7 @@
                         <th>Tên doanh nghiệp</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
-                        <th>Trạng thái</th>
+                        <th>Tải hóa đơn</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -76,9 +77,11 @@
                     {
                         @foreach (var order in Orders)
                         {
-                            <tr>
-                                <td>@order.UserId</td>
-                                <td>@(string.IsNullOrWhiteSpace(order.UserEmail) ? "-" : order.UserEmail)</td>
+                            <tr class="@GetRowClass(order)">
+                                <td>
+                                    <div class="cell-title">@GetCreatorName(order.CreatorUserId)</div>
+                                    <div class="cell-subtitle">@GetCreatorPhone(order.CreatorUserId)</div>
+                                </td>
                                 <td>
                                     <div class="cell-title">@order.OrderCode</div>
                                     <div class="cell-subtitle">@order.VehicleNumber</div>
@@ -90,7 +93,20 @@
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
                                 <td>
-                                    <span class="status-chip @GetStatusClass(order.StatusCode)">@order.Status</span>
+                                    @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
+                                    {
+                                        <a class="invoice-download-link"
+                                           href="@order.InvoiceDownloadUrl"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           title="Tải hóa đơn">
+                                            <i class="icon-download"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="portal-text-muted">-</span>
+                                    }
                                 </td>
                                 <td>
                                     <button class="portal-secondary-action" @onclick="() => ViewDetail(order.Id)">Xem chi tiết</button>
@@ -131,7 +147,7 @@
     private int TotalCount;
     private int PageSize = 10;
     private int CurrentPage = 1;
-    private readonly Dictionary<long, string> UserEmails = new();
+    private readonly Dictionary<long, AccountListItem> UserCreators = new();
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
     private bool IsFirstPage => CurrentPage <= 1;
@@ -146,12 +162,12 @@
     private async Task LoadUserMapAsync()
     {
         var accounts = await LegacyCustomerPortalService.GetAccountsAsync();
-        UserEmails.Clear();
+        UserCreators.Clear();
         foreach (var account in accounts)
         {
-            if (long.TryParse(account.Id, out var userId) && !UserEmails.ContainsKey(userId))
+            if (long.TryParse(account.Id, out var userId) && !UserCreators.ContainsKey(userId))
             {
-                UserEmails[userId] = account.Email;
+                UserCreators[userId] = account;
             }
         }
     }
@@ -209,13 +225,11 @@
             PageSize);
 
         Orders = result.Items;
-        foreach (var order in Orders)
-        {
-            if (string.IsNullOrWhiteSpace(order.UserEmail) && UserEmails.TryGetValue(order.UserId, out var userEmail))
-            {
-                order.UserEmail = userEmail;
-            }
-        }
+        Orders = Orders
+            .OrderBy(GetSortPriority)
+            .ThenByDescending(order => order.PickupDate ?? DateTime.MinValue)
+            .ThenByDescending(order => order.OrderDate)
+            .ToList();
 
         TotalCount = result.TotalCount;
         CurrentPage = result.Page <= 0 ? 1 : result.Page;
@@ -232,6 +246,52 @@
             0 => "neutral",
             _ => "neutral"
         };
+
+    private static int GetSortPriority(OnlineOrderRecord order)
+    {
+        var today = DateTime.Today;
+        var pickupDate = order.PickupDate?.Date;
+
+        if (pickupDate.HasValue && pickupDate.Value < today)
+        {
+            return 0;
+        }
+
+        if (order.IsHoanThanh)
+        {
+            return 2;
+        }
+
+        return 1;
+    }
+
+    private string GetCreatorName(long creatorUserId)
+        => UserCreators.TryGetValue(creatorUserId, out var creator) && !string.IsNullOrWhiteSpace(creator.Name)
+            ? creator.Name
+            : $"User #{creatorUserId}";
+
+    private string GetCreatorPhone(long creatorUserId)
+        => UserCreators.TryGetValue(creatorUserId, out var creator) && !string.IsNullOrWhiteSpace(creator.Phone)
+            ? creator.Phone
+            : "-";
+
+    private static string GetRowClass(OnlineOrderRecord order)
+    {
+        var today = DateTime.Today;
+        var pickupDate = order.PickupDate?.Date;
+
+        if (pickupDate.HasValue && pickupDate.Value < today)
+        {
+            return "order-row-overdue";
+        }
+
+        if (order.IsHoanThanh)
+        {
+            return "order-row-completed";
+        }
+
+        return "order-row-pending";
+    }
 
     private void ViewDetail(string orderId)
         => NavigationManager.NavigateTo($"/admin/orders/{orderId}");

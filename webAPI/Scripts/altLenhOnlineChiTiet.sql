@@ -12,6 +12,7 @@ BEGIN
 
         TrangThaiThanhToan TINYINT NOT NULL CONSTRAINT DF_tblLenhOnlineChiTiet_TrangThaiThanhToan DEFAULT (0),
         TrangThaiThongQuan TINYINT NOT NULL CONSTRAINT DF_tblLenhOnlineChiTiet_TrangThaiThongQuan DEFAULT (0),
+        IsHoanThanh BIT NOT NULL CONSTRAINT DF_tblLenhOnlineChiTiet_IsHoanThanh DEFAULT (0),
 
         ThuKho NVARCHAR(255) NULL,
         Forwarder NVARCHAR(255) NULL,
@@ -110,6 +111,18 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE dbo.tblLenhOnlineChiTiet
     ADD TrangThaiThongQuan TINYINT NOT NULL CONSTRAINT DF_tblLenhOnlineChiTiet_TrangThaiThongQuan DEFAULT (0);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlineChiTiet')
+      AND name = N'IsHoanThanh'
+)
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlineChiTiet
+    ADD IsHoanThanh BIT NOT NULL CONSTRAINT DF_tblLenhOnlineChiTiet_IsHoanThanh DEFAULT (0);
 END
 GO
 

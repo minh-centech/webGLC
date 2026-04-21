@@ -16,41 +16,43 @@
             <p class="page-subtitle">Theo dõi và quản lý tập trung các lệnh trực tuyến. Dễ dàng tra cứu dữ liệu bằng bộ lọc ngày và công cụ tìm kiếm đa năng (HBL, Cont).</p>
         </div>
         <div class="header-actions">
-            <button class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Thêm mới</button>
-            <button class="portal-secondary-action" @onclick="RefreshDataAsync">Làm mới dữ liệu</button>
+            <button type="button" class="portal-primary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders/new"))">Thêm mới</button>
+            <button type="button" class="portal-secondary-action" @onclick="RefreshDataAsync">Làm mới dữ liệu</button>
         </div>
     </header>
 
     <section class="workspace-card">
-        <div class="order-filter-panel">
-            <div class="order-filter-grid">
-                <div class="order-filter-field">
-                    <label class="portal-label">Số House Bill</label>
-                    <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhập số House Bill..." />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Số hiệu Container</label>
-                    <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhập số hiệu Cont..." />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Mã số thuế</label>
-                    <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhập mã số thuế..." />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Từ ngày</label>
-                    <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
-                </div>
-                <div class="order-filter-field">
-                    <label class="portal-label">Đến ngày</label>
-                    <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
-                </div>
-                <div class="order-filter-actions">
-                    <button class="portal-primary-action order-filter-button" @onclick="SearchAsync">
-                        <i class="icon-search"></i> Tìm kiếm
-                    </button>
+        <form @formname="user-orders-filter-form" @onsubmit="SearchAsync" @onsubmit:preventDefault="true">
+            <div class="order-filter-panel">
+                <div class="order-filter-grid">
+                    <div class="order-filter-field">
+                        <label class="portal-label">Số House Bill</label>
+                        <input class="portal-input order-filter-input" @bind="HouseBillFilter" placeholder="Nhập số House Bill..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Số hiệu Container</label>
+                        <input class="portal-input order-filter-input" @bind="ContainerNumberFilter" placeholder="Nhập số hiệu Cont..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Mã số thuế</label>
+                        <input class="portal-input order-filter-input" @bind="TaxCodeFilter" placeholder="Nhập mã số thuế..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Từ ngày</label>
+                        <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Đến ngày</label>
+                        <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
+                    </div>
+                    <div class="order-filter-actions">
+                        <button type="submit" class="portal-primary-action order-filter-button">
+                            <i class="icon-search"></i> Tìm kiếm
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
 
         <div class="table-shell">
             <table class="portal-table dense">
@@ -64,8 +66,7 @@
                         <th>Tên doanh nghiệp</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
-                        <th>Trạng thái</th>
-                        <th>Thanh toán / hóa đơn</th>
+                        <th>Tải hóa đơn</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -73,7 +74,7 @@
                     @if (Orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="11">
+                            <td colspan="10">
                                 <div class="portal-empty-inline">
                                     Không tìm thấy lệnh trực tuyến nào trong khoảng thời gian đã chọn.
                                     <br />Vui lòng bấm <strong>"Thêm mới"</strong> để khởi tạo.
@@ -85,7 +86,7 @@
                     {
                         @foreach (var order in Orders)
                         {
-                            <tr>
+                            <tr class="@GetRowClass(order)">
                                 <td>
                                     <div class="cell-title">@order.OrderCode</div>
                                     <div class="cell-subtitle">@order.VehicleNumber</div>
@@ -98,27 +99,15 @@
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
                                 <td>
-                                    <span class="status-chip @GetStatusClass(order.StatusCode)">@order.Status</span>
-                                </td>
-                                <td>
-                                    @if (order.HasPaymentInfo)
+                                    @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
                                     {
-                                        <div class="order-payment-stack">
-                                            <span class="status-chip @GetPaymentStatusClass(order.PaymentStatusCode)">
-                                                @order.PaymentStatus
-                                            </span>
-
-                                            @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
-                                            {
-                                                <a class="invoice-download-link"
-                                                   href="@order.InvoiceDownloadUrl"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   title="Tải hóa đơn">
-                                                    <i class="icon-download"></i>
-                                                </a>
-                                            }
-                                        </div>
+                                        <a class="invoice-download-link"
+                                           href="@order.InvoiceDownloadUrl"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           title="Tải hóa đơn">
+                                            <i class="icon-download"></i>
+                                        </a>
                                     }
                                     else
                                     {
@@ -126,7 +115,7 @@
                                     }
                                 </td>
                                 <td>
-                                    <button class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
+                                    <button type="button" class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
                                         Xem chi tiết
                                     </button>
                                 </td>
@@ -148,9 +137,9 @@
                 </select>
             </div>
             <div class="footer-pagination">
-                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
+                <button type="button" class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
                 <span>Trang <strong>@CurrentPage</strong> / @TotalPages</span>
-                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
+                <button type="button" class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
             </div>
         </footer>
     </section>
@@ -246,7 +235,11 @@
             CurrentPage,
             PageSize);
 
-        Orders = result.Items;
+        Orders = result.Items
+            .OrderBy(GetSortPriority)
+            .ThenByDescending(order => order.PickupDate ?? DateTime.MinValue)
+            .ThenByDescending(order => order.OrderDate)
+            .ToList();
         TotalCount = result.TotalCount;
         CurrentPage = result.Page <= 0 ? 1 : result.Page;
     }
@@ -266,11 +259,47 @@
     private static string GetPaymentStatusClass(int statusCode)
         => statusCode switch
         {
-            1 => "success",
+            2 => "success",
             0 => "pending",
-            2 => "warning",
+            1 => "warning",
             _ => "neutral"
         };
+
+    private static int GetSortPriority(OnlineOrderRecord order)
+    {
+        var today = DateTime.Today;
+        var pickupDate = order.PickupDate?.Date;
+
+        if (pickupDate.HasValue && pickupDate.Value < today)
+        {
+            return 0;
+        }
+
+        if (order.IsHoanThanh)
+        {
+            return 2;
+        }
+
+        return 1;
+    }
+
+    private static string GetRowClass(OnlineOrderRecord order)
+    {
+        var today = DateTime.Today;
+        var pickupDate = order.PickupDate?.Date;
+
+        if (pickupDate.HasValue && pickupDate.Value < today)
+        {
+            return "order-row-overdue";
+        }
+
+        if (order.IsHoanThanh)
+        {
+            return "order-row-completed";
+        }
+
+        return "order-row-pending";
+    }
 
     private void ViewDetail(string orderId)
     {

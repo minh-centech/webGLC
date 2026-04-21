@@ -1,0 +1,250 @@
+@page "/admin/profile"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+
+<PageTitle>Thông tin tài khoản</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Thông tin tài khoản</h1>
+            <p class="page-subtitle">Cập nhật tên hiển thị, email đăng nhập và đổi mật khẩu. Nếu đổi email, bạn nên đăng nhập lại để topbar đồng bộ theo thông tin mới.</p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="portal-alert portal-alert-error">@ErrorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="portal-alert @(FeedbackIsError ? "portal-alert-error" : "portal-alert-success")">@FeedbackMessage</div>
+    }
+
+    @if (IsLoading)
+    {
+        <section class="workspace-card">
+            <div class="portal-empty-state compact">
+                <div class="portal-empty-icon">...</div>
+                <h2>Đang tải thông tin tài khoản</h2>
+                <p>Hệ thống đang lấy hồ sơ hiện tại của admin.</p>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="workspace-card">
+            <div class="section-heading">
+                <h2>Hồ sơ admin</h2>
+                <p>Bạn có thể chỉnh sửa các thông tin hồ sơ</p>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="stat-label">Mã tài khoản</span>
+                    <strong>@AccountId</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Số điện thoại</span>
+                    <strong>@CurrentPhone</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Email hiện tại</span>
+                    <strong>@OriginalEmail</strong>
+                </article>
+            </div>
+
+            <EditForm Model="ProfileModel" OnValidSubmit="SaveAsync" FormName="admin-profile-form">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="portal-alert portal-alert-error" />
+
+                <div class="field-grid">
+                    <div class="field-card">
+                        <label class="portal-label" for="DisplayName">Tên hiển thị</label>
+                        <InputText id="DisplayName" class="portal-input" @bind-Value="ProfileModel.DisplayName" />
+                        <ValidationMessage For="@(() => ProfileModel.DisplayName)" class="validation-message" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="Email">Email đăng nhập</label>
+                        <InputText id="Email" class="portal-input" @bind-Value="ProfileModel.Email" />
+                        <ValidationMessage For="@(() => ProfileModel.Email)" class="validation-message" />
+                    </div>
+
+                    <div class="field-card field-span-3">
+                        <label class="portal-label" for="CurrentPassword">Mật khẩu cũ</label>
+                        <InputText id="CurrentPassword" type="password" class="portal-input" @bind-Value="ProfileModel.CurrentPassword" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="NewPassword">Mật khẩu mới</label>
+                        <InputText id="NewPassword" type="password" class="portal-input" @bind-Value="ProfileModel.NewPassword" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="ConfirmNewPassword">Nhập lại mật khẩu mới</label>
+                        <InputText id="ConfirmNewPassword" type="password" class="portal-input" @bind-Value="ProfileModel.ConfirmNewPassword" />
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
+                        @(IsSubmitting ? "Đang lưu..." : "Lưu thay đổi")
+                    </button>
+                </div>
+            </EditForm>
+        </section>
+    }
+</section>
+
+@code {
+    private readonly AdminProfileFormModel ProfileModel = new();
+    private bool IsLoading = true;
+    private bool IsSubmitting;
+    private string? ErrorMessage;
+    private string? FeedbackMessage;
+    private bool FeedbackIsError;
+    private string AccountId = string.Empty;
+    private string CurrentPhone = string.Empty;
+    private string OriginalEmail = string.Empty;
+    private string CurrentBillingEmail = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            AccountId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            OriginalEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.Identity?.Name ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(AccountId))
+            {
+                throw new InvalidOperationException("Không xác định được tài khoản quản trị hiện tại.");
+            }
+
+            var details = await LegacyCustomerPortalService.GetAccountDocumentsAsync(AccountId);
+            ProfileModel.DisplayName = details.Name;
+            ProfileModel.Email = string.IsNullOrWhiteSpace(details.Email) ? OriginalEmail : details.Email;
+            CurrentPhone = details.Phone;
+            CurrentBillingEmail = string.IsNullOrWhiteSpace(details.BillingEmail) ? details.Email : details.BillingEmail;
+            OriginalEmail = ProfileModel.Email;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(AccountId))
+        {
+            FeedbackMessage = "Không xác định được tài khoản hiện tại.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        var hasPasswordInput =
+            !string.IsNullOrWhiteSpace(ProfileModel.CurrentPassword) ||
+            !string.IsNullOrWhiteSpace(ProfileModel.NewPassword) ||
+            !string.IsNullOrWhiteSpace(ProfileModel.ConfirmNewPassword);
+
+        if (hasPasswordInput)
+        {
+            if (string.IsNullOrWhiteSpace(ProfileModel.CurrentPassword) ||
+                string.IsNullOrWhiteSpace(ProfileModel.NewPassword) ||
+                string.IsNullOrWhiteSpace(ProfileModel.ConfirmNewPassword))
+            {
+                FeedbackMessage = "Vui lòng nhập đủ mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới.";
+                FeedbackIsError = true;
+                return;
+            }
+
+            if (!string.Equals(ProfileModel.NewPassword, ProfileModel.ConfirmNewPassword, StringComparison.Ordinal))
+            {
+                FeedbackMessage = "Mật khẩu mới và xác nhận mật khẩu mới không khớp.";
+                FeedbackIsError = true;
+                return;
+            }
+        }
+
+        IsSubmitting = true;
+        FeedbackMessage = null;
+
+        try
+        {
+            if (hasPasswordInput)
+            {
+                await LegacyCustomerPortalService.ChangePasswordAsync(
+                    OriginalEmail,
+                    ProfileModel.CurrentPassword,
+                    ProfileModel.NewPassword,
+                    ProfileModel.ConfirmNewPassword);
+            }
+
+            await LegacyCustomerPortalService.UpdatePersonalProfileAsync(
+                AccountId,
+                ProfileModel.DisplayName,
+                CurrentPhone,
+                CurrentBillingEmail,
+                ProfileModel.Email);
+
+            FeedbackMessage = hasPasswordInput
+                ? "Đã cập nhật thông tin tài khoản và đổi mật khẩu thành công."
+                : "Đã cập nhật thông tin tài khoản thành công.";
+            FeedbackIsError = false;
+
+            ProfileModel.CurrentPassword = string.Empty;
+            ProfileModel.NewPassword = string.Empty;
+            ProfileModel.ConfirmNewPassword = string.Empty;
+            OriginalEmail = ProfileModel.Email;
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private sealed class AdminProfileFormModel
+    {
+        [Required(ErrorMessage = "Tên hiển thị không được bỏ trống.")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email đăng nhập không được bỏ trống.")]
+        [EmailAddress(ErrorMessage = "Email đăng nhập không đúng định dạng.")]
+        public string Email { get; set; } = string.Empty;
+
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
+}

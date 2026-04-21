@@ -25,8 +25,9 @@
                 <nav class="portal-nav">
                     @if (isAdmin)
                     {
+                        <a class="@GetNavClass("/admin/profile")" href="/admin/profile">Thông tin tài khoản</a>
                         <a class="@GetNavClass("/admin/orders")" href="/admin/orders">Quản lý lệnh online</a>
-                        <a class="@GetNavClass("/admin/users")" href="/admin/users">Quản lý user</a>
+                        <a class="@GetNavClass("/admin/users")" href="/admin/users">Quản lý người dùng</a>
                     }
                     else
                     {

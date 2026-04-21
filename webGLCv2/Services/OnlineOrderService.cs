@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using webGLCv2.Models;
@@ -14,7 +15,9 @@ public sealed class OnlineOrderService
 
     private const string ThongQuanApiPath = "m1/1263694-1261439-default/TrangThaiThongQuan";
     private const string PhiLuuKhoApiPath = "m1/1263694-1261439-default/PhiLuuKho";
+    private const string PhiLuuKhoQuaHanApiPath = "m1/1263694-1261439-default/PhiLuuKhoQuaHan";
     private const string ChiTietHouseBillApiPath = "m1/1263694-1261439-default/ChiTietHouseBill";
+    private const string ThongTinThanhToanApiPath = "m1/1263694-1261439-default/ThongTinThanhToan";
 
     private readonly HttpClient _httpClient;
     private readonly OnlineOrderWorkflowOptions _workflowOptions;
@@ -245,6 +248,27 @@ public sealed class OnlineOrderService
             };
     }
 
+    public async Task<PhiLuuKhoQuaHanResponse> GetPhiLuuKhoQuaHanAsync(string houseBill, string soCont)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(PhiLuuKhoQuaHanApiPath),
+            new
+            {
+                HouseBill = houseBill,
+                SoCont = soCont
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<PhiLuuKhoQuaHanResponse>(JsonOptions)
+            ?? new PhiLuuKhoQuaHanResponse
+            {
+                Success = false,
+                Message = "Khong the doc ket qua tinh phi luu kho qua han."
+            };
+    }
+
     public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont)
     {
         var response = await _httpClient.PostAsJsonAsync(
@@ -266,9 +290,40 @@ public sealed class OnlineOrderService
             };
     }
 
-    public async Task<OnlineOrderWorkflowResult> RunOrderWorkflowAsync(string houseBill, string soCont)
+    public async Task<ThongTinThanhToanResponse> GetThongTinThanhToanAsync(string houseBill, string soCont)
     {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(ThongTinThanhToanApiPath),
+            new
+            {
+                HouseBill = houseBill,
+                SoCont = soCont
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<ThongTinThanhToanResponse>(JsonOptions)
+            ?? new ThongTinThanhToanResponse
+            {
+                Success = false,
+                Message = "Khong the doc thong tin thanh toan."
+            };
+    }
+
+    public async Task<OnlineOrderWorkflowResult> RunOrderWorkflowAsync(
+        long idLenhOnline,
+        string houseBill,
+        string soCont,
+        DateTime? pickupDate = null,
+        string? invoiceDownloadUrl = null,
+        string? traceTag = null)
+    {
+        var tracePrefix = string.IsNullOrWhiteSpace(traceTag) ? string.Empty : $"[{traceTag}] ";
+        Console.WriteLine($"{tracePrefix}RunOrderWorkflowAsync start. HouseBill={houseBill}, SoCont={soCont}, PickupDate={pickupDate:yyyy-MM-dd}");
+
         var thongQuan = await CheckThongQuanAsync(houseBill, soCont);
+        Console.WriteLine($"{tracePrefix}ThongQuan completed. Success={thongQuan.Success}, IsThongQuan={thongQuan.IsThongQuan}");
 
         var result = new OnlineOrderWorkflowResult
         {
@@ -280,10 +335,115 @@ public sealed class OnlineOrderService
             return result;
         }
 
+        Console.WriteLine($"{tracePrefix}Calling PhiLuuKho...");
         result.PhiLuuKho = await GetPhiLuuKhoAsync(houseBill, soCont);
+        Console.WriteLine($"{tracePrefix}PhiLuuKho.Response={JsonSerializer.Serialize(result.PhiLuuKho, JsonOptions)}");
+
+        Console.WriteLine($"{tracePrefix}Calling ChiTietHouseBill...");
         result.ChiTietHouseBill = await GetChiTietHouseBillAsync(houseBill, soCont);
+        Console.WriteLine($"{tracePrefix}ChiTietHouseBill.Response={JsonSerializer.Serialize(result.ChiTietHouseBill, JsonOptions)}");
+        Console.WriteLine($"{tracePrefix}ChiTietHouseBill.IsHoanThanh={result.ChiTietHouseBill?.Data?.IsHoanThanh}");
+        if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.Data?.IsHoanThanh ?? false))
+        {
+            Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
+            result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
+        }
+
+        Console.WriteLine($"{tracePrefix}Upserting LenhOnlineChiTiet...");
+        await UpsertLenhOnlineChiTietAsync(idLenhOnline, houseBill, soCont, invoiceDownloadUrl, result, traceTag);
+        Console.WriteLine($"{tracePrefix}RunOrderWorkflowAsync end.");
         return result;
     }
+
+    private async Task UpsertLenhOnlineChiTietAsync(
+        long idLenhOnline,
+        string houseBill,
+        string soCont,
+        string? invoiceDownloadUrl,
+        OnlineOrderWorkflowResult workflow,
+        string? traceTag = null)
+    {
+        var tracePrefix = string.IsNullOrWhiteSpace(traceTag) ? string.Empty : $"[{traceTag}] ";
+
+        if (workflow.ThongQuan is null || !workflow.ThongQuan.Success || !workflow.ThongQuan.IsThongQuan)
+        {
+            return;
+        }
+
+        if (workflow.PhiLuuKho is null || workflow.ChiTietHouseBill is null)
+        {
+            return;
+        }
+
+        var chiTiet = workflow.ChiTietHouseBill.Data;
+        var phi = workflow.PhiLuuKho.Data;
+        if (chiTiet is null || phi is null)
+        {
+            return;
+        }
+
+        var payload = new
+        {
+            IDLenhOnline = idLenhOnline,
+            PhiLuuKho = GetPhiAmountByDescription(phi, "Phí lưu kho"),
+            PhiGiaoNhan = GetPhiAmountByDescription(phi, "Phí giao nhận"),
+            PhiBocXep = GetPhiAmountByDescription(phi, "Phí bốc xếp"),
+            VAT = phi.Vat,
+            TrangThaiThanhToan = phi.TrangThaiThanhToan,
+            TrangThaiThongQuan = workflow.ThongQuan.IsThongQuan ? 1 : 0,
+            ThuKho = NullIfEmpty(chiTiet.ThuKho),
+            Forwarder = NullIfEmpty(chiTiet.Forwarder),
+            TenTau = NullIfEmpty(chiTiet.TenTau),
+            ChuHang = NullIfEmpty(chiTiet.ChuHang),
+            SoKien = chiTiet.SoKien,
+            SoChuyen = NullIfEmpty(chiTiet.SoChuyen),
+            SoHouseBill = NullIfEmpty(string.IsNullOrWhiteSpace(chiTiet.SoHouseBill) ? houseBill : chiTiet.SoHouseBill),
+            NgayTauCap = ParseWorkflowDate(chiTiet.NgayTauCap),
+            TrongLuong = chiTiet.TrongLuong,
+            SoCont = NullIfEmpty(string.IsNullOrWhiteSpace(chiTiet.SoCont) ? soCont : chiTiet.SoCont),
+            SoKhoi = chiTiet.SoKhoi,
+            LinkTaiHoaDon = NullIfEmpty(invoiceDownloadUrl ?? string.Empty),
+            DuongDanFileHoaDon = NullIfEmpty(invoiceDownloadUrl ?? string.Empty),
+            IsHoanThanh = chiTiet.IsHoanThanh
+        };
+
+        Console.WriteLine($"{tracePrefix}UpsertChiTiet.IsHoanThanh={chiTiet.IsHoanThanh}");
+        Console.WriteLine($"{tracePrefix}UpsertChiTiet.Payload={JsonSerializer.Serialize(payload, JsonOptions)}");
+
+        var response = await _httpClient.PostAsJsonAsync("api/LenhOnlines/UpsertChiTiet", payload, JsonOptions);
+        Console.WriteLine($"{tracePrefix}UpsertChiTiet.POST api/LenhOnlines/UpsertChiTiet => {(int)response.StatusCode} {response.ReasonPhrase}");
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the luu chi tiet lenh online.");
+    }
+
+    private static decimal GetPhiAmountByDescription(PhiLuuKhoData data, string descriptionPart)
+    {
+        return data.ChiTietHoaDon
+            .Where(item => ContainsText(item.MoTa, descriptionPart))
+            .Sum(item => item.ThanhTien);
+    }
+
+    private static bool ContainsText(string source, string value)
+        => !string.IsNullOrWhiteSpace(source)
+           && source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
+
+    private static DateTime? ParseWorkflowDate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var culture = CultureInfo.GetCultureInfo("vi-VN");
+        return DateTime.TryParse(value, culture, DateTimeStyles.None, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private static bool IsOverduePickupDate(DateTime? pickupDate, bool isHoanThanh)
+        => isHoanThanh && pickupDate.HasValue && pickupDate.Value.Date < DateTime.Today;
 
     public async Task SeedDefaultsAsync(long idDanhMucKhachHangDoiLenh)
     {
@@ -393,13 +553,46 @@ public sealed class OnlineOrderService
     private static int GetInt(JsonElement element, string propertyName)
         => int.TryParse(GetString(element, propertyName), out var parsed) ? parsed : 0;
 
+    private static bool GetBool(JsonElement element, string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(element, propertyName, out var property))
+        {
+            return false;
+        }
+
+        return property.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number => property.TryGetInt32(out var number) && number != 0,
+            JsonValueKind.String when bool.TryParse(property.GetString(), out var parsedBool) => parsedBool,
+            JsonValueKind.String when int.TryParse(property.GetString(), out var parsedInt) => parsedInt != 0,
+            _ => false
+        };
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement property)
+    {
+        foreach (var candidate in element.EnumerateObject())
+        {
+            if (string.Equals(candidate.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                property = candidate.Value;
+                return true;
+            }
+        }
+
+        property = default;
+        return false;
+    }
+
     private static DateTime? GetDateTime(JsonElement element, string propertyName)
     {
         var value = GetString(element, propertyName);
         return DateTime.TryParse(value, out var parsed) ? parsed : null;
     }
 
-    private static string? NullIfEmpty(string value)
+    private static string? NullIfEmpty(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private string BuildWorkflowUrl(string relativePath)
@@ -423,6 +616,7 @@ public sealed class OnlineOrderService
         return new OnlineOrderRecord
         {
             Id = id.ToString(),
+            CreatorUserId = GetLong(item, "IDDanhMucKhachHangDoiLenh"),
             UserId = GetLong(item, "IDDanhMucKhachHangDoiLenh"),
             UserEmail = GetString(item, "EmailUser"),
             SequenceNumber = soThuTuLenh,
@@ -442,6 +636,7 @@ public sealed class OnlineOrderService
             DeclarationNumber = GetString(item, "SoToKhai"),
             StatusCode = trangThai,
             Status = GetTrangThaiText(trangThai),
+            IsHoanThanh = GetBool(item, "IsHoanThanh"),
             HasPaymentInfo = hasPaymentInfo,
             PaymentStatusCode = paymentStatusCode,
             PaymentStatus = hasPaymentInfo ? GetPaymentStatusText(paymentStatusCode) : string.Empty,
@@ -478,8 +673,8 @@ public sealed class OnlineOrderService
         => trangThaiThanhToan switch
         {
             0 => "Chưa thanh toán",
-            1 => "Đã thanh toán",
-            2 => "Đã hoàn tiền",
+            1 => "Đang kiểm tra",
+            2 => "Đã thanh toán",
             _ => "Không xác định"
         };
 

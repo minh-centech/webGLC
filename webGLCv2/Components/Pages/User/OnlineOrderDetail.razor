@@ -92,7 +92,7 @@
             </div>
 
             <div class="form-actions no-print">
-                <button class="portal-primary-action" @onclick="RunWorkflowAsync" disabled="@IsLoadingWorkflow">
+                <button class="portal-primary-action" @onclick='() => RunWorkflowAsync("button")' disabled="@IsLoadingWorkflow">
                     @(IsLoadingWorkflow ? "Đang truy vấn..." : "Truy vấn thông tin")
                 </button>
                @*  <button class="portal-secondary-action" @onclick="Query">Tra cứu import check</button> *@
@@ -127,20 +127,25 @@
                                     @GetPaymentStatusLabel(Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan)
                                 </span>
 
-                                @if (Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan == 0)
+                                @* @if (Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan == 0)
                                 {
-                                    <button class="portal-primary-action" type="button" @onclick="ShowPaymentMessageAsync">
+                                    <button class="portal-primary-action" type="button" @onclick="ShowPaymentPopupAsync">
                                         Thanh toán
                                     </button>
-                                }
+                                } *@
                             </div>
+
+                            
 
                             <div class="table-shell compact-table">
                                 <table class="portal-table">
                                     <thead>
                                         <tr>
                                             <th>Mô tả</th>
-                                            <th class="text-start">Số tiền</th>
+                                            <th>Đơn vị tính</th>
+                                            <th class="text-start">Số lượng</th>
+                                            <th class="text-start">Đơn giá</th>
+                                            <th class="text-start">Thành tiền</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -148,38 +153,154 @@
                                         {
                                             <tr>
                                                 <td>@item.MoTa</td>
-                                                <td class="text-start">@FormatMoney(item.SoTien)</td>
+                                                <td>@item.DonViTinh</td>
+                                                <td class="text-start">@FormatNumber(item.SoLuong)</td>
+                                                <td class="text-start">@FormatMoney(item.DonGia)</td>
+                                                <td class="text-start">@FormatMoney(item.ThanhTien)</td>
                                             </tr>
                                         }
                                     </tbody>
                                     <tfoot>
                                         <tr>
                                             <td><strong>Tạm tính</strong></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
                                             <td class="text-start">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Phí VAT (@FormatVatPercent(Workflow.PhiLuuKho!.Data!.Vat))</strong></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
                                             <td class="text-start">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Cộng phí + VAT</strong></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
                                             <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</strong></td>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
-                            <div class="workflow-meta">
-                                <span><strong>Tổng tiền chưa VAT:</strong> @FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</span>
-                                <span><strong>Tiền VAT:</strong> @FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</span>
-                                <span><strong>Tổng tiền đã bao gồm VAT:</strong> @FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</span>
-                                <span><strong>Đơn vị tiền tệ:</strong> @Workflow.PhiLuuKho!.Data!.DonViTienTe</span>
-                            </div>
+                            @if (Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan == 0)
+                            {
+                                <div class="payment-warning-row">
+                                    <div class="portal-alert portal-alert-warning payment-warning">
+                                        <span class="payment-warning-icon" aria-hidden="true">!</span>
+                                        <span>Vui lòng thanh toán qua QR bằng nút Thanh toán để lấy phiếu giao hàng.</span>
+                                    </div>
+                                    <button class="portal-primary-action payment-warning-action" type="button" @onclick="ShowPaymentPopupAsync">
+                                        Thanh toán
+                                    </button>
+                                </div>
+                            }
                         }
                         else
                         {
                             <p class="workflow-message">@GetPhiLuuKhoMessage(Workflow)</p>
                         }
                     </article>
+
+                    @if (IsOverdueOrder)
+                    {
+                        <article class="workflow-card workflow-card-overdue">
+                            <div class="section-heading">
+                                <h2>2b. Phí lưu kho quá hạn</h2>
+                                <span class="status-chip @(HasPhiLuuKhoQuaHan ? "warning" : "neutral")">@(HasPhiLuuKhoQuaHan ? "Đã lấy dữ liệu" : "Chưa có dữ liệu")</span>
+                            </div>
+
+                            @if (HasPhiLuuKhoQuaHan)
+                            {
+                                <div class="workflow-payment-row">
+                                    <span class="status-chip @GetPaymentStatusClass(Workflow.PhiLuuKhoQuaHan!.Data!.TrangThaiThanhToan)">
+                                        @GetPaymentStatusLabel(Workflow.PhiLuuKhoQuaHan!.Data!.TrangThaiThanhToan)
+                                    </span>
+                                </div>
+
+                                @if (false && Workflow.PhiLuuKhoQuaHan!.Data!.TrangThaiThanhToan == 0)
+                                {
+                                    <div class="payment-warning-row">
+                                        <div class="portal-alert portal-alert-danger payment-warning">
+                                            <span class="payment-warning-icon" aria-hidden="true">!</span>
+                                            <span>Vui lòng thanh toán qua QR bằng nút Thanh toán để lấy phiếu giao hàng.</span>
+                                        </div>
+                                        <button class="portal-primary-action payment-warning-action" type="button" @onclick="ShowPaymentPopupAsync">
+                                            Thanh toán
+                                        </button>
+                                    </div>
+                                }
+
+                                <div class="table-shell compact-table">
+                                    <table class="portal-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Mô tả</th>
+                                                <th>Đơn vị tính</th>
+                                                <th class="text-start">Số lượng</th>
+                                                <th class="text-start">Đơn giá</th>
+                                                <th class="text-start">Thành tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Workflow.PhiLuuKhoQuaHan!.Data!.ChiTietHoaDon)
+                                            {
+                                                <tr>
+                                                    <td>@item.MoTa</td>
+                                                    <td>@item.DonViTinh</td>
+                                                    <td class="text-start">@FormatNumber(item.SoLuong)</td>
+                                                    <td class="text-start">@FormatMoney(item.DonGia)</td>
+                                                    <td class="text-start">@FormatMoney(item.ThanhTien)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td><strong>Tạm tính</strong></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td class="text-start">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKhoQuaHan!))</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Phí VAT (@FormatVatPercent(Workflow.PhiLuuKhoQuaHan!.Data!.Vat))</strong></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td class="text-start">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKhoQuaHan!))</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Cộng phí + VAT</strong></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKhoQuaHan!))</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                @if (Workflow.PhiLuuKhoQuaHan!.Data!.TrangThaiThanhToan == 0)
+                                {
+                                    <div class="payment-warning-row">
+                                        <div class="portal-alert portal-alert-warning payment-warning">
+                                            <span class="payment-warning-icon" aria-hidden="true">!</span>
+                                            <span>Vui lòng thanh toán qua QR bằng nút Thanh toán để lấy phiếu giao hàng.</span>
+                                        </div>
+                                        <button class="portal-primary-action payment-warning-action" type="button" @onclick="ShowPaymentPopupAsync">
+                                            Thanh toán
+                                        </button>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="workflow-message">@GetPhiLuuKhoQuaHanMessage(Workflow)</p>
+                            }
+                        </article>
+                    }
 
                     <article class="workflow-card workflow-card-wide">
                         <div class="section-heading">
@@ -189,6 +310,15 @@
 
                         @if (HasChiTietHouseBill)
                         {
+                            <div class="workflow-payment-row" style="margin-bottom:12px;">
+                                <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow.ChiTietHouseBill!.Data!.IsHoanThanh)">
+                                    @GetChiTietHouseBillStatusLabel(Workflow.ChiTietHouseBill!.Data!.IsHoanThanh)
+                                </span>
+                                <span class="workflow-message" style="margin:0;">
+                                    Trạng thái lấy trực tiếp từ API <strong>/ChiTietHouseBill</strong>.
+                                </span>
+                            </div>
+
                             <div class="field-grid compact-fields">
                                 <div>
                                     <label class="portal-label">Thủ kho</label>
@@ -257,6 +387,72 @@
     }
 </section>
 
+@if (IsPaymentPopupOpen)
+{
+    <div class="payment-modal-backdrop" @onclick="ClosePaymentPopupAsync">
+        <div class="payment-modal" @onclick:stopPropagation="true">
+            <div class="payment-modal-header">
+                <div>
+                    <p class="page-kicker">Thanh toán</p>
+                    <h3>Quét mã QR để thanh toán</h3>
+                </div>
+                <button type="button" class="payment-modal-close" @onclick="ClosePaymentPopupAsync">×</button>
+            </div>
+
+            <div class="payment-modal-body">
+                @if (IsLoadingPaymentInfo)
+                {
+                    <div class="portal-empty-inline">Đang lấy thông tin thanh toán...</div>
+                }
+                else if (!string.IsNullOrWhiteSpace(PaymentPopupMessage))
+                {
+                    <div class="portal-alert portal-alert-error">@PaymentPopupMessage</div>
+                }
+                else if (PaymentInfo?.Data is not null)
+                {
+                    <div class="payment-modal-grid">
+                        <div class="payment-qr-card">
+                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.Data.QrCodeBase64)" alt="QR thanh toán" />
+                            <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này.</p>
+                        </div>
+
+                        <div class="payment-details">
+                            <div class="payment-detail-row">
+                                <span>Số tiền</span>
+                                <strong>@FormatMoney(PaymentInfo.Data.SoTien)</strong>
+                            </div>
+                            <div class="payment-detail-row">
+                                <span>Số tài khoản</span>
+                                <strong>@PaymentInfo.Data.SoTaiKhoan</strong>
+                            </div>
+                            <div class="payment-detail-row">
+                                <span>Tên tài khoản</span>
+                                <strong>@PaymentInfo.Data.TenTaiKhoan</strong>
+                            </div>
+                            <div class="payment-detail-row">
+                                <span>Ngân hàng</span>
+                                <strong>@PaymentInfo.Data.TenNganHang</strong>
+                            </div>
+                            <div class="payment-detail-row">
+                                <span>Mã thanh toán</span>
+                                <strong>@PaymentInfo.Data.IdPayment</strong>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="portal-alert portal-alert-error">Không có dữ liệu thanh toán.</div>
+                }
+            </div>
+
+            <div class="payment-modal-footer">
+                <button type="button" class="portal-secondary-action" @onclick="ClosePaymentPopupAsync">Đóng</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public long OrderId { get; set; }
@@ -267,6 +463,11 @@
     private bool IsLoadingWorkflow;
     private string? WorkflowMessage;
     private string? ErrorMessage;
+    private bool IsPaymentPopupOpen;
+    private bool IsLoadingPaymentInfo;
+    private ThongTinThanhToanResponse? PaymentInfo;
+    private string? PaymentPopupMessage;
+    private int WorkflowRunSequence;
 
     protected override async Task OnInitializedAsync()
     {
@@ -287,7 +488,7 @@
             return;
         }
 
-        await RunWorkflowAsync();
+        await RunWorkflowAsync("auto-init");
     }
 
     private void Query()
@@ -302,20 +503,29 @@
         NavigationManager.NavigateTo($"/user/import-check?houseBill={houseBill}&containerNumber={containerNumber}");
     }
 
-    private async Task RunWorkflowAsync()
+    private async Task RunWorkflowAsync(string source)
     {
         if (Order is null || IsLoadingWorkflow)
         {
             return;
         }
 
+        WorkflowRunSequence++;
+        var traceTag = $"{source}-{WorkflowRunSequence}";
         IsLoadingWorkflow = true;
         WorkflowMessage = null;
         Workflow = null;
 
         try
         {
-            Workflow = await OnlineOrderService.RunOrderWorkflowAsync(Order.HouseBill, Order.ContainerNumber);
+            Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync start. OrderId={OrderId}");
+            Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
+                OrderId,
+                Order.HouseBill,
+                Order.ContainerNumber,
+                Order.PickupDate,
+                Order.InvoiceDownloadUrl,
+                traceTag);
 
             if (Workflow.ThongQuan is null)
             {
@@ -335,9 +545,11 @@
         catch (Exception ex)
         {
             WorkflowMessage = ex.Message;
+            Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync error: {ex.Message}");
         }
         finally
         {
+            Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync end.");
             IsLoadingWorkflow = false;
         }
     }
@@ -390,6 +602,12 @@
             _ => "Không xác định"
         };
 
+    private static string GetChiTietHouseBillStatusClass(bool isHoanThanh)
+        => isHoanThanh ? "success" : "warning";
+
+    private static string GetChiTietHouseBillStatusLabel(bool isHoanThanh)
+        => isHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành";
+
     private static string GetPhiLuuKhoMessage(OnlineOrderWorkflowResult? workflow)
     {
         if (workflow?.ThongQuan is null)
@@ -435,12 +653,59 @@
            && Workflow?.ChiTietHouseBill?.Success == true
            && Workflow.ChiTietHouseBill.Data is not null;
 
+    private bool IsOverdueOrder
+        => Workflow?.ChiTietHouseBill?.Data is not null
+           && Workflow.ChiTietHouseBill.Data.IsHoanThanh == true
+           && Order?.PickupDate.HasValue == true
+           && Order.PickupDate.Value.Date < DateTime.Today
+           && Workflow?.ThongQuan?.IsThongQuan == true;
+
+    private bool HasPhiLuuKhoQuaHan
+        => Workflow?.PhiLuuKhoQuaHan?.Success == true
+           && Workflow.PhiLuuKhoQuaHan.Data is not null
+           && Workflow.PhiLuuKhoQuaHan.Data.ChiTietHoaDon.Count > 0;
+
     private bool HasInvoiceDownload
         => !string.IsNullOrWhiteSpace(Order?.InvoiceDownloadUrl);
 
-    private Task ShowPaymentMessageAsync()
+    private async Task ShowPaymentPopupAsync()
     {
-        WorkflowMessage = "Chức năng thanh toán sẽ được nối vào cổng thanh toán sau.";
+        if (Order is null)
+        {
+            return;
+        }
+
+        IsPaymentPopupOpen = true;
+        IsLoadingPaymentInfo = true;
+        PaymentPopupMessage = null;
+        PaymentInfo = null;
+
+        try
+        {
+            PaymentInfo = await OnlineOrderService.GetThongTinThanhToanAsync(Order.HouseBill, Order.ContainerNumber);
+
+            if (PaymentInfo is null || !PaymentInfo.Success || PaymentInfo.Data is null)
+            {
+                PaymentPopupMessage = string.IsNullOrWhiteSpace(PaymentInfo?.Message)
+                    ? "Không lấy được thông tin thanh toán."
+                    : PaymentInfo.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            PaymentPopupMessage = ex.Message;
+        }
+        finally
+        {
+            IsLoadingPaymentInfo = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task ClosePaymentPopupAsync()
+    {
+        IsPaymentPopupOpen = false;
+        IsLoadingPaymentInfo = false;
         return Task.CompletedTask;
     }
 
@@ -452,7 +717,7 @@
             return 0m;
         }
 
-        return data.ChiTietHoaDon.Sum(item => item.SoTien);
+        return data.ChiTietHoaDon.Sum(item => item.ThanhTien);
     }
 
     private static decimal GetPhiSubtotal(PhiLuuKhoResponse response)
@@ -480,9 +745,95 @@
         return GetPhiSubtotal(response) + GetPhiVatAmount(response);
     }
 
+    private static decimal GetPhiTotal(PhiLuuKhoQuaHanResponse response)
+    {
+        var data = response.Data;
+        if (data is null)
+        {
+            return 0m;
+        }
+
+        return data.ChiTietHoaDon.Sum(item => item.ThanhTien);
+    }
+
+    private static decimal GetPhiSubtotal(PhiLuuKhoQuaHanResponse response)
+        => GetPhiTotal(response);
+
+    private static decimal GetPhiVatAmount(PhiLuuKhoQuaHanResponse response)
+    {
+        var data = response.Data;
+        if (data is null)
+        {
+            return 0m;
+        }
+
+        return GetPhiSubtotal(response) * data.Vat / 100m;
+    }
+
+    private static decimal GetPhiGrandTotal(PhiLuuKhoQuaHanResponse response)
+    {
+        var data = response.Data;
+        if (data is null)
+        {
+            return 0m;
+        }
+
+        return GetPhiSubtotal(response) + GetPhiVatAmount(response);
+    }
+
+    private static string GetPhiLuuKhoQuaHanMessage(OnlineOrderWorkflowResult? workflow)
+    {
+        if (workflow?.ThongQuan is null)
+        {
+            return "Chưa kiểm tra thông quan nên chưa gọi API phí lưu kho quá hạn.";
+        }
+
+        if (!workflow.ThongQuan.Success)
+        {
+            return string.IsNullOrWhiteSpace(workflow.ThongQuan.Message)
+                ? "Không thể kiểm tra thông quan nên chưa lấy được phí lưu kho quá hạn."
+                : workflow.ThongQuan.Message;
+        }
+
+        if (!workflow.ThongQuan.IsThongQuan)
+        {
+            return "Lệnh chưa thông quan nên hệ thống chưa gọi API phí lưu kho quá hạn.";
+        }
+
+        if (workflow.PhiLuuKhoQuaHan is null)
+        {
+            return "Lệnh đã quá hạn nhưng chưa nhận được dữ liệu phí lưu kho quá hạn.";
+        }
+
+        if (!workflow.PhiLuuKhoQuaHan.Success)
+        {
+            return string.IsNullOrWhiteSpace(workflow.PhiLuuKhoQuaHan.Message)
+                ? "Không lấy được dữ liệu phí lưu kho quá hạn."
+                : workflow.PhiLuuKhoQuaHan.Message;
+        }
+
+        return "Chưa có dữ liệu phí lưu kho quá hạn.";
+    }
+
     private static string FormatVatPercent(decimal vat)
         => vat.ToString("0.##", CultureInfo.GetCultureInfo("vi-VN")) + "%";
 
     private static string FormatMoney(decimal amount)
         => string.Format(CultureInfo.GetCultureInfo("vi-VN"), "{0:N0} VND", amount);
+
+    private static string FormatNumber(decimal value)
+        => value.ToString("0.###", CultureInfo.GetCultureInfo("vi-VN"));
+
+    private static string GetQrCodeDataUrl(string base64)
+    {
+        var value = base64?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return value.StartsWith("data:image", StringComparison.OrdinalIgnoreCase)
+            ? value
+            : $"data:image/png;base64,{value}";
+    }
 }

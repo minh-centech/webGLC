@@ -1,4 +1,5 @@
-﻿@page "/admin/users"
+@page "/admin/users"
+@rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 
@@ -39,13 +40,20 @@
             <div class="toolbar-search">
                 <div class="input-action-row">
                     <div class="input-action-field">
-                        <input class="portal-input" @bind="SearchDraft" placeholder="Tìm theo tên, email hoặc số điện thoại" />
+                        <input class="portal-input"
+                               @bind="SearchDraft"
+                               @bind:event="oninput"
+                               @onkeydown="HandleSearchKeyDown"
+                               placeholder="Tìm theo tên, email hoặc số điện thoại" />
                     </div>
-                    <button class="portal-primary-action" @onclick="ApplyFilters">Tìm kiếm</button>
+                    <button type="button" class="portal-primary-action" @onclick="SearchAsync">Tìm kiếm</button>
+                    <button type="button" class="portal-secondary-action" @onclick="ClearFiltersAsync">Xóa bộ lọc</button>
                 </div>
             </div>
             <label class="toolbar-toggle">
-                <input type="checkbox" @bind="ShowPendingActivationOnly" @bind:after="ApplyFilters" />
+                <input type="checkbox"
+                       checked="@ShowPendingActivationOnly"
+                       @onchange="HandlePendingActivationOnlyChanged" />
                 <span>Chỉ hiện tài khoản chưa kích hoạt</span>
             </label>
         </div>
@@ -80,7 +88,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var account in FilteredAccounts)
+                        @foreach (var account in PagedAccounts)
                         {
                             <tr>
                                 <td>
@@ -114,6 +122,24 @@
                 </table>
             </div>
         }
+
+        <footer class="workspace-footer">
+            <div class="footer-summary">
+                <span>Kết quả lọc: <strong>@FilteredAccounts.Count</strong> tài khoản</span>
+                <span>Trang <strong>@CurrentPage</strong> / @TotalPages</span>
+            </div>
+            <div class="footer-pagination">
+                <label class="portal-label pager-label">Hiển thị</label>
+                <select class="portal-input pager-size-select" @bind="PageSize" @bind:after="HandlePageSizeChangedAsync">
+                    <option value="10">10 dòng</option>
+                    <option value="20">20 dòng</option>
+                    <option value="50">50 dòng</option>
+                </select>
+                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
+                <span>Hiển thị <strong>@PagedAccounts.Count</strong> / @FilteredAccounts.Count</span>
+                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
+            </div>
+        </footer>
     </section>
 </section>
 
@@ -125,6 +151,8 @@
     private string SearchTerm = string.Empty;
     private string? FeedbackMessage;
     private bool FeedbackIsError;
+    private int CurrentPage = 1;
+    private int PageSize = 10;
 
     private List<AccountListItem> FilteredAccounts =>
         Accounts
@@ -133,10 +161,21 @@
                 (string.IsNullOrWhiteSpace(SearchTerm) ||
                  account.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                 account.Phone.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
+                 account.Phone.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 account.Id.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
             .OrderBy(account => account.IsActive)
             .ThenBy(account => account.Name)
             .ToList();
+
+    private List<AccountListItem> PagedAccounts =>
+        FilteredAccounts
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredAccounts.Count / (double)PageSize));
+    private bool IsFirstPage => CurrentPage <= 1;
+    private bool IsLastPage => CurrentPage >= TotalPages;
 
     protected override async Task OnInitializedAsync()
     {
@@ -146,6 +185,38 @@
     private void ApplyFilters()
     {
         SearchTerm = SearchDraft.Trim();
+        CurrentPage = 1;
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (!IsFirstPage)
+        {
+            CurrentPage--;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (!IsLastPage)
+        {
+            CurrentPage++;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandlePendingActivationOnlyChanged(ChangeEventArgs e)
+    {
+        ShowPendingActivationOnly = e.Value is bool isChecked && isChecked;
+        CurrentPage = 1;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandlePageSizeChangedAsync()
+    {
+        CurrentPage = 1;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadAccountsAsync()
@@ -181,6 +252,32 @@
         finally
         {
             IsBusy = false;
+            CurrentPage = 1;
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        SearchTerm = SearchDraft.Trim();
+        CurrentPage = 1;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        SearchDraft = string.Empty;
+        SearchTerm = string.Empty;
+        ShowPendingActivationOnly = false;
+        CurrentPage = 1;
+        PageSize = 10;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchAsync();
         }
     }
 

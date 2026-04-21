@@ -25,7 +25,7 @@
         <div class="portal-alert portal-alert-success">@InfoMessage</div>
     }
 
-    <EditForm Model="Draft" OnValidSubmit="HandleSubmitAsync" FormName="new-online-order-form">
+    <EditForm Model="@Draft" OnValidSubmit="HandleSubmitAsync" FormName="new-online-order-form">
         <DataAnnotationsValidator />
         <ValidationSummary />
 

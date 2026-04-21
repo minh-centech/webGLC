@@ -544,11 +544,43 @@ namespace webAPI.Controllers
                     throw new Exception("So dien thoai khong duoc bo trong.");
                 }
 
-                const string sql = @"
+                string normalizedEmail = string.IsNullOrWhiteSpace(request.Email) ? string.Empty : request.Email.Trim();
+
+                using (SqlConnection sqlConnection = new SqlConnection(GlobalVariables.ConnectionString))
+                {
+                    sqlConnection.Open();
+
+                    if (!string.IsNullOrWhiteSpace(normalizedEmail))
+                    {
+                        const string emailCheckSql = @"
+                            select count(1)
+                            from DanhMucKhachHangDoiLenh
+                            where Email = @Email
+                                and ID <> @ID
+                                and IDDanhMucDonVi = @IDDanhMucDonVi
+                                and IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong";
+
+                        using (SqlCommand checkCommand = new SqlCommand(emailCheckSql, sqlConnection))
+                        {
+                            checkCommand.Parameters.AddWithValue("@Email", normalizedEmail);
+                            checkCommand.Parameters.AddWithValue("@ID", customerId);
+                            checkCommand.Parameters.AddWithValue("@IDDanhMucDonVi", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucDonVi));
+                            checkCommand.Parameters.AddWithValue("@IDDanhMucLoaiDoiTuong", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucKhachHangDoiLenh));
+
+                            int emailCount = Convert.ToInt32(checkCommand.ExecuteScalar() ?? 0);
+                            if (emailCount > 0)
+                            {
+                                throw new Exception("Email đã được sử dụng bởi tài khoản khác.");
+                            }
+                        }
+                    }
+
+                    const string sql = @"
                     update DanhMucKhachHangDoiLenh
                     set
                         Ten = @Ten,
                         SoDienThoai = @SoDienThoai,
+                        Email = COALESCE(@Email, Email),
                         EmailXuatHoaDon = @EmailXuatHoaDon,
                         IDDanhMucNguoiSuDungEdit = @IDDanhMucNguoiSuDungEdit,
                         EditDate = @EditDate
@@ -556,14 +588,12 @@ namespace webAPI.Controllers
                         and IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong
                         and ID = @ID";
 
-                int affectedRows;
-                using (SqlConnection sqlConnection = new SqlConnection(GlobalVariables.ConnectionString))
-                {
-                    sqlConnection.Open();
+                    int affectedRows;
                     using (SqlCommand command = new SqlCommand(sql, sqlConnection))
                     {
                         command.Parameters.AddWithValue("@Ten", request.Ten.Trim());
                         command.Parameters.AddWithValue("@SoDienThoai", request.SoDienThoai.Trim());
+                        command.Parameters.AddWithValue("@Email", (object)normalizedEmail ?? DBNull.Value);
                         command.Parameters.AddWithValue("@EmailXuatHoaDon", (object)(string.IsNullOrWhiteSpace(request.EmailXuatHoaDon) ? null : request.EmailXuatHoaDon.Trim()) ?? DBNull.Value);
                         command.Parameters.AddWithValue("@IDDanhMucNguoiSuDungEdit", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucNguoiSuDungGuest));
                         command.Parameters.AddWithValue("@EditDate", DateTime.Now);
@@ -573,11 +603,11 @@ namespace webAPI.Controllers
 
                         affectedRows = command.ExecuteNonQuery();
                     }
-                }
 
-                if (affectedRows <= 0)
-                {
-                    throw new Exception("Tai khoan khong ton tai hoac da bi xoa.");
+                    if (affectedRows <= 0)
+                    {
+                        throw new Exception("Tai khoan khong ton tai hoac da bi xoa.");
+                    }
                 }
 
                 response.Status = 0;

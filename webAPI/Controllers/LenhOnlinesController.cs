@@ -60,6 +60,7 @@ namespace webAPI.Controllers
                         IDDanhMucKhachHangDoiLenh = coreCommon.coreCommon.longParse(dataRow["IDDanhMucKhachHangDoiLenh"]),
                         ChiTietId = dataRow["ChiTietId"] == DBNull.Value ? null : dataRow["ChiTietId"],
                         TrangThaiThanhToan = dataRow["TrangThaiThanhToan"] == DBNull.Value ? null : dataRow["TrangThaiThanhToan"],
+                        IsHoanThanh = dataRow["IsHoanThanh"] == DBNull.Value ? null : dataRow["IsHoanThanh"],
                         LinkTaiHoaDon = dataRow["LinkTaiHoaDon"] == DBNull.Value ? null : dataRow["LinkTaiHoaDon"],
                         DuongDanFileHoaDon = dataRow["DuongDanFileHoaDon"] == DBNull.Value ? null : dataRow["DuongDanFileHoaDon"],
                         CreateDate = dataRow["CreateDate"] == DBNull.Value ? null : dataRow["CreateDate"],
@@ -141,6 +142,42 @@ namespace webAPI.Controllers
                 else
                 {
                     throw new Exception("Khong the cap nhat du lieu.");
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Status = 1;
+                response.Data = string.Empty;
+                response.ErrorMsg = ex.Message;
+            }
+
+            return response;
+        }
+
+        [HttpPost]
+        public webAPIresponse UpsertChiTiet(LenhOnlineChiTietUpsertRequest model)
+        {
+            webAPIresponse response = new webAPIresponse();
+
+            try
+            {
+                if (model == null || model.IDLenhOnline <= 0)
+                {
+                    throw new Exception("IDLenhOnline khong hop le.");
+                }
+
+                if (LenhOnlineChiTietBUS.Upsert(GlobalVariables.ConnectionString, model))
+                {
+                    response.Status = 0;
+                    response.Data = JsonConvert.SerializeObject(new
+                    {
+                        IDLenhOnline = model.IDLenhOnline
+                    });
+                    response.ErrorMsg = string.Empty;
+                }
+                else
+                {
+                    throw new Exception("Khong the cap nhat du lieu chi tiet lenh online.");
                 }
             }
             catch (Exception ex)

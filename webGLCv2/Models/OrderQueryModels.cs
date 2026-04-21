@@ -16,6 +16,13 @@ public sealed class PhiLuuKhoResponse
     public string Message { get; set; } = string.Empty;
 }
 
+public sealed class PhiLuuKhoQuaHanResponse
+{
+    public bool Success { get; set; }
+    public PhiLuuKhoData? Data { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
 public sealed class PhiLuuKhoData
 {
     [JsonPropertyName("chi_tiet_hoa_don")]
@@ -36,8 +43,19 @@ public sealed class PhiLuuKhoItem
     [JsonPropertyName("mo_ta")]
     public string MoTa { get; set; } = string.Empty;
 
-    [JsonPropertyName("so_tien")]
-    public decimal SoTien { get; set; }
+    [JsonPropertyName("donvi_tinh")]
+    public string DonViTinh { get; set; } = string.Empty;
+
+    [JsonPropertyName("soluong")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoLuong { get; set; }
+
+    [JsonPropertyName("dongia")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal DonGia { get; set; }
+
+    [JsonIgnore]
+    public decimal ThanhTien => SoLuong * DonGia;
 }
 
 public sealed class ChiTietHouseBillResponse
@@ -45,6 +63,35 @@ public sealed class ChiTietHouseBillResponse
     public bool Success { get; set; }
     public ChiTietHouseBillData? Data { get; set; }
     public string Message { get; set; } = string.Empty;
+}
+
+public sealed class ThongTinThanhToanResponse
+{
+    public bool Success { get; set; }
+    public ThongTinThanhToanData? Data { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
+public sealed class ThongTinThanhToanData
+{
+    [JsonPropertyName("id_payment")]
+    public string IdPayment { get; set; } = string.Empty;
+
+    [JsonPropertyName("so_tien")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoTien { get; set; }
+
+    [JsonPropertyName("so_taikhoan")]
+    public string SoTaiKhoan { get; set; } = string.Empty;
+
+    [JsonPropertyName("ten_taikhoan")]
+    public string TenTaiKhoan { get; set; } = string.Empty;
+
+    [JsonPropertyName("ten_nganhang")]
+    public string TenNganHang { get; set; } = string.Empty;
+
+    [JsonPropertyName("qrcode_base64")]
+    public string QrCodeBase64 { get; set; } = string.Empty;
 }
 
 public sealed class ChiTietHouseBillData
@@ -81,11 +128,15 @@ public sealed class ChiTietHouseBillData
 
     [JsonPropertyName("ngay_tau_cap")]
     public string NgayTauCap { get; set; } = string.Empty;
+
+    [JsonPropertyName("is_hoanthanh")]
+    public bool IsHoanThanh { get; set; }
 }
 
 public sealed class OnlineOrderWorkflowResult
 {
     public ThongQuanCheckResponse? ThongQuan { get; set; }
     public PhiLuuKhoResponse? PhiLuuKho { get; set; }
+    public PhiLuuKhoQuaHanResponse? PhiLuuKhoQuaHan { get; set; }
     public ChiTietHouseBillResponse? ChiTietHouseBill { get; set; }
 }

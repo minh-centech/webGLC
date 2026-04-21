@@ -374,13 +374,14 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể gửi đăng ký tài khoản.");
     }
 
-    public async Task UpdatePersonalProfileAsync(string accountId, string fullName, string phoneNumber, string? billingEmail)
+    public async Task UpdatePersonalProfileAsync(string accountId, string fullName, string phoneNumber, string? billingEmail, string? email = null)
     {
         var payload = new
         {
             ID = accountId,
             Ten = fullName,
             SoDienThoai = phoneNumber,
+            Email = NullIfEmpty(email ?? string.Empty),
             EmailXuatHoaDon = NullIfEmpty(billingEmail ?? string.Empty)
         };
 

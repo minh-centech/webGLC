@@ -23,6 +23,7 @@ namespace cenDTO
         public object IDDanhMucKhachHangDoiLenh { get; set; }
         public object ChiTietId { get; set; }
         public object TrangThaiThanhToan { get; set; }
+        public object IsHoanThanh { get; set; }
         public object LinkTaiHoaDon { get; set; }
         public object DuongDanFileHoaDon { get; set; }
 

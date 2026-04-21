@@ -24,15 +24,15 @@
     {
         <div class="portal-alert portal-alert-error">@ErrorMessage</div>
     }
-    else if (Order is null)
+    else if (IsPageLoading)
     {
-        <div class="portal-empty-inline">Đang tải dữ liệu...</div>
+        <div class="portal-empty-inline">Đang mở trang chi tiết, vui lòng chờ giây lát...</div>
     }
     else
     {
         <section class="workspace-card">
             <div class="section-heading">
-                <h2>@Order.OrderCode</h2>
+                <h2>@Order!.OrderCode</h2>
                 <p>Trang thai hien tai: <span class="status-chip @GetStatusClass(Order.StatusCode)">@Order.Status</span></p>
             </div>
 
@@ -468,27 +468,55 @@
     private ThongTinThanhToanResponse? PaymentInfo;
     private string? PaymentPopupMessage;
     private int WorkflowRunSequence;
+    private bool IsPageLoading = true;
+    private bool _pageLoadStarted;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
-
-        if (CurrentUserId <= 0)
+        if (!firstRender || _pageLoadStarted)
         {
-            ErrorMessage = "Khong xac dinh duoc tai khoan dang nhap.";
             return;
         }
 
-        Order = await OnlineOrderService.GetOrderByIdAsync(CurrentUserId, OrderId);
+        _pageLoadStarted = true;
+        await LoadPageAsync();
+    }
 
-        if (Order is null)
+    private async Task LoadPageAsync()
+    {
+        IsPageLoading = true;
+
+        try
         {
-            ErrorMessage = "Khong tim thay lenh online.";
-            return;
-        }
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
 
-        await RunWorkflowAsync("auto-init");
+            if (CurrentUserId <= 0)
+            {
+                ErrorMessage = "Khong xac dinh duoc tai khoan dang nhap.";
+                return;
+            }
+
+            Order = await OnlineOrderService.GetOrderByIdAsync(CurrentUserId, OrderId);
+
+            if (Order is null)
+            {
+                ErrorMessage = "Khong tim thay lenh online.";
+                return;
+            }
+
+            await InvokeAsync(StateHasChanged);
+            _ = InvokeAsync(() => RunWorkflowAsync("auto-init"));
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsPageLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void Query()
@@ -515,6 +543,7 @@
         IsLoadingWorkflow = true;
         WorkflowMessage = null;
         Workflow = null;
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -551,6 +580,7 @@
         {
             Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync end.");
             IsLoadingWorkflow = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

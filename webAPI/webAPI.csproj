@@ -139,6 +139,7 @@
     <Compile Include="Code\Commons.cs" />
     <Compile Include="Code\DocumentStorageHelper.cs" />
     <Compile Include="Controllers\DanhMucKhachHangDoiLenhController.cs" />
+    <Compile Include="Controllers\HealthCheckController.cs" />
     <Compile Include="Controllers\StatusController.cs" />
     <Compile Include="Controllers\LenhOnlinesController.cs" />
     <Compile Include="Controllers\TaiLieuController.cs" />

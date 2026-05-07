@@ -40,6 +40,12 @@ public sealed class PhiLuuKhoData
 
 public sealed class PhiLuuKhoItem
 {
+    [JsonPropertyName("id_danh_muc_cuoc")]
+    public long IDDanhMucCuoc { get; set; }
+
+    [JsonPropertyName("ma_danh_muc_cuoc")]
+    public string MaDanhMucCuoc { get; set; } = string.Empty;
+
     [JsonPropertyName("mo_ta")]
     public string MoTa { get; set; } = string.Empty;
 
@@ -55,7 +61,61 @@ public sealed class PhiLuuKhoItem
     public decimal DonGia { get; set; }
 
     [JsonIgnore]
-    public decimal ThanhTien => SoLuong * DonGia;
+    public decimal TienHang { get; set; }
+
+    [JsonIgnore]
+    public decimal TienHangThucTe => TienHang > 0m ? TienHang : SoLuong * DonGia;
+
+    [JsonIgnore]
+    public decimal TienThue { get; set; }
+
+    [JsonIgnore]
+    public decimal ThueSuat { get; set; }
+
+    [JsonIgnore]
+    public decimal TongTien => TienHangThucTe + TienThue;
+
+    [JsonIgnore]
+    public decimal ThanhTien => TienHangThucTe;
+}
+
+public sealed class PhiLuuKhoApiItem
+{
+    [JsonPropertyName("IDDanhMucCuoc")]
+    public long IDDanhMucCuoc { get; set; }
+
+    [JsonPropertyName("MaDanhMucCuoc")]
+    public string MaDanhMucCuoc { get; set; } = string.Empty;
+
+    [JsonPropertyName("DienGiai")]
+    public string DienGiai { get; set; } = string.Empty;
+
+    [JsonPropertyName("DonViTinh")]
+    public string DonViTinh { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoLuong")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoLuong { get; set; }
+
+    [JsonPropertyName("DonGia")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal DonGia { get; set; }
+
+    [JsonPropertyName("TienHang")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal TienHang { get; set; }
+
+    [JsonPropertyName("ThueSuat")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal ThueSuat { get; set; }
+
+    [JsonPropertyName("TienThue")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal TienThue { get; set; }
+
+    [JsonPropertyName("TongTien")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal TongTien { get; set; }
 }
 
 public sealed class ChiTietHouseBillResponse

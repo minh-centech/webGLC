@@ -141,11 +141,13 @@
                                 <table class="portal-table">
                                     <thead>
                                         <tr>
-                                            <th>Mô tả</th>
+                                            <th>Diễn giải</th>
                                             <th>Đơn vị tính</th>
-                                            <th class="text-start">Số lượng</th>
                                             <th class="text-start">Đơn giá</th>
-                                            <th class="text-start">Thành tiền</th>
+                                            <th class="text-start">Tiền hàng</th>
+                                            <th class="text-start">Thuế suất</th>
+                                            <th class="text-start">Tiền thuế</th>
+                                            <th class="text-start">Tổng tiền</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -154,32 +156,20 @@
                                             <tr>
                                                 <td>@item.MoTa</td>
                                                 <td>@item.DonViTinh</td>
-                                                <td class="text-start">@FormatNumber(item.SoLuong)</td>
                                                 <td class="text-start">@FormatMoney(item.DonGia)</td>
-                                                <td class="text-start">@FormatMoney(item.ThanhTien)</td>
+                                                <td class="text-start">@FormatMoney(item.TienHangThucTe)</td>
+                                                <td class="text-start">@FormatVatPercent(item.ThueSuat)</td>
+                                                <td class="text-start">@FormatMoney(item.TienThue)</td>
+                                                <td class="text-start">@FormatMoney(item.TongTien)</td>
                                             </tr>
                                         }
                                     </tbody>
                                     <tfoot>
-                                        <tr>
-                                            <td><strong>Tạm tính</strong></td>
+                                        <tr class="text-success fw-semibold">
+                                            <td colspan="3"><strong>Tổng cộng</strong></td>
+                                            <td class="text-start"><strong>@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</strong></td>
                                             <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td class="text-start">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Phí VAT (@FormatVatPercent(Workflow.PhiLuuKho!.Data!.Vat))</strong></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td class="text-start">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Cộng phí + VAT</strong></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
+                                            <td class="text-start"><strong>@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</strong></td>
                                             <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</strong></td>
                                         </tr>
                                     </tfoot>
@@ -554,6 +544,7 @@
                 Order.ContainerNumber,
                 Order.PickupDate,
                 Order.InvoiceDownloadUrl,
+                Order.PickupDate?.ToString("yyyy/MM/dd"),
                 traceTag);
 
             if (Workflow.ThongQuan is null)
@@ -747,7 +738,7 @@
             return 0m;
         }
 
-        return data.ChiTietHoaDon.Sum(item => item.ThanhTien);
+        return data.ChiTietHoaDon.Sum(item => item.TienHangThucTe);
     }
 
     private static decimal GetPhiSubtotal(PhiLuuKhoResponse response)
@@ -761,7 +752,10 @@
             return 0m;
         }
 
-        return GetPhiSubtotal(response) * data.Vat / 100m;
+        var explicitVat = data.ChiTietHoaDon.Sum(item => item.TienThue);
+        return explicitVat > 0m
+            ? explicitVat
+            : GetPhiSubtotal(response) * data.Vat / 100m;
     }
 
     private static decimal GetPhiGrandTotal(PhiLuuKhoResponse response)
@@ -772,7 +766,10 @@
             return 0m;
         }
 
-        return GetPhiSubtotal(response) + GetPhiVatAmount(response);
+        var explicitGrandTotal = data.ChiTietHoaDon.Sum(item => item.TongTien);
+        return explicitGrandTotal > GetPhiSubtotal(response)
+            ? explicitGrandTotal
+            : GetPhiSubtotal(response) + GetPhiVatAmount(response);
     }
 
     private static decimal GetPhiTotal(PhiLuuKhoQuaHanResponse response)
@@ -783,7 +780,7 @@
             return 0m;
         }
 
-        return data.ChiTietHoaDon.Sum(item => item.ThanhTien);
+        return data.ChiTietHoaDon.Sum(item => item.TienHangThucTe);
     }
 
     private static decimal GetPhiSubtotal(PhiLuuKhoQuaHanResponse response)
@@ -797,7 +794,10 @@
             return 0m;
         }
 
-        return GetPhiSubtotal(response) * data.Vat / 100m;
+        var explicitVat = data.ChiTietHoaDon.Sum(item => item.TienThue);
+        return explicitVat > 0m
+            ? explicitVat
+            : GetPhiSubtotal(response) * data.Vat / 100m;
     }
 
     private static decimal GetPhiGrandTotal(PhiLuuKhoQuaHanResponse response)
@@ -808,7 +808,10 @@
             return 0m;
         }
 
-        return GetPhiSubtotal(response) + GetPhiVatAmount(response);
+        var explicitGrandTotal = data.ChiTietHoaDon.Sum(item => item.TongTien);
+        return explicitGrandTotal > GetPhiSubtotal(response)
+            ? explicitGrandTotal
+            : GetPhiSubtotal(response) + GetPhiVatAmount(response);
     }
 
     private static string GetPhiLuuKhoQuaHanMessage(OnlineOrderWorkflowResult? workflow)

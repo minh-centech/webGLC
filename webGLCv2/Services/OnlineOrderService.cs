@@ -13,11 +13,11 @@ public sealed class OnlineOrderService
         PropertyNameCaseInsensitive = true
     };
 
-    private const string ThongQuanApiPath = "m1/1263694-1261439-default/TrangThaiThongQuan";
-    private const string PhiLuuKhoApiPath = "m1/1263694-1261439-default/PhiLuuKho";
-    private const string PhiLuuKhoQuaHanApiPath = "m1/1263694-1261439-default/PhiLuuKhoQuaHan";
-    private const string ChiTietHouseBillApiPath = "m1/1263694-1261439-default/ChiTietHouseBill";
-    private const string ThongTinThanhToanApiPath = "m1/1263694-1261439-default/ThongTinThanhToan";
+    private const string ThongQuanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/TrangThaiThongQuan";
+    private const string PhiLuuKhoApiPath = "http://192.168.1.66:59/api/TinhCuoc/TinhCuoc";
+    private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
+    private const string ChiTietHouseBillApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ChiTietHouseBill";
+    private const string ThongTinThanhToanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ThongTinThanhToan";
 
     private readonly HttpClient _httpClient;
     private readonly OnlineOrderWorkflowOptions _workflowOptions;
@@ -227,25 +227,93 @@ public sealed class OnlineOrderService
             };
     }
 
-    public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string soCont)
+    public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string soCont, string? ngayLayHang)
     {
+        if (string.IsNullOrWhiteSpace(ngayLayHang))
+        {
+            return new PhiLuuKhoResponse
+            {
+                Success = false,
+                Message = "Lỗi ngày lấy hàng không được để trống."
+            };
+        }
+
         var response = await _httpClient.PostAsJsonAsync(
             BuildWorkflowUrl(PhiLuuKhoApiPath),
             new
             {
-                HouseBill = houseBill,
-                SoCont = soCont
+                SoVanDonHangNhapKhau = houseBill,
+                SoCont = soCont,
+                NgayGiaHan = ngayLayHang
             },
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<PhiLuuKhoResponse>(JsonOptions)
-            ?? new PhiLuuKhoResponse
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        if (envelope is null)
+        {
+            return new PhiLuuKhoResponse
             {
                 Success = false,
                 Message = "Khong the doc ket qua tinh phi luu kho."
             };
+        }
+
+        if (envelope.Status != 0)
+        {
+            return new PhiLuuKhoResponse
+            {
+                Success = false,
+                Message = string.IsNullOrWhiteSpace(envelope.ErrorMsg)
+                    ? "Khong the doc ket qua tinh phi luu kho."
+                    : envelope.ErrorMsg
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(envelope.Data))
+        {
+            return new PhiLuuKhoResponse
+            {
+                Success = false,
+                Message = "Khong the doc ket qua tinh phi luu kho."
+            };
+        }
+
+        List<PhiLuuKhoApiItem>? apiItems;
+        try
+        {
+            apiItems = JsonSerializer.Deserialize<List<PhiLuuKhoApiItem>>(envelope.Data, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            apiItems = null;
+        }
+
+        if (apiItems is null)
+        {
+            return new PhiLuuKhoResponse
+            {
+                Success = false,
+                Message = "Khong the doc ket qua tinh phi luu kho."
+            };
+        }
+
+        var chiTietHoaDon = apiItems.Select(MapPhiLuuKhoItem).ToList();
+        var vat = apiItems.FirstOrDefault()?.ThueSuat ?? 0m;
+
+        return new PhiLuuKhoResponse
+        {
+            Success = true,
+            Data = new PhiLuuKhoData
+            {
+                ChiTietHoaDon = chiTietHoaDon,
+                Vat = vat,
+                DonViTienTe = "VND",
+                TrangThaiThanhToan = 0
+            },
+            Message = string.IsNullOrWhiteSpace(envelope.ErrorMsg) ? string.Empty : envelope.ErrorMsg
+        };
     }
 
     public async Task<PhiLuuKhoQuaHanResponse> GetPhiLuuKhoQuaHanAsync(string houseBill, string soCont)
@@ -317,6 +385,7 @@ public sealed class OnlineOrderService
         string soCont,
         DateTime? pickupDate = null,
         string? invoiceDownloadUrl = null,
+        string? pickupDateStr = "",
         string? traceTag = null)
     {
         var tracePrefix = string.IsNullOrWhiteSpace(traceTag) ? string.Empty : $"[{traceTag}] ";
@@ -336,7 +405,8 @@ public sealed class OnlineOrderService
         }
 
         Console.WriteLine($"{tracePrefix}Calling PhiLuuKho...");
-        result.PhiLuuKho = await GetPhiLuuKhoAsync(houseBill, soCont);
+        Console.WriteLine($"{tracePrefix}Calling PhiLuuKho houseBill ..." + houseBill);
+        result.PhiLuuKho = await GetPhiLuuKhoAsync(houseBill, soCont, pickupDateStr);
         Console.WriteLine($"{tracePrefix}PhiLuuKho.Response={JsonSerializer.Serialize(result.PhiLuuKho, JsonOptions)}");
 
         Console.WriteLine($"{tracePrefix}Calling ChiTietHouseBill...");
@@ -423,6 +493,22 @@ public sealed class OnlineOrderService
         return data.ChiTietHoaDon
             .Where(item => ContainsText(item.MoTa, descriptionPart))
             .Sum(item => item.ThanhTien);
+    }
+
+    private static PhiLuuKhoItem MapPhiLuuKhoItem(PhiLuuKhoApiItem item)
+    {
+        return new PhiLuuKhoItem
+        {
+            IDDanhMucCuoc = item.IDDanhMucCuoc,
+            MaDanhMucCuoc = item.MaDanhMucCuoc,
+            MoTa = item.DienGiai,
+            DonViTinh = item.DonViTinh,
+            SoLuong = item.SoLuong,
+            DonGia = item.DonGia,
+            TienHang = item.TienHang,
+            ThueSuat = item.ThueSuat,
+            TienThue = item.TienThue
+        };
     }
 
     private static bool ContainsText(string source, string value)
@@ -597,12 +683,14 @@ public sealed class OnlineOrderService
 
     private string BuildWorkflowUrl(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
-        {
-            throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
-        }
+        //Tạm thời dùng url mặc định
+        return relativePath;
+        //if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
+        //{
+        //    throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
+        //}
 
-        return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
+        //return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
     }
 
     private static OnlineOrderRecord MapOnlineOrder(JsonElement item)

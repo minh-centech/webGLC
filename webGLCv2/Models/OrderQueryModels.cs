@@ -121,7 +121,9 @@ public sealed class PhiLuuKhoApiItem
 public sealed class ChiTietHouseBillResponse
 {
     public bool Success { get; set; }
-    public ChiTietHouseBillData? Data { get; set; }
+    public string Data { get; set; } = string.Empty;
+    [JsonIgnore]
+    public ChiTietHouseBillData? ParsedData { get; set; }
     public string Message { get; set; } = string.Empty;
 }
 
@@ -156,40 +158,139 @@ public sealed class ThongTinThanhToanData
 
 public sealed class ChiTietHouseBillData
 {
-    [JsonPropertyName("thu_kho")]
-    public string ThuKho { get; set; } = string.Empty;
+    [JsonPropertyName("SoVanDon")]
+    public string SoVanDon { get; set; } = string.Empty;
 
-    [JsonPropertyName("chu_hang")]
-    public string ChuHang { get; set; } = string.Empty;
+    [JsonPropertyName("TrangThaiKhoa")]
+    public bool TrangThaiKhoa { get; set; }
 
-    [JsonPropertyName("so_house_bill")]
-    public string SoHouseBill { get; set; } = string.Empty;
+    [JsonPropertyName("SoContainer")]
+    public string SoContainer { get; set; } = string.Empty;
 
-    [JsonPropertyName("so_cont")]
-    public string SoCont { get; set; } = string.Empty;
+    [JsonPropertyName("MoTaHangHoa")]
+    public string MoTaHangHoa { get; set; } = string.Empty;
 
-    [JsonPropertyName("forwarder")]
-    public string Forwarder { get; set; } = string.Empty;
+    [JsonPropertyName("TenChuHang")]
+    public string TenChuHang { get; set; } = string.Empty;
 
-    [JsonPropertyName("so_kien")]
-    public int SoKien { get; set; }
+    [JsonPropertyName("MaDanhMucDonViTinh")]
+    public string MaDanhMucDonViTinh { get; set; } = string.Empty;
 
-    [JsonPropertyName("trong_luong")]
-    public decimal TrongLuong { get; set; }
+    [JsonPropertyName("SoLuongKienNhap")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoLuongKienNhap { get; set; }
 
-    [JsonPropertyName("so_khoi")]
-    public decimal SoKhoi { get; set; }
+    [JsonPropertyName("KhoiLuongNhap")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal KhoiLuongNhap { get; set; }
 
-    [JsonPropertyName("ten_tau")]
+    [JsonPropertyName("CBMNhap")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal CBMNhap { get; set; }
+
+    [JsonPropertyName("DonGiaLuuKho")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal DonGiaLuuKho { get; set; }
+
+    [JsonPropertyName("DonGiaGiaoNhan")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal DonGiaGiaoNhan { get; set; }
+
+    [JsonPropertyName("DonGiaBocXep")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal DonGiaBocXep { get; set; }
+
+    [JsonPropertyName("DonGiaQuanLy")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal DonGiaQuanLy { get; set; }
+
+    [JsonPropertyName("HangNguyHiem")]
+    public bool HangNguyHiem { get; set; }
+
+    [JsonPropertyName("HangQuaKho")]
+    public bool HangQuaKho { get; set; }
+
+    [JsonPropertyName("SoLuongQuaKho")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoLuongQuaKho { get; set; }
+
+    [JsonPropertyName("HangQuaTai")]
+    public bool HangQuaTai { get; set; }
+
+    [JsonPropertyName("SoLuongQuaTai")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoLuongQuaTai { get; set; }
+
+    [JsonPropertyName("EDO")]
+    public string EDO { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucCuaLamHang")]
+    public string MaDanhMucCuaLamHang { get; set; } = string.Empty;
+
+    [JsonPropertyName("NgayNhapKho")]
+    public DateTime? NgayNhapKho { get; set; }
+
+    [JsonPropertyName("NgayGiaHanCuoi")]
+    public DateTime? NgayGiaHanCuoi { get; set; }
+
+    [JsonPropertyName("MaDanhMucDaiLy")]
+    public string MaDanhMucDaiLy { get; set; } = string.Empty;
+
+    [JsonPropertyName("IDctKeHoachKhaiThacHangNhapKhau")]
+    public long IDctKeHoachKhaiThacHangNhapKhau { get; set; }
+
+    [JsonPropertyName("SoSeal")]
+    public string SoSeal { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucLoaiContainer")]
+    public string MaDanhMucLoaiContainer { get; set; } = string.Empty;
+
+    [JsonPropertyName("MasterBill")]
+    public string MasterBill { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucHangTau")]
+    public string MaDanhMucHangTau { get; set; } = string.Empty;
+
+    [JsonPropertyName("TenTau")]
     public string TenTau { get; set; } = string.Empty;
 
-    [JsonPropertyName("so_chuyen")]
+    [JsonPropertyName("SoChuyen")]
     public string SoChuyen { get; set; } = string.Empty;
 
-    [JsonPropertyName("ngay_tau_cap")]
+    [JsonPropertyName("NgayTauDen")]
+    public DateTime? NgayTauDen { get; set; }
+
+    [JsonPropertyName("GhiChu")]
+    public string GhiChu { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string ThuKho { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string ChuHang { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string SoHouseBill { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string SoCont { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string Forwarder { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public int SoKien { get; set; }
+
+    [JsonIgnore]
+    public decimal TrongLuong { get; set; }
+
+    [JsonIgnore]
+    public decimal SoKhoi { get; set; }
+
+    [JsonIgnore]
     public string NgayTauCap { get; set; } = string.Empty;
 
-    [JsonPropertyName("is_hoanthanh")]
+    [JsonIgnore]
     public bool IsHoanThanh { get; set; }
 }
 

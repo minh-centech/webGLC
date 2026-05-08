@@ -194,103 +194,111 @@
 
         <section class="workspace-card">
             <div class="section-heading">
-                <h2>Tạo mới doanh nghiệp</h2>
-                <p>Tài khoản cá nhân có thể tạo thêm nhiều hồ sơ doanh nghiệp để phục vụ nghiệp vụ sau này.</p>
+                <div>
+                    <h2>Tạo mới doanh nghiệp</h2>
+                    <p>Tài khoản cá nhân có thể tạo thêm nhiều hồ sơ doanh nghiệp để phục vụ nghiệp vụ sau này.</p>
+                </div>
+                <button type="button" class="portal-secondary-action" @onclick="ToggleCreateCompanySection">
+                    @(IsCreateCompanyExpanded ? "−" : "+")
+                </button>
             </div>
 
-            <EditForm Model="FormModel" OnValidSubmit="CreateCompanyAsync" FormName="personal-company-form">
-                <DataAnnotationsValidator />
-                <ValidationSummary class="portal-alert portal-alert-error" />
+            @if (IsCreateCompanyExpanded)
+            {
+                <EditForm Model="FormModel" OnValidSubmit="CreateCompanyAsync" FormName="personal-company-form">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="portal-alert portal-alert-error" />
 
-                <div class="field-grid">
-                    <div class="field-card">
-                        <label class="portal-label" for="TenDoanhNghiep">Tên doanh nghiệp</label>
-                        <InputText id="TenDoanhNghiep" class="portal-input" @bind-Value="FormModel.TenDoanhNghiep" />
-                        <ValidationMessage For="@(() => FormModel.TenDoanhNghiep)" class="validation-message" />
+                    <div class="field-grid">
+                        <div class="field-card field-span-3">
+                            <label class="portal-label" for="TenDoanhNghiep">Tên doanh nghiệp</label>
+                            <InputText id="TenDoanhNghiep" class="portal-input" @bind-Value="FormModel.TenDoanhNghiep" />
+                            <ValidationMessage For="@(() => FormModel.TenDoanhNghiep)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="MaSoThue">Mã số thuế</label>
+                            <InputText id="MaSoThue" class="portal-input" @bind-Value="FormModel.MaSoThue" />
+                            <ValidationMessage For="@(() => FormModel.MaSoThue)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="EmailDoanhNghiep">Email doanh nghiệp</label>
+                            <InputText id="EmailDoanhNghiep" class="portal-input" @bind-Value="FormModel.EmailDoanhNghiep" />
+                            <ValidationMessage For="@(() => FormModel.EmailDoanhNghiep)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card field-span-3">
+                            <label class="portal-label" for="DiaChi">Địa chỉ</label>
+                            <InputText id="DiaChi" class="portal-input" @bind-Value="FormModel.DiaChi" />
+                            <ValidationMessage For="@(() => FormModel.DiaChi)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="SoDienThoaiDoanhNghiep">Số điện thoại doanh nghiệp</label>
+                            <InputText id="SoDienThoaiDoanhNghiep" class="portal-input" @bind-Value="FormModel.SoDienThoaiDoanhNghiep" />
+                            <ValidationMessage For="@(() => FormModel.SoDienThoaiDoanhNghiep)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="SoFax">Số fax</label>
+                            <InputText id="SoFax" class="portal-input" @bind-Value="FormModel.SoFax" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="GiayPhepKinhDoanh">Số giấy phép kinh doanh</label>
+                            <InputText id="GiayPhepKinhDoanh" class="portal-input" @bind-Value="FormModel.GiayPhepKinhDoanh" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="NgayCap">Ngày cấp</label>
+                            <InputDate id="NgayCap" class="portal-input" @bind-Value="FormModel.NgayCap" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="NoiCap">Nơi cấp</label>
+                            <InputText id="NoiCap" class="portal-input" @bind-Value="FormModel.NoiCap" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="DaiDienCoThamQuyen">Đại diện có thẩm quyền</label>
+                            <InputText id="DaiDienCoThamQuyen" class="portal-input" @bind-Value="FormModel.DaiDienCoThamQuyen" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="ChucVu">Chức vụ</label>
+                            <InputText id="ChucVu" class="portal-input" @bind-Value="FormModel.ChucVu" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="DoanhNghiepCongTyDuocUyQuyen">Doanh nghiệp/công ty được ủy quyền</label>
+                            <InputText id="DoanhNghiepCongTyDuocUyQuyen" class="portal-input" @bind-Value="FormModel.DoanhNghiepCongTyDuocUyQuyen" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="TenDangNhapDangKyDichVu">Tên đăng nhập đăng ký dịch vụ</label>
+                            <InputText id="TenDangNhapDangKyDichVu" class="portal-input" @bind-Value="FormModel.TenDangNhapDangKyDichVu" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
+                            <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="FormModel.EmailXuatHoaDon" />
+                            <ValidationMessage For="@(() => FormModel.EmailXuatHoaDon)" class="text-danger" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
+                            <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="FormModel.SoCMNDCanCuoc" />
+                        </div>
                     </div>
 
-                    <div class="field-card">
-                        <label class="portal-label" for="MaSoThue">Mã số thuế</label>
-                        <InputText id="MaSoThue" class="portal-input" @bind-Value="FormModel.MaSoThue" />
-                        <ValidationMessage For="@(() => FormModel.MaSoThue)" class="validation-message" />
+                    <div class="form-actions">
+                        <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
+                            @(IsSubmitting ? "Đang tạo..." : "Tạo mới doanh nghiệp")
+                        </button>
                     </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="EmailDoanhNghiep">Email doanh nghiệp</label>
-                        <InputText id="EmailDoanhNghiep" class="portal-input" @bind-Value="FormModel.EmailDoanhNghiep" />
-                        <ValidationMessage For="@(() => FormModel.EmailDoanhNghiep)" class="validation-message" />
-                    </div>
-
-                    <div class="field-card field-span-3">
-                        <label class="portal-label" for="DiaChi">Địa chỉ</label>
-                        <InputText id="DiaChi" class="portal-input" @bind-Value="FormModel.DiaChi" />
-                        <ValidationMessage For="@(() => FormModel.DiaChi)" class="validation-message" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="SoDienThoaiDoanhNghiep">Số điện thoại doanh nghiệp</label>
-                        <InputText id="SoDienThoaiDoanhNghiep" class="portal-input" @bind-Value="FormModel.SoDienThoaiDoanhNghiep" />
-                        <ValidationMessage For="@(() => FormModel.SoDienThoaiDoanhNghiep)" class="validation-message" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="SoFax">Số fax</label>
-                        <InputText id="SoFax" class="portal-input" @bind-Value="FormModel.SoFax" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="GiayPhepKinhDoanh">Số giấy phép kinh doanh</label>
-                        <InputText id="GiayPhepKinhDoanh" class="portal-input" @bind-Value="FormModel.GiayPhepKinhDoanh" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="NgayCap">Ngày cấp</label>
-                        <InputDate id="NgayCap" class="portal-input" @bind-Value="FormModel.NgayCap" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="NoiCap">Nơi cấp</label>
-                        <InputText id="NoiCap" class="portal-input" @bind-Value="FormModel.NoiCap" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="DaiDienCoThamQuyen">Đại diện có thẩm quyền</label>
-                        <InputText id="DaiDienCoThamQuyen" class="portal-input" @bind-Value="FormModel.DaiDienCoThamQuyen" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="ChucVu">Chức vụ</label>
-                        <InputText id="ChucVu" class="portal-input" @bind-Value="FormModel.ChucVu" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="DoanhNghiepCongTyDuocUyQuyen">Doanh nghiệp/công ty được ủy quyền</label>
-                        <InputText id="DoanhNghiepCongTyDuocUyQuyen" class="portal-input" @bind-Value="FormModel.DoanhNghiepCongTyDuocUyQuyen" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="TenDangNhapDangKyDichVu">Tên đăng nhập đăng ký dịch vụ</label>
-                        <InputText id="TenDangNhapDangKyDichVu" class="portal-input" @bind-Value="FormModel.TenDangNhapDangKyDichVu" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
-                        <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="FormModel.EmailXuatHoaDon" />
-                        <ValidationMessage For="@(() => FormModel.EmailXuatHoaDon)" class="text-danger" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
-                        <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="FormModel.SoCMNDCanCuoc" />
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
-                        @(IsSubmitting ? "Đang tạo..." : "Tạo mới doanh nghiệp")
-                    </button>
-                </div>
-            </EditForm>
+                </EditForm>
+            }
         </section>
 
         @if (Companies.Count > 0)
@@ -310,6 +318,7 @@
                                 <th>Điện thoại</th>
                                 <th>Email</th>
                                 <th>Email xuất hóa đơn</th>
+                                <th>Thao tác</th>
                                 <th>Trang thai duyet</th>
                             </tr>
                         </thead>
@@ -323,6 +332,9 @@
                                     <td>@company.EmailDoanhNghiep</td>
                                     <td>@company.EmailXuatHoaDon</td>
                                     <td>
+                                        <button type="button" class="portal-secondary-action" @onclick="() => OpenCompanyEditPopup(company)">Sửa</button>
+                                    </td>
+                                    <td>
                                         <span class="status-chip @GetCompanyApprovalStatusClass(company)">@GetCompanyApprovalStatusText(company)</span>
                                     </td>
                                 </tr>
@@ -335,17 +347,72 @@
     }
 </section>
 
+@if (IsCompanyEditPopupOpen && EditingCompany is not null)
+{
+    <div class="portal-modal-backdrop" @onclick="CloseCompanyEditPopup">
+        <div class="portal-modal" @onclick:stopPropagation="true">
+            <div>
+                <h3>Sửa doanh nghiệp</h3>
+                <p>Cập nhật thông tin doanh nghiệp cho tài khoản cá nhân đang đăng nhập.</p>
+            </div>
+
+            <EditForm Model="CompanyEditModel" OnValidSubmit="SaveCompanyEditAsync" FormName="company-edit-form">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="portal-alert portal-alert-error" />
+
+                <div class="field-grid">
+                    <div class="field-card field-span-3">
+                        <label class="portal-label" for="EditCompanyName">Tên doanh nghiệp</label>
+                        <InputText id="EditCompanyName" class="portal-input" @bind-Value="CompanyEditModel.CompanyName" />
+                        <ValidationMessage For="@(() => CompanyEditModel.CompanyName)" class="validation-message" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="EditCompanyPhone">Điện thoại</label>
+                        <InputText id="EditCompanyPhone" class="portal-input" @bind-Value="CompanyEditModel.CompanyPhone" />
+                        <ValidationMessage For="@(() => CompanyEditModel.CompanyPhone)" class="validation-message" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="EditCompanyEmail">Email xuất hóa đơn</label>
+                        <InputText id="EditCompanyEmail" class="portal-input" @bind-Value="CompanyEditModel.CompanyEmail" />
+                        <ValidationMessage For="@(() => CompanyEditModel.CompanyEmail)" class="validation-message" />
+                    </div>
+
+                    <div class="field-card field-span-3">
+                        <label class="portal-label" for="EditCompanyAddress">Địa chỉ</label>
+                        <InputText id="EditCompanyAddress" class="portal-input" @bind-Value="CompanyEditModel.CompanyAddress" />
+                        <ValidationMessage For="@(() => CompanyEditModel.CompanyAddress)" class="validation-message" />
+                    </div>
+                </div>
+
+                <div class="portal-modal-actions">
+                    <button type="button" class="portal-secondary-action" @onclick="CloseCompanyEditPopup">Hủy</button>
+                    <button type="submit" class="portal-primary-action" disabled="@IsCompanySaving">
+                        @(IsCompanySaving ? "Đang lưu..." : "Lưu thay đổi")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
 @code {
     private readonly UserCompanyFormModel FormModel = new();
     private readonly PersonalProfileFormModel PersonalProfileModel = new();
     private readonly EnterpriseProfileFormModel EnterpriseProfileModel = new();
     private readonly List<LegacyCompanyProfile> Companies = new();
     private LegacyCompanyProfile? CurrentCompany;
+    private LegacyCompanyProfile? EditingCompany;
+    private readonly CompanyEditFormModel CompanyEditModel = new();
     private string AccountId = string.Empty;
     private int AccountType;
     private string AccountEmail = string.Empty;
     private bool IsLoading = true;
     private bool IsSubmitting;
+    private bool IsCreateCompanyExpanded;
+    private bool IsCompanyEditPopupOpen;
+    private bool IsCompanySaving;
     private string? ErrorMessage;
     private string? FeedbackMessage;
     private bool FeedbackIsError;
@@ -488,6 +555,60 @@
             IsSubmitting = false;
         }
     }
+
+    private void OpenCompanyEditPopup(LegacyCompanyProfile company)
+    {
+        EditingCompany = company;
+        CompanyEditModel.CompanyName = company.TenDoanhNghiep;
+        CompanyEditModel.CompanyEmail = company.EmailXuatHoaDon;
+        CompanyEditModel.CompanyAddress = company.DiaChi;
+        CompanyEditModel.CompanyPhone = company.SoDienThoaiDoanhNghiep;
+        IsCompanyEditPopupOpen = true;
+        ErrorMessage = null;
+        FeedbackMessage = null;
+    }
+
+    private void CloseCompanyEditPopup()
+    {
+        IsCompanyEditPopupOpen = false;
+        EditingCompany = null;
+    }
+
+    private async Task SaveCompanyEditAsync()
+    {
+        if (EditingCompany is null)
+        {
+            return;
+        }
+
+        IsCompanySaving = true;
+        FeedbackMessage = null;
+
+        try
+        {
+            await LegacyCustomerPortalService.UpdateCompanyProfileAsync(
+                EditingCompany,
+                CompanyEditModel.CompanyName,
+                CompanyEditModel.CompanyEmail,
+                CompanyEditModel.CompanyAddress,
+                CompanyEditModel.CompanyPhone);
+
+            FeedbackMessage = "Đã cập nhật thông tin doanh nghiệp thành công.";
+            FeedbackIsError = false;
+            CloseCompanyEditPopup();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsCompanySaving = false;
+        }
+    }
+
     private async Task UpdateEnterpriseProfileAsync()
     {
         if (string.IsNullOrWhiteSpace(AccountId))
@@ -550,6 +671,7 @@
             FeedbackIsError = false;
             ResetForm();
             await LoadAsync();
+            IsCreateCompanyExpanded = false;
         }
         catch (Exception ex)
         {
@@ -560,6 +682,11 @@
         {
             IsSubmitting = false;
         }
+    }
+
+    private void ToggleCreateCompanySection()
+    {
+        IsCreateCompanyExpanded = !IsCreateCompanyExpanded;
     }
 
     private void ResetForm()
@@ -637,5 +764,21 @@
             0 => "pending",
             _ => company.IsActive ? "success" : "pending"
         };
+
+    private sealed class CompanyEditFormModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập tên doanh nghiệp.")]
+        public string CompanyName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập địa chỉ.")]
+        public string CompanyAddress { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập điện thoại.")]
+        public string CompanyPhone { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập email xuất hóa đơn.")]
+        [EmailAddress(ErrorMessage = "Email xuất hóa đơn không đúng định dạng.")]
+        public string CompanyEmail { get; set; } = string.Empty;
+    }
 }
 

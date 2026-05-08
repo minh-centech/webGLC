@@ -314,6 +314,46 @@ public sealed class LegacyCustomerPortalService
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
         EnsureSuccess(envelope, "Không thể cập nhật trạng thái duyệt doanh nghiệp.");
     }
+
+    public async Task UpdateCompanyProfileAsync(
+        LegacyCompanyProfile company,
+        string companyName,
+        string billingEmail,
+        string companyAddress,
+        string companyPhone)
+    {
+        var payload = new
+        {
+            ID = company.ID,
+            IDDanhMucKhachHangDoiLenh = company.IDDanhMucKhachHangDoiLenh,
+            TenDoanhNghiep = companyName,
+            MaSoThue = company.MaSoThue,
+            DiaChi = companyAddress,
+            SoDienThoaiDoanhNghiep = companyPhone,
+            EmailDoanhNghiep = NullIfEmpty(company.EmailDoanhNghiep),
+            SoFax = NullIfEmpty(company.SoFax),
+            GiayPhepKinhDoanh = NullIfEmpty(company.GiayPhepKinhDoanh),
+            NgayCap = company.NgayCap,
+            NoiCap = NullIfEmpty(company.NoiCap),
+            DaiDienCoThamQuyen = NullIfEmpty(company.DaiDienCoThamQuyen),
+            ChucVu = NullIfEmpty(company.ChucVu),
+            DoanhNghiepCongTyDuocUyQuyen = NullIfEmpty(company.DoanhNghiepCongTyDuocUyQuyen),
+            TenDangNhapDangKyDichVu = NullIfEmpty(company.TenDangNhapDangKyDichVu),
+            EmailXuatHoaDon = NullIfEmpty(billingEmail),
+            SoCMNDCanCuoc = NullIfEmpty(company.SoCMNDCanCuoc),
+            BanScanGiayPhepKinhDoanhPath = NullIfEmpty(company.BanScanGiayPhepKinhDoanhPath),
+            BanScanSoCMNDCanCuocPath = NullIfEmpty(company.BanScanSoCMNDCanCuocPath),
+            BanDangKyEPortChuKySoPath = NullIfEmpty(company.BanDangKyEPortChuKySoPath),
+            IsActive = company.IsActive
+        };
+
+        var response = await _httpClient.PostAsJsonAsync("api/DanhMucKhachHangDoiLenh/SaveDoanhNghiep", payload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật thông tin doanh nghiệp.");
+    }
+
     public async Task UpdateEnterpriseProfileAsync(
         string accountId,
         string companyName,

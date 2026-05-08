@@ -301,62 +301,63 @@
                         @if (HasChiTietHouseBill)
                         {
                             <div class="workflow-payment-row" style="margin-bottom:12px;">
-                                <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow.ChiTietHouseBill!.Data!.IsHoanThanh)">
-                                    @GetChiTietHouseBillStatusLabel(Workflow.ChiTietHouseBill!.Data!.IsHoanThanh)
+                                <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)">
+                                    @GetChiTietHouseBillStatusLabel(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)
                                 </span>
                                 <span class="workflow-message" style="margin:0;">
                                     Trạng thái lấy trực tiếp từ API <strong>/ChiTietHouseBill</strong>.
                                 </span>
                             </div>
 
-                            <div class="field-grid compact-fields">
-                                <div>
-                                    <label class="portal-label">Thủ kho</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.ThuKho" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Chủ hàng</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.ChuHang" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Số House Bill</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoHouseBill" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Số Cont</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoCont" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Forwarder</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.Forwarder" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Số kiện</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoKien.ToString()" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Trọng lượng</label>
-                                    <input class="portal-input" value="@(Workflow.ChiTietHouseBill!.Data!.TrongLuong.ToString("0.###"))" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Số khối</label>
-                                    <input class="portal-input" value="@(Workflow.ChiTietHouseBill!.Data!.SoKhoi.ToString("0.###"))" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Tên tàu</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.TenTau" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Số chuyến</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.SoChuyen" readonly />
-                                </div>
-                                <div>
-                                    <label class="portal-label">Ngày tàu cập</label>
-                                    <input class="portal-input" value="@Workflow.ChiTietHouseBill!.Data!.NgayTauCap" readonly />
-                                </div>
-                            </div>
-                        }
-                    </article>
+                        <div class="table-shell compact-table">
+                            <table class="portal-table">
+                                <thead>
+                                    <tr>
+                                        <th>Trường</th>
+                                        <th>Giá trị</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        var chiTiet = Workflow!.ChiTietHouseBill!.ParsedData!;
+                                    }
+                                    <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
+                                    <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr>
+                                    <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
+                                    <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
+                                    <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
+                                    <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr>
+                                    <tr><td>Số lượng kiện nhập</td><td>@FormatNumber(chiTiet.SoLuongKienNhap)</td></tr>
+                                    <tr><td>Khối lượng nhập</td><td>@FormatNumber(chiTiet.KhoiLuongNhap)</td></tr>
+                                    <tr><td>CBM nhập</td><td>@FormatNumber(chiTiet.CBMNhap)</td></tr>
+                                   @*  <tr><td>Đơn giá lưu kho</td><td>@FormatMoney(chiTiet.DonGiaLuuKho)</td></tr>
+                                    <tr><td>Đơn giá giao nhận</td><td>@FormatMoney(chiTiet.DonGiaGiaoNhan)</td></tr>
+                                    <tr><td>Đơn giá bốc xếp</td><td>@FormatMoney(chiTiet.DonGiaBocXep)</td></tr>
+                                    <tr><td>Đơn giá quản lý</td><td>@FormatMoney(chiTiet.DonGiaQuanLy)</td></tr> *@
+                                    <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
+                                    <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
+                                    <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
+                                    <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
+                                    <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr>
+                                    <tr><td>EDO</td><td>@chiTiet.EDO</td></tr>
+                                    <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr>
+                                    <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
+                                    <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
+                                    <tr><td>Mã danh mục đại lý</td><td>@chiTiet.MaDanhMucDaiLy</td></tr>
+                                    @* <tr><td>ID kế hoạch khai thác hàng nhập khẩu</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
+                                    <tr><td>Số seal</td><td>@chiTiet.SoSeal</td></tr>
+                                    <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
+                                    <tr><td>Master Bill</td><td>@chiTiet.MasterBill</td></tr>
+                                    <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
+                                    <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
+                                    <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
+                                    <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
+                                    <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </article>
                 </section>
 
                 <div class="workflow-actions no-print">
@@ -623,11 +624,11 @@
             _ => "Không xác định"
         };
 
-    private static string GetChiTietHouseBillStatusClass(bool isHoanThanh)
-        => isHoanThanh ? "success" : "warning";
+    private static string GetChiTietHouseBillStatusClass(bool trangThaiKhoa)
+        => trangThaiKhoa ? "warning" : "success";
 
-    private static string GetChiTietHouseBillStatusLabel(bool isHoanThanh)
-        => isHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành";
+    private static string GetChiTietHouseBillStatusLabel(bool trangThaiKhoa)
+        => trangThaiKhoa ? "Đã khóa" : "Chưa khóa";
 
     private static string GetPhiLuuKhoMessage(OnlineOrderWorkflowResult? workflow)
     {
@@ -672,11 +673,11 @@
     private bool HasChiTietHouseBill
         => Workflow?.ThongQuan?.IsThongQuan == true
            && Workflow?.ChiTietHouseBill?.Success == true
-           && Workflow.ChiTietHouseBill.Data is not null;
+           && Workflow.ChiTietHouseBill.ParsedData is not null;
 
     private bool IsOverdueOrder
-        => Workflow?.ChiTietHouseBill?.Data is not null
-           && Workflow.ChiTietHouseBill.Data.IsHoanThanh == true
+        => Workflow?.ChiTietHouseBill?.ParsedData is not null
+           && Workflow.ChiTietHouseBill.ParsedData.IsHoanThanh == true
            && Order?.PickupDate.HasValue == true
            && Order.PickupDate.Value.Date < DateTime.Today
            && Workflow?.ThongQuan?.IsThongQuan == true;
@@ -856,6 +857,12 @@
 
     private static string FormatNumber(decimal value)
         => value.ToString("0.###", CultureInfo.GetCultureInfo("vi-VN"));
+
+    private static string FormatDateTime(DateTime? value)
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
+
+    private static string FormatYesNo(bool value)
+        => value ? "Có" : "Không";
 
     private static string GetQrCodeDataUrl(string base64)
     {

@@ -515,9 +515,13 @@ select {
 }
 
 .portal-alert-error {
-    background: rgba(207, 90, 77, 0.1);
-    border-color: rgba(207, 90, 77, 0.22);
-    color: #8d2f25;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(248, 113, 113, 0.18));
+    border-color: rgba(220, 38, 38, 0.26);
+    color: #991b1b;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .portal-alert-danger {
@@ -528,6 +532,25 @@ select {
     border-color: rgba(220, 38, 38, 0.26);
     color: #8f1f24;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.portal-alert-error::before,
+.portal-alert-danger::before {
+    content: "!";
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    border-radius: 999px;
+    background: rgba(220, 38, 38, 0.14);
+    border: 1px solid rgba(220, 38, 38, 0.28);
+    color: #b91c1c;
+    font-weight: 800;
+    line-height: 1;
+    font-size: 0.9rem;
 }
 
 .portal-alert-warning {

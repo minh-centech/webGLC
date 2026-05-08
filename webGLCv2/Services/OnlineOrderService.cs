@@ -16,7 +16,7 @@ public sealed class OnlineOrderService
     private const string ThongQuanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/TrangThaiThongQuan";
     private const string PhiLuuKhoApiPath = "http://192.168.1.66:59/api/TinhCuoc/TinhCuoc";
     private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
-    private const string ChiTietHouseBillApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ChiTietHouseBill";
+    private const string ChiTietHouseBillApiPath = "http://192.168.1.66:59/api/ctLenhNhapKhoHangNhapKhau/ListValidSoVanDonXuatKho";
     private const string ThongTinThanhToanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ThongTinThanhToan";
 
     private readonly HttpClient _httpClient;
@@ -341,21 +341,40 @@ public sealed class OnlineOrderService
     {
         var response = await _httpClient.PostAsJsonAsync(
             BuildWorkflowUrl(ChiTietHouseBillApiPath),
-            new
-            {
-                HouseBill = houseBill,
-                SoCont = soCont
-            },
+            new { SoVanDon = houseBill },
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<ChiTietHouseBillResponse>(JsonOptions)
-            ?? new ChiTietHouseBillResponse
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        if (envelope is null)
+        {
+            return new ChiTietHouseBillResponse
             {
                 Success = false,
                 Message = "Khong the doc thong tin truy van house bill."
             };
+        }
+
+        var result = new ChiTietHouseBillResponse
+        {
+            Success = envelope.Status == 0,
+            Data = envelope.Data ?? string.Empty,
+            Message = string.IsNullOrWhiteSpace(envelope.ErrorMsg)
+                ? string.Empty
+                : envelope.ErrorMsg
+        };
+
+        result.ParsedData = ParseChiTietHouseBillData(result.Data, houseBill, soCont);
+        if (result.Success && result.ParsedData is null)
+        {
+            result.Success = false;
+            result.Message = string.IsNullOrWhiteSpace(result.Message)
+                ? "Khong the phan tich thong tin truy van house bill."
+                : result.Message;
+        }
+
+        return result;
     }
 
     public async Task<ThongTinThanhToanResponse> GetThongTinThanhToanAsync(string houseBill, string soCont)
@@ -412,8 +431,8 @@ public sealed class OnlineOrderService
         Console.WriteLine($"{tracePrefix}Calling ChiTietHouseBill...");
         result.ChiTietHouseBill = await GetChiTietHouseBillAsync(houseBill, soCont);
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.Response={JsonSerializer.Serialize(result.ChiTietHouseBill, JsonOptions)}");
-        Console.WriteLine($"{tracePrefix}ChiTietHouseBill.IsHoanThanh={result.ChiTietHouseBill?.Data?.IsHoanThanh}");
-        if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.Data?.IsHoanThanh ?? false))
+        Console.WriteLine($"{tracePrefix}ChiTietHouseBill.IsHoanThanh={result.ChiTietHouseBill?.ParsedData?.IsHoanThanh}");
+        if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
         {
             Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
             result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
@@ -445,7 +464,7 @@ public sealed class OnlineOrderService
             return;
         }
 
-        var chiTiet = workflow.ChiTietHouseBill.Data;
+        var chiTiet = workflow.ChiTietHouseBill.ParsedData;
         var phi = workflow.PhiLuuKho.Data;
         if (chiTiet is null || phi is null)
         {
@@ -530,6 +549,66 @@ public sealed class OnlineOrderService
 
     private static bool IsOverduePickupDate(DateTime? pickupDate, bool isHoanThanh)
         => isHoanThanh && pickupDate.HasValue && pickupDate.Value.Date < DateTime.Today;
+
+    private static ChiTietHouseBillData? ParseChiTietHouseBillData(string rawData, string houseBill, string soCont)
+    {
+        if (string.IsNullOrWhiteSpace(rawData))
+        {
+            return null;
+        }
+
+        var trimmed = rawData.Trim();
+        try
+        {
+            if (trimmed.StartsWith("["))
+            {
+                var items = JsonSerializer.Deserialize<List<ChiTietHouseBillData>>(trimmed, JsonOptions);
+                var data = items?.FirstOrDefault();
+                return NormalizeChiTietHouseBillData(data, houseBill, soCont);
+            }
+
+            if (trimmed.StartsWith("{"))
+            {
+                var data = JsonSerializer.Deserialize<ChiTietHouseBillData>(trimmed, JsonOptions);
+                return NormalizeChiTietHouseBillData(data, houseBill, soCont);
+            }
+
+            if (trimmed.StartsWith("\"") && trimmed.EndsWith("\""))
+            {
+                var unwrapped = JsonSerializer.Deserialize<string>(trimmed, JsonOptions);
+                if (!string.IsNullOrWhiteSpace(unwrapped))
+                {
+                    return ParseChiTietHouseBillData(unwrapped, houseBill, soCont);
+                }
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static ChiTietHouseBillData? NormalizeChiTietHouseBillData(ChiTietHouseBillData? data, string houseBill, string soCont)
+    {
+        if (data is null)
+        {
+            return null;
+        }
+
+        data.ThuKho = data.MaDanhMucCuaLamHang;
+        data.ChuHang = data.TenChuHang;
+        data.SoHouseBill = string.IsNullOrWhiteSpace(data.SoVanDon) ? houseBill : data.SoVanDon;
+        data.SoCont = string.IsNullOrWhiteSpace(data.SoContainer) ? soCont : data.SoContainer;
+        data.Forwarder = data.MaDanhMucDaiLy;
+        data.SoKien = (int)data.SoLuongKienNhap;
+        data.TrongLuong = data.KhoiLuongNhap;
+        data.SoKhoi = data.CBMNhap;
+        data.NgayTauCap = (data.NgayTauDen ?? data.NgayNhapKho)?.ToString("O") ?? string.Empty;
+        data.IsHoanThanh = !data.TrangThaiKhoa;
+        return data;
+    }
 
     public async Task SeedDefaultsAsync(long idDanhMucKhachHangDoiLenh)
     {

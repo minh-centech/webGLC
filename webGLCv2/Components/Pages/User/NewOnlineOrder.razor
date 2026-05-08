@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
@@ -52,11 +53,24 @@
                     </div>
 
                     <div>
-                        <label class="portal-label">Mã số thuế</label>
-                        <div class="input-action-row">
-                            <InputText class="portal-input input-action-field" @bind-Value="Draft.TaxCode" />
-                            <button type="button" class="portal-secondary-action" @onclick="LookupCompanyAsync">Lấy thông tin</button>
-                        </div>
+                        <label class="portal-label">Mã số thuế (Chọn danh sách)</label>
+                        @if (CustomerCompanies.Count > 0)
+                        {
+                            <select class="portal-input" value="@SelectedTaxCode" @onchange="OnTaxCodeSelectionChanged">
+                                <option value="">Chọn mã số thuế theo tài khoản</option>
+                                @foreach (var company in CustomerCompanies)
+                                {
+                                    <option value="@company.MaSoThue">@company.MaSoThue</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="input-action-row">
+                                <InputText class="portal-input input-action-field" @bind-Value="Draft.TaxCode" />
+                                <button type="button" class="portal-secondary-action" @onclick="LookupCompanyAsync">Lấy thông tin</button>
+                            </div>
+                        }
                         <ValidationMessage For="@(() => Draft.TaxCode)" class="validation-message" />
                     </div>
                     <div>
@@ -111,6 +125,8 @@
     private string CurrentUserKey { get; set; } = "customer";
     private string CurrentUserEmail { get; set; } = string.Empty;
     private long CurrentUserId { get; set; }
+    private readonly List<LegacyCompanyProfile> CustomerCompanies = new();
+    private string SelectedTaxCode { get; set; } = string.Empty;
     private string? InfoMessage { get; set; }
     private string PickupDateText { get; set; } = string.Empty;
 
@@ -121,8 +137,10 @@
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         CurrentUserKey = authState.User.Identity?.Name ?? "customer";
-        CurrentUserEmail = authState.User.Identity?.Name ?? string.Empty;
+        CurrentUserEmail = authState.User.FindFirstValue(ClaimTypes.Email) ?? authState.User.Identity?.Name ?? string.Empty;
         CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
+
+        await LoadCustomerCompaniesAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -169,6 +187,69 @@
         }
     }
 
+    private async Task LoadCustomerCompaniesAsync()
+    {
+        CustomerCompanies.Clear();
+        SelectedTaxCode = string.Empty;
+
+        if (CurrentUserId <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var companies = await LegacyCustomerPortalService.GetCompaniesByCustomerAsync(CurrentUserId.ToString(CultureInfo.InvariantCulture));
+            CustomerCompanies.AddRange(companies.Where(company => !string.IsNullOrWhiteSpace(company.MaSoThue)));
+
+            if (CustomerCompanies.Count == 1)
+            {
+                SelectCompany(CustomerCompanies[0]);
+            }
+        }
+        catch
+        {
+            CustomerCompanies.Clear();
+        }
+    }
+
+    private async Task OnTaxCodeSelectionChanged(ChangeEventArgs args)
+    {
+        SelectedTaxCode = args.Value?.ToString() ?? string.Empty;
+        InfoMessage = null;
+
+        if (string.IsNullOrWhiteSpace(SelectedTaxCode))
+        {
+            Draft.TaxCode = string.Empty;
+            Draft.CompanyName = string.Empty;
+            Draft.CompanyAddress = string.Empty;
+            Draft.CompanyEmail = string.Empty;
+            return;
+        }
+
+        Draft.TaxCode = SelectedTaxCode;
+
+        var matchedCompany = CustomerCompanies.FirstOrDefault(company =>
+            string.Equals(company.MaSoThue, SelectedTaxCode, StringComparison.OrdinalIgnoreCase));
+
+        if (matchedCompany is not null)
+        {
+            SelectCompany(matchedCompany);
+            return;
+        }
+
+        await LookupCompanyAsync();
+    }
+
+    private void SelectCompany(LegacyCompanyProfile company)
+    {
+        SelectedTaxCode = company.MaSoThue;
+        Draft.TaxCode = company.MaSoThue;
+        Draft.CompanyName = company.TenDoanhNghiep;
+        Draft.CompanyAddress = company.DiaChi;
+        Draft.CompanyEmail = company.EmailDoanhNghiep;
+    }
+
     private void OnPickupDateInput(ChangeEventArgs args)
     {
         PickupDateText = args.Value?.ToString() ?? string.Empty;
@@ -192,7 +273,13 @@
         {
             OrderDate = DateTime.Today
         };
+        SelectedTaxCode = string.Empty;
         PickupDateText = string.Empty;
         InfoMessage = null;
+
+        if (CustomerCompanies.Count == 1)
+        {
+            SelectCompany(CustomerCompanies[0]);
+        }
     }
 }

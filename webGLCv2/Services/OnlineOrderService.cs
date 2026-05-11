@@ -517,8 +517,10 @@ public sealed class OnlineOrderService
             result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
         }
 
-        Console.WriteLine($"{tracePrefix}Upserting LenhOnlineChiTiet...");
-        await UpsertLenhOnlineChiTietAsync(idLenhOnline, houseBill, soCont, invoiceDownloadUrl, result, traceTag);
+        //Khong cap nhat lai chi tiet
+        //Console.WriteLine($"{tracePrefix}Upserting LenhOnlineChiTiet...");
+        //await UpsertLenhOnlineChiTietAsync(idLenhOnline, houseBill, soCont, invoiceDownloadUrl, result, traceTag);
+
         Console.WriteLine($"{tracePrefix}RunOrderWorkflowAsync end.");
         return result;
     }

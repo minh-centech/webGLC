@@ -59,6 +59,7 @@ public sealed class AuthController : Controller
                 new(ClaimTypes.Email, loginResult.Email),
                 new(ClaimTypes.NameIdentifier, loginResult.Id),
                 new("display_name", loginResult.DisplayName),
+                new("id_khachhang_doilenh", loginResult.Id),
                 new("account_type", loginResult.AccountType.ToString()),
                 new("account_type_name", loginResult.AccountTypeName),
                 new(ClaimTypes.Role, loginResult.RoleName)

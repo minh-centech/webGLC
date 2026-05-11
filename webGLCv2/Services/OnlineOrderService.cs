@@ -227,6 +227,9 @@ public sealed class OnlineOrderService
             };
     }
 
+    public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string? ngayGiaHan)
+        => await GetPhiLuuKhoAsync(houseBill, string.Empty, ngayGiaHan);
+
     public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string soCont, string? ngayLayHang)
     {
         if (string.IsNullOrWhiteSpace(ngayLayHang))
@@ -238,14 +241,22 @@ public sealed class OnlineOrderService
             };
         }
 
-        var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(PhiLuuKhoApiPath),
-            new
+        object payload = string.IsNullOrWhiteSpace(soCont)
+            ? new
+            {
+                SoVanDonHangNhapKhau = houseBill,
+                NgayGiaHan = ngayLayHang
+            }
+            : new
             {
                 SoVanDonHangNhapKhau = houseBill,
                 SoCont = soCont,
                 NgayGiaHan = ngayLayHang
-            },
+            };
+
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(PhiLuuKhoApiPath),
+            payload,
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
@@ -520,13 +531,23 @@ public sealed class OnlineOrderService
         {
             IDDanhMucCuoc = item.IDDanhMucCuoc,
             MaDanhMucCuoc = item.MaDanhMucCuoc,
+            TenDanhMucCuoc = item.TenDanhMucCuoc,
             MoTa = item.DienGiai,
             DonViTinh = item.DonViTinh,
             SoLuong = item.SoLuong,
+            NgayLuuKho = item.NgayLuuKho,
             DonGia = item.DonGia,
+            DonGiaCuoc = item.DonGiaCuoc,
+            DonGiaTraDaiLyTheoHopDong = item.DonGiaTraDaiLyTheoHopDong,
+            DonGiaTraDaiLyThuThem = item.DonGiaTraDaiLyThuThem,
+            IDDanhMucThueSuat = item.IDDanhMucThueSuat,
             TienHang = item.TienHang,
             ThueSuat = item.ThueSuat,
-            TienThue = item.TienThue
+            TienThue = item.TienThue,
+            ThanhTien = item.ThanhTien > 0m ? item.ThanhTien : item.TienHang + item.TienThue,
+            MaDanhMucTaiKhoanKeToanDoanhThu = item.MaDanhMucTaiKhoanKeToanDoanhThu,
+            MaDanhMucTaiKhoanKeToanThanhToan = item.MaDanhMucTaiKhoanKeToanThanhToan,
+            MaDanhMucTaiKhoanKeToanThue = item.MaDanhMucTaiKhoanKeToanThue
         };
     }
 

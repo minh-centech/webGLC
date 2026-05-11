@@ -1329,6 +1329,17 @@ select {
     padding-bottom: 10px;
 }
 
+.query-table-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: var(--portal-surface);
+}
+
+.query-table-scroll .portal-table {
+    min-width: 920px;
+}
+
 .compact-fields {
     margin-top: 12px;
 }

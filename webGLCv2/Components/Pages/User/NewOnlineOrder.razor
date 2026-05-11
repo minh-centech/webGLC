@@ -6,6 +6,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components
 @using System.Security.Claims
 @using System.Globalization
 
@@ -129,6 +130,11 @@
     private string SelectedTaxCode { get; set; } = string.Empty;
     private string? InfoMessage { get; set; }
     private string PickupDateText { get; set; } = string.Empty;
+    [SupplyParameterFromQuery(Name = "houseBill")]
+    private string? HouseBillFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "soCont")]
+    private string? SoContFromQuery { get; set; }
+    private bool AppliedQueryDefaults { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,6 +147,34 @@
         CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
 
         await LoadCustomerCompaniesAsync();
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (AppliedQueryDefaults)
+        {
+            return Task.CompletedTask;
+        }
+
+        var houseBill = HouseBillFromQuery?.Trim();
+        var soCont = SoContFromQuery?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(houseBill))
+        {
+            Draft.HouseBill = houseBill;
+        }
+
+        if (!string.IsNullOrWhiteSpace(soCont))
+        {
+            Draft.ContainerNumber = soCont;
+        }
+
+        if (!string.IsNullOrWhiteSpace(houseBill) || !string.IsNullOrWhiteSpace(soCont))
+        {
+            AppliedQueryDefaults = true;
+        }
+
+        return Task.CompletedTask;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

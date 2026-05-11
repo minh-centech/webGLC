@@ -18,6 +18,7 @@ begin
         NgayLayHang datetime null,
         SoToKhai nvarchar(100) null,
         TrangThai int not null constraint DF_tblLenhOnlines_TrangThai default(0),
+        TrangThaiHaiQuan TINYINT NOT NULL CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0,
         IDDanhMucKhachHangDoiLenh bigint not null,
         CreateDate datetime not null constraint DF_tblLenhOnlines_CreateDate default(getdate()),
         EditDate datetime null,
@@ -61,3 +62,8 @@ begin
     create index idx_tblLenhOnlines_SoCont on dbo.tblLenhOnlines(SoCont);
 end
 go
+
+
+ALTER TABLE tblLenhOnlines
+ADD TrangThaiHaiQuan TINYINT NOT NULL 
+    CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;

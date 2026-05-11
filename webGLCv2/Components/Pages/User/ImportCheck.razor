@@ -2,7 +2,9 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
+@inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Components
+@using System.Globalization
 
 <PageTitle>Kiểm tra hàng nhập</PageTitle>
 
@@ -31,11 +33,85 @@
                 <input id="containerNumber" class="portal-input" @bind="ContainerNumber" @bind:event="oninput" placeholder="Nhập Số Cont" />
             </div>
             <div class="search-actions-block">
-                <button class="portal-primary-action" @onclick="SearchAsync">Tìm kiếm</button>
+                <button type="button" class="portal-primary-action" @onclick="SearchAsync" disabled="@IsSearching">
+                    @(IsSearching ? "Đang tìm kiếm..." : "Tìm kiếm dữ liệu")
+                </button>
             </div>
         </div>
     </section>
 
+    @if (ThongQuanResult is not null || ChiTietResult is not null)
+    {
+        <section class="workspace-card">
+            <div class="section-heading">
+                <h2>Kết quả tra cứu</h2>
+                <p>@GetResultSummary()</p>
+            </div>
+
+            <div class="workflow-grid">
+                <article class="workflow-card">
+                    <div class="section-heading" style="display:flex; align-items:center; justify-content:space-between; gap: 12px;">
+                        <h2>Tình trạng thông quan</h2>
+                        <span class="status-chip @GetThongQuanClass(ThongQuanResult)">
+                            @GetThongQuanLabel(ThongQuanResult)
+                        </span>
+                        @if (ThongQuanResult?.Success == true && ThongQuanResult.IsThongQuan)
+                        {
+                            <button type="button"
+                                    class="portal-primary-action"
+                                    @onclick="OpenNewOnlineOrder">
+                                Tạo lệnh online
+                            </button>
+                        }
+                    </div>
+                    <p class="workflow-message">@GetThongQuanMessage()</p>
+                </article>
+
+                <article class="workflow-card" style="display:none;">
+                    <div class="section-heading">
+                        <h2>Chi tiết House Bill</h2>
+                        <span class="status-chip @GetChiTietClass(ChiTietResult?.ParsedData)">
+                            @GetChiTietLabel(ChiTietResult?.ParsedData)
+                        </span>
+                    </div>
+                    <p class="workflow-message">@GetChiTietMessage()</p>
+                </article>
+            </div>
+        </section>
+    }
+
+    @if (DetailRows.Count > 0)
+    {
+        <section class="workspace-card">
+            <div class="section-heading">
+                <h2>Bảng chi tiết House Bill</h2>
+                <p>Hiển thị toàn bộ trường dữ liệu trả về từ API chi tiết House Bill.</p>
+            </div>
+
+            <div class="table-shell" style="max-height: 560px; overflow-y: auto;">
+                <table class="portal-table dense">
+                    <thead>
+                        <tr>
+                            <th>Trường</th>
+                            <th>Giá trị</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in DetailRows)
+                        {
+                            <tr>
+                                <td>@row.Label</td>
+                                <td>@row.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+
+    @if (false)
+    {
     <section class="workspace-card">
         <div class="table-shell">
             <table class="portal-table dense">
@@ -89,15 +165,24 @@
             </table>
         </div>
     </section>
+    }
 </section>
 
 @code {
-    [SupplyParameterFromQuery]
+    [SupplyParameterFromQuery(Name = "houseBill")]
+    private string? HouseBillFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "soCont")]
+    private string? ContainerNumberFromQuery { get; set; }
     private string HouseBill { get; set; } = string.Empty;
-    [SupplyParameterFromQuery]
     private string ContainerNumber { get; set; } = string.Empty;
     private List<ImportCheckRecord> Results { get; set; } = [];
+    private ThongQuanCheckResponse? ThongQuanResult { get; set; }
+    private ChiTietHouseBillResponse? ChiTietResult { get; set; }
+    private List<DetailRow> DetailRows { get; set; } = [];
+    private string SearchMessage { get; set; } = string.Empty;
+    private string ErrorMessage { get; set; } = string.Empty;
     private bool AutoLoaded;
+    private bool IsSearching;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -106,7 +191,20 @@
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(HouseBill) || !string.IsNullOrWhiteSpace(ContainerNumber))
+        var queryHouseBill = HouseBillFromQuery?.Trim() ?? string.Empty;
+        var queryContainer = ContainerNumberFromQuery?.Trim() ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(queryHouseBill))
+        {
+            HouseBill = queryHouseBill;
+        }
+
+        if (!string.IsNullOrWhiteSpace(queryContainer))
+        {
+            ContainerNumber = queryContainer;
+        }
+
+        if (!string.IsNullOrWhiteSpace(queryHouseBill) || !string.IsNullOrWhiteSpace(queryContainer))
         {
             AutoLoaded = true;
             await SearchAsync();
@@ -115,8 +213,227 @@
 
     private async Task SearchAsync()
     {
-        Results = await OnlineOrderService.SearchImportChecksAsync(HouseBill, ContainerNumber);
+        var normalizedHouseBill = HouseBill.Trim();
+        var normalizedContainer = ContainerNumber.Trim();
+
+        SearchMessage = string.Empty;
+        ErrorMessage = string.Empty;
+        ThongQuanResult = null;
+        ChiTietResult = null;
+        DetailRows = [];
+        Results = [];
+
+        if (string.IsNullOrWhiteSpace(normalizedHouseBill) && string.IsNullOrWhiteSpace(normalizedContainer))
+        {
+            ErrorMessage = "Vui lòng nhập House Bill hoặc số Cont trước khi tìm kiếm.";
+            return;
+        }
+
+        IsSearching = true;
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(normalizedHouseBill))
+            {
+                HouseBill = normalizedHouseBill;
+            }
+
+            if (!string.IsNullOrWhiteSpace(normalizedContainer))
+            {
+                ContainerNumber = normalizedContainer;
+            }
+
+            try
+            {
+                ThongQuanResult = await OnlineOrderService.CheckThongQuanAsync(normalizedHouseBill, normalizedContainer);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = AppendError(ErrorMessage, $"Không thể lấy tình trạng thông quan: {ex.Message}");
+            }
+
+            try
+            {
+                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillAsync(normalizedHouseBill, normalizedContainer);
+                DetailRows = BuildDetailRows(ChiTietResult?.ParsedData);
+                Results = BuildSummaryRows(ThongQuanResult, ChiTietResult?.ParsedData, normalizedHouseBill, normalizedContainer);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = AppendError(ErrorMessage, $"Không thể lấy chi tiết House Bill: {ex.Message}");
+            }
+
+            if (string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                SearchMessage = "Đã tải xong tình trạng thông quan và chi tiết House Bill.";
+            }
+        }
+        finally
+        {
+            IsSearching = false;
+        }
     }
+
+    private static string AppendError(string current, string next)
+        => string.IsNullOrWhiteSpace(current) ? next : $"{current} {next}";
+
+    private void OpenNewOnlineOrder()
+    {
+        var houseBill = Uri.EscapeDataString(HouseBill.Trim());
+        var soCont = Uri.EscapeDataString(ContainerNumber.Trim());
+
+        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}");
+    }
+
+    private string GetResultSummary()
+    {
+        var houseBill = string.IsNullOrWhiteSpace(HouseBill) ? "-" : HouseBill;
+        var cont = string.IsNullOrWhiteSpace(ContainerNumber) ? "-" : ContainerNumber;
+        return $"House Bill: {houseBill} | Số Cont: {cont}";
+    }
+
+    private static string GetThongQuanClass(ThongQuanCheckResponse? result)
+        => result switch
+        {
+            null => "neutral",
+            { Success: true, IsThongQuan: true } => "success",
+            { Success: true, IsThongQuan: false } => "warning",
+            _ => "danger"
+        };
+
+    private static string GetThongQuanLabel(ThongQuanCheckResponse? result)
+        => result switch
+        {
+            null => "Chưa tra cứu",
+            { Success: true, IsThongQuan: true } => "Đã thông quan",
+            { Success: true, IsThongQuan: false } => "Chưa thông quan",
+            _ => "Lỗi"
+        };
+
+    private string GetThongQuanMessage()
+    {
+        if (ThongQuanResult is null)
+        {
+            return "Chưa có dữ liệu tình trạng thông quan.";
+        }
+
+        return string.IsNullOrWhiteSpace(ThongQuanResult.Message)
+            ? "API đã trả về kết quả tình trạng thông quan."
+            : ThongQuanResult.Message;
+    }
+
+    private static string GetChiTietClass(ChiTietHouseBillData? detail)
+        => detail is null ? "neutral" : (detail.IsHoanThanh ? "success" : "warning");
+
+    private static string GetChiTietLabel(ChiTietHouseBillData? detail)
+        => detail is null ? "Chưa tra cứu" : (detail.IsHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành");
+
+    private string GetChiTietMessage()
+    {
+        if (ChiTietResult is null)
+        {
+            return "Chưa có dữ liệu chi tiết House Bill.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(ChiTietResult.Message))
+        {
+            return ChiTietResult.Message;
+        }
+
+        return ChiTietResult.ParsedData is null
+            ? "API đã trả về dữ liệu nhưng chưa đọc được chi tiết House Bill."
+            : "API đã trả về chi tiết House Bill.";
+    }
+
+    private static List<ImportCheckRecord> BuildSummaryRows(
+        ThongQuanCheckResponse? thongQuan,
+        ChiTietHouseBillData? detail,
+        string houseBill,
+        string containerNumber)
+    {
+        if (detail is null)
+        {
+            return [];
+        }
+
+        return
+        [
+            new ImportCheckRecord
+            {
+                ReceivedDate = detail.NgayNhapKho ?? detail.NgayTauDen ?? DateTime.Today,
+                MasterBill = detail.MasterBill,
+                HouseBill = detail.SoHouseBill,
+                Quantity = detail.SoKien,
+                Volume = detail.SoKhoi,
+                Weight = detail.TrongLuong,
+                ContainerNumber = detail.SoCont,
+                Forwarder = detail.Forwarder,
+                Status = thongQuan is not null
+                    ? (thongQuan.IsThongQuan ? "Đã thông quan" : "Chưa thông quan")
+                    : (detail.IsHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành"),
+                CustomsDeclaration = string.IsNullOrWhiteSpace(detail.EDO)
+                    ? (string.IsNullOrWhiteSpace(containerNumber) ? houseBill : containerNumber)
+                    : detail.EDO
+            }
+        ];
+    }
+
+    private static List<DetailRow> BuildDetailRows(ChiTietHouseBillData? detail)
+    {
+        if (detail is null)
+        {
+            return [];
+        }
+
+        return
+        [
+            new DetailRow("Số House Bill", detail.SoHouseBill),
+            new DetailRow("Số Cont", detail.SoCont),
+            new DetailRow("Master Bill", detail.MasterBill),
+            new DetailRow("Trạng thái khóa", FormatBool(!detail.TrangThaiKhoa)),
+            new DetailRow("Mô tả hàng hóa", detail.MoTaHangHoa),
+            new DetailRow("Chủ hàng", detail.ChuHang),
+            new DetailRow("Đơn vị tính", detail.MaDanhMucDonViTinh),
+            new DetailRow("Số kiện nhập", FormatDecimal(detail.SoLuongKienNhap)),
+            new DetailRow("Khối lượng nhập", FormatDecimal(detail.KhoiLuongNhap)),
+            new DetailRow("CBM nhập", FormatDecimal(detail.CBMNhap)),
+            new DetailRow("Đơn giá lưu kho", FormatMoney(detail.DonGiaLuuKho)),
+            new DetailRow("Đơn giá giao nhận", FormatMoney(detail.DonGiaGiaoNhan)),
+            new DetailRow("Đơn giá bốc xếp", FormatMoney(detail.DonGiaBocXep)),
+            new DetailRow("Đơn giá quản lý", FormatMoney(detail.DonGiaQuanLy)),
+            new DetailRow("Hàng nguy hiểm", FormatBool(detail.HangNguyHiem)),
+            new DetailRow("Hàng quá kho", FormatBool(detail.HangQuaKho)),
+            new DetailRow("Số lượng quá kho", FormatDecimal(detail.SoLuongQuaKho)),
+            new DetailRow("Hàng quá tải", FormatBool(detail.HangQuaTai)),
+            new DetailRow("Số lượng quá tải", FormatDecimal(detail.SoLuongQuaTai)),
+            new DetailRow("EDO", detail.EDO),
+            new DetailRow("Mã cửa làm hàng", detail.MaDanhMucCuaLamHang),
+            new DetailRow("Ngày nhập kho", FormatDate(detail.NgayNhapKho)),
+            new DetailRow("Ngày gia hạn cuối", FormatDate(detail.NgayGiaHanCuoi)),
+            new DetailRow("Mã đại lý", detail.MaDanhMucDaiLy),
+            new DetailRow("Số seal", detail.SoSeal),
+            new DetailRow("Loại container", detail.MaDanhMucLoaiContainer),
+            new DetailRow("Mã hàng tàu", detail.MaDanhMucHangTau),
+            new DetailRow("Tên tàu", detail.TenTau),
+            new DetailRow("Số chuyến", detail.SoChuyen),
+            new DetailRow("Ngày tàu đến", FormatDate(detail.NgayTauDen)),
+            new DetailRow("Ghi chú", detail.GhiChu)
+        ];
+    }
+
+    private static string FormatDate(DateTime? value)
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) : "-";
+
+    private static string FormatMoney(decimal value)
+        => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
+
+    private static string FormatDecimal(decimal value)
+        => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
+
+    private static string FormatBool(bool value)
+        => value ? "Có" : "Không";
+
+    private sealed record DetailRow(string Label, string Value);
 
     private static string GetStatusClass(string status)
         => status switch

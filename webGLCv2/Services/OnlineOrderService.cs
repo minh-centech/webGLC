@@ -14,9 +14,9 @@ public sealed class OnlineOrderService
     };
 
     private const string ThongQuanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/TrangThaiThongQuan";
-    private const string PhiLuuKhoApiPath = "http://192.168.1.66:59/api/TinhCuoc/TinhCuoc";
+    private const string PhiLuuKhoApiPath = "/api/TinhCuoc/TinhCuoc";
     private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
-    private const string ChiTietHouseBillApiPath = "http://192.168.1.66:59/api/ctLenhNhapKhoHangNhapKhau/ListValidSoVanDonXuatKho";
+    private const string ChiTietHouseBillApiPath = "/api/ctLenhNhapKhoHangNhapKhau/ListValidSoVanDonXuatKho";
     private const string ThongTinThanhToanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ThongTinThanhToan";
 
     private readonly HttpClient _httpClient;
@@ -337,11 +337,11 @@ public sealed class OnlineOrderService
             };
     }
 
-    public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont)
+    public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont="")
     {
         var response = await _httpClient.PostAsJsonAsync(
             BuildWorkflowUrl(ChiTietHouseBillApiPath),
-            new { SoVanDon = houseBill },
+            new { SoVanDon = houseBill, SoCont= soCont },
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
@@ -762,14 +762,18 @@ public sealed class OnlineOrderService
 
     private string BuildWorkflowUrl(string relativePath)
     {
-        //Tạm thời dùng url mặc định
-        return relativePath;
-        //if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
-        //{
-        //    throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
-        //}
+        // Nếu relativePath đã là URL tuyệt đối (bắt đầu bằng http:// hoặc https://)
+        if (relativePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            relativePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return relativePath;
+        }
+        if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
+        {
+            throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
+        }
 
-        //return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
+        return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
     }
 
     private static OnlineOrderRecord MapOnlineOrder(JsonElement item)

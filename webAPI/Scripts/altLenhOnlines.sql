@@ -137,3 +137,7 @@ BEGIN
         ON dbo.tblLenhOnlines(SoThuTuLenh);
 END
 GO
+
+ALTER TABLE tblLenhOnlines
+ADD TrangThaiHaiQuan TINYINT NOT NULL 
+    CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;

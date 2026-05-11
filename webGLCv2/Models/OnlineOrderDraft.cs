@@ -28,7 +28,7 @@ public sealed class OnlineOrderDraft
     [Required(ErrorMessage = "Vui lòng nhập số cont.")]
     public string ContainerNumber { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lòng chọn ngày lấy hàng.")]
+    //[Required(ErrorMessage = "Vui lòng chọn ngày lấy hàng.")]
     public DateTime? PickupDate { get; set; }
 
     public string DeclarationNumber { get; set; } = string.Empty;

@@ -221,8 +221,86 @@ public sealed class ThongTinThanhToanData
     public string QrCodeBase64 { get; set; } = string.Empty;
 }
 
+public sealed class LenhXuatKhoHangNhapKhauTempInsertRequest
+{
+    [JsonPropertyName("LenhXuatKho")]
+    public LenhXuatKhoHangNhapKhauTempInsertData LenhXuatKho { get; set; } = new();
+
+    [JsonPropertyName("DanhSachPhi")]
+    public List<PhiLuuKhoApiItem> DanhSachPhi { get; set; } = [];
+}
+
+public sealed class LenhXuatKhoHangNhapKhauTempInsertData
+{
+    [JsonPropertyName("NgayLap")]
+    public string NgayLap { get; set; } = string.Empty;
+
+    [JsonPropertyName("NgayGiaHan")]
+    public string NgayGiaHan { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoVanDon")]
+    public string SoVanDon { get; set; } = string.Empty;
+
+    [JsonPropertyName("IDctLenhNhapKhoHangNhapKhauChiTiet")]
+    public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
+
+    [JsonPropertyName("SoLuongQuaKho")]
+    public decimal SoLuongQuaKho { get; set; }
+
+    [JsonPropertyName("SoLuongQuaTai")]
+    public decimal SoLuongQuaTai { get; set; }
+
+    [JsonPropertyName("MaSoThue")]
+    public string MaSoThue { get; set; } = string.Empty;
+
+    [JsonPropertyName("HoTenNguoiNhanHang")]
+    public string HoTenNguoiNhanHang { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoCMND")]
+    public string SoCMND { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoDienThoaiNguoiNhanHang")]
+    public string SoDienThoaiNguoiNhanHang { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoLuongKienXuat")]
+    public int SoLuongKienXuat { get; set; }
+
+    [JsonPropertyName("KhoiLuongXuat")]
+    public decimal KhoiLuongXuat { get; set; }
+
+    [JsonPropertyName("CBMXuat")]
+    public decimal CBMXuat { get; set; }
+
+    [JsonPropertyName("IDDanhMucCuaLamHang")]
+    public long IDDanhMucCuaLamHang { get; set; }
+
+    [JsonPropertyName("SoToKhai")]
+    public string SoToKhai { get; set; } = string.Empty;
+
+    [JsonPropertyName("GhiChu")]
+    public string GhiChu { get; set; } = string.Empty;
+
+    [JsonPropertyName("IDDanhMucKhachHangDoiLenh")]
+    public long IDDanhMucKhachHangDoiLenh { get; set; }
+}
+
+public sealed class LenhXuatKhoHangNhapKhauTempInsertResponse
+{
+    [JsonPropertyName("ID")]
+    public int ID { get; set; }
+
+    [JsonPropertyName("So")]
+    public string So { get; set; } = string.Empty;
+
+    [JsonPropertyName("QRCode")]
+    public string QRCode { get; set; } = string.Empty;
+}
+
 public sealed class ChiTietHouseBillData
 {
+    [JsonPropertyName("ID")]
+    public int ID { get; set; }
+
     [JsonPropertyName("SoVanDon")]
     public string SoVanDon { get; set; } = string.Empty;
 
@@ -292,6 +370,9 @@ public sealed class ChiTietHouseBillData
     [JsonPropertyName("MaDanhMucCuaLamHang")]
     public string MaDanhMucCuaLamHang { get; set; } = string.Empty;
 
+    [JsonPropertyName("IDDanhMucCuaLamHang")]
+    public long IDDanhMucCuaLamHang { get; set; }
+
     [JsonPropertyName("NgayNhapKho")]
     public DateTime? NgayNhapKho { get; set; }
 
@@ -357,6 +438,12 @@ public sealed class ChiTietHouseBillData
 
     [JsonIgnore]
     public bool IsHoanThanh { get; set; }
+
+    [JsonIgnore]
+    public long ResolvedIDDanhMucCuaLamHang
+        => IDDanhMucCuaLamHang > 0
+            ? IDDanhMucCuaLamHang
+            : long.TryParse(MaDanhMucCuaLamHang, out var parsedId) ? parsedId : 0;
 }
 
 public sealed class OnlineOrderWorkflowResult

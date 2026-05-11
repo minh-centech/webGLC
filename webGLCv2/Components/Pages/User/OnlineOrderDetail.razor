@@ -487,8 +487,14 @@
             <div class="payment-modal-body">
                 <div class="field-grid">
                     <div>
-                        <label class="portal-label">Nhập ngày</label>
-                        <InputDate TValue="DateTime?" class="portal-input" @bind-Value="StorageActionDate" />
+                        <label class="portal-label">Chọn ngày lấy hàng</label>
+                        <input class="portal-input"
+                               id="storageActionDateInput"
+                               value="@StorageActionDateText"
+                               @oninput="OnStorageActionDateInput"
+                               @onchange="OnStorageActionDateInput"
+                               placeholder="dd/MM/yyyy"
+                               inputmode="numeric" />
                     </div>
                 </div>
 
@@ -554,49 +560,34 @@
                 {
                     <div class="portal-alert portal-alert-error" style="margin-top:16px;">@PaymentPopupMessage</div>
                 }
-                else if (PaymentInfo?.Data is not null)
+                else if (PaymentInfo is not null)
                 {
                     <div class="payment-modal-grid" style="margin-top:16px;">
                         <div class="payment-qr-card">
-                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.Data.QrCodeBase64)" alt="QR thanh toán" />
+                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.QRCode)" alt="QR thanh toán" />
                             <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này.</p>
                         </div>
 
                         <div class="payment-details">
                             <div class="payment-detail-row">
-                                <span>Số tiền</span>
-                                <strong>@FormatMoney(PaymentInfo.Data.SoTien)</strong>
+                                <span>Số phiếu</span>
+                                <strong>@PaymentInfo.So</strong>
                             </div>
                             <div class="payment-detail-row">
-                                <span>Số tài khoản</span>
-                                <strong>@PaymentInfo.Data.SoTaiKhoan</strong>
-                            </div>
-                            <div class="payment-detail-row">
-                                <span>Tên tài khoản</span>
-                                <strong>@PaymentInfo.Data.TenTaiKhoan</strong>
-                            </div>
-                            <div class="payment-detail-row">
-                                <span>Ngân hàng</span>
-                                <strong>@PaymentInfo.Data.TenNganHang</strong>
-                            </div>
-                            <div class="payment-detail-row">
-                                <span>Mã thanh toán</span>
-                                <strong>@PaymentInfo.Data.IdPayment</strong>
+                                <span>ID</span>
+                                <strong>@PaymentInfo.ID</strong>
                             </div>
                         </div>
                     </div>
                 }
             </div>
 
-            <div class="payment-modal-footer">
-                <button type="button" class="portal-secondary-action" @onclick="CloseStorageActionPopup">Đóng</button>
-                <button type="button" class="portal-primary-action" @onclick="ExecuteStorageActionAsync" disabled="@IsExecutingStorageAction">
-                    @(IsExecutingStorageAction ? "Đang thực hiện..." : (Workflow?.PhiLuuKho?.Data is not null ? "Thực hiện lại" : "Thực hiện"))
-                </button>
+            <div class="payment-modal-footer" style="gap:12px; padding:14px 18px;">
+                <button type="button" class="portal-secondary-action" style="padding:0.85rem 1.2rem;" @onclick="CloseStorageActionPopup">Đóng</button>
                 @if (Workflow?.PhiLuuKho?.Data?.TrangThaiThanhToan == 0)
                 {
-                    <button type="button" class="portal-secondary-action" @onclick="ShowPaymentPopupAsync">
-                        Thanh toán
+                    <button type="button" class="portal-primary-action" style="padding:0.85rem 1.2rem;" @onclick="ExecutePaymentAsync">
+                        Thanh toán QRCode
                     </button>
                 }
             </div>
@@ -615,7 +606,7 @@
     private string? WorkflowMessage;
     private string? ErrorMessage;
     private bool IsLoadingPaymentInfo;
-    private ThongTinThanhToanResponse? PaymentInfo;
+    private LenhXuatKhoHangNhapKhauTempInsertResponse? PaymentInfo;
     private string? PaymentPopupMessage;
     private int WorkflowRunSequence;
     private bool IsPageLoading = true;
@@ -623,7 +614,10 @@
     private StorageActionPopupMode? StorageActionMode;
     private bool IsStorageActionPopupOpen;
     private bool IsExecutingStorageAction;
+    private bool _shouldInitStorageDatePicker;
+    private bool _shouldAutoLoadStorageAction;
     private DateTime? StorageActionDate;
+    private string StorageActionDateText = string.Empty;
     private string? StorageActionPopupMessage;
 
     private enum StorageActionPopupMode
@@ -634,13 +628,32 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _pageLoadStarted)
+        if (firstRender && !_pageLoadStarted)
         {
+            _pageLoadStarted = true;
+            await LoadPageAsync();
             return;
         }
 
-        _pageLoadStarted = true;
-        await LoadPageAsync();
+        if (!IsStorageActionPopupOpen || !_shouldInitStorageDatePicker)
+        {
+            if (!IsStorageActionPopupOpen || !_shouldAutoLoadStorageAction)
+            {
+                return;
+            }
+        }
+
+        if (_shouldInitStorageDatePicker)
+        {
+            _shouldInitStorageDatePicker = false;
+            await JSRuntime.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "storageActionDateInput");
+        }
+
+        if (_shouldAutoLoadStorageAction)
+        {
+            _shouldAutoLoadStorageAction = false;
+            await ExecuteStorageActionAsync();
+        }
     }
 
     private async Task LoadPageAsync()
@@ -650,7 +663,7 @@
         try
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
+            CurrentUserId = GetCurrentUserId(authState.User);
 
             if (CurrentUserId <= 0)
             {
@@ -814,7 +827,7 @@
         {
             0 => "Chưa thanh toán",
             1 => "Đang chờ xác nhận",
-            2 => "Thanh toán th�nh c�ng",
+            2 => "Thanh toán thành công",
             _ => "Không xác định"
         };
 
@@ -826,8 +839,8 @@
 
     private string GetStorageActionPopupTitle()
         => StorageActionMode == StorageActionPopupMode.Extend
-            ? "Gia hạn ph� luu kho"
-            : "Thanh toán ph� luu kho";
+            ? "Gia hạn phí lưu kho"
+            : "Thanh toán phí lưu kho";
 
     private bool CanShowExtendAction
     {
@@ -852,9 +865,16 @@
         }
 
         StorageActionMode = mode;
-        StorageActionDate = chiTiet.NgayGiaHanCuoi ?? chiTiet.NgayNhapKho ?? Order.PickupDate ?? DateTime.Today;
+        StorageActionDate = mode == StorageActionPopupMode.Payment
+            ? DateTime.Today
+            : chiTiet.NgayGiaHanCuoi ?? chiTiet.NgayNhapKho ?? Order.PickupDate ?? DateTime.Today;
+        StorageActionDateText = StorageActionDate.HasValue
+            ? StorageActionDate.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))
+            : string.Empty;
         StorageActionPopupMessage = null;
         IsStorageActionPopupOpen = true;
+        _shouldInitStorageDatePicker = true;
+        _shouldAutoLoadStorageAction = mode == StorageActionPopupMode.Payment;
     }
 
     private void CloseStorageActionPopup()
@@ -863,6 +883,38 @@
         IsExecutingStorageAction = false;
         StorageActionPopupMessage = null;
         StorageActionMode = null;
+        StorageActionDateText = string.Empty;
+        _shouldInitStorageDatePicker = false;
+        _shouldAutoLoadStorageAction = false;
+    }
+
+    private async Task OnStorageActionDateInput(ChangeEventArgs args)
+    {
+        StorageActionDateText = args.Value?.ToString() ?? string.Empty;
+        SyncStorageActionDateFromText();
+
+        if (!IsStorageActionPopupOpen || !StorageActionDate.HasValue)
+        {
+            return;
+        }
+
+        await ExecuteStorageActionAsync();
+    }
+
+    private void SyncStorageActionDateFromText()
+    {
+        if (DateTime.TryParseExact(
+                StorageActionDateText,
+                "dd/MM/yyyy",
+                CultureInfo.GetCultureInfo("vi-VN"),
+                DateTimeStyles.None,
+                out var parsedDate))
+        {
+            StorageActionDate = parsedDate;
+            return;
+        }
+
+        StorageActionDate = null;
     }
 
     private async Task ExecuteStorageActionAsync()
@@ -890,7 +942,7 @@
             Workflow.PhiLuuKho = response;
             WorkflowMessage = StorageActionMode == StorageActionPopupMode.Extend
                 ? "Đã tải dữ liệu phí gia hạn và phí lưu kho."
-                : "Đã tải dữ liệu phí lưu kho.";
+                : "Đã tải dữ liệu thành công.";
         }
         catch (Exception ex)
         {
@@ -965,10 +1017,24 @@
 
     private async Task ShowPaymentPopupAsync()
     {
-        if (Order is null)
+        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null)
         {
             return;
         }
+
+        OpenStorageActionPopup(StorageActionPopupMode.Payment);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ExecutePaymentAsync()
+    {
+        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null || Workflow?.PhiLuuKho?.Data is null)
+        {
+            return;
+        }
+
+        SyncStorageActionDateFromText();
 
         IsLoadingPaymentInfo = true;
         PaymentPopupMessage = null;
@@ -976,14 +1042,16 @@
 
         try
         {
-            PaymentInfo = await OnlineOrderService.GetThongTinThanhToanAsync(Order.HouseBill, Order.ContainerNumber);
+            var chiTiet = Workflow.ChiTietHouseBill.ParsedData;
+            var ngayGiaHan = StorageActionDate ?? chiTiet.NgayGiaHanCuoi ?? chiTiet.NgayNhapKho ?? Order.PickupDate ?? DateTime.Today;
+            var currentUserId = CurrentUserId > 0 ? CurrentUserId : GetCurrentUserId((await AuthenticationStateProvider.GetAuthenticationStateAsync()).User);
 
-            if (PaymentInfo is null || !PaymentInfo.Success || PaymentInfo.Data is null)
-            {
-                PaymentPopupMessage = string.IsNullOrWhiteSpace(PaymentInfo?.Message)
-                    ? "Không lấy được thông tin thanh toán."
-                    : PaymentInfo.Message;
-            }
+            PaymentInfo = await OnlineOrderService.InsertLenhXuatKhoHangNhapKhauTempAsync(
+                Order,
+                chiTiet,
+                Workflow.PhiLuuKho,
+                ngayGiaHan,
+                currentUserId);
         }
         catch (Exception ex)
         {
@@ -1148,6 +1216,14 @@
         return value.StartsWith("data:image", StringComparison.OrdinalIgnoreCase)
             ? value
             : $"data:image/png;base64,{value}";
+    }
+
+    private static long GetCurrentUserId(ClaimsPrincipal user)
+    {
+        var claimValue = user.FindFirstValue("id_khachhang_doilenh")
+            ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        return long.TryParse(claimValue, out var parsedId) ? parsedId : 0;
     }
 }
 

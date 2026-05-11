@@ -409,6 +409,74 @@ public sealed class OnlineOrderService
             };
     }
 
+    public async Task<LenhXuatKhoHangNhapKhauTempInsertResponse> InsertLenhXuatKhoHangNhapKhauTempAsync(
+        OnlineOrderRecord order,
+        ChiTietHouseBillData chiTiet,
+        PhiLuuKhoResponse phiLuuKho,
+        DateTime ngayGiaHan,
+        long idDanhMucKhachHangDoiLenh,
+        string? ghiChu = null)
+    {
+        if (phiLuuKho.Data is null)
+        {
+            throw new InvalidOperationException("Khong co du lieu phi luu kho de tao lenh xuat kho.");
+        }
+
+        var ngayLap = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+        var ngayGiaHanText = ngayGiaHan.Date.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+        var request = new LenhXuatKhoHangNhapKhauTempInsertRequest
+        {
+            LenhXuatKho = new LenhXuatKhoHangNhapKhauTempInsertData
+            {
+                NgayLap = ngayLap,
+                NgayGiaHan = ngayGiaHanText,
+                SoVanDon = string.IsNullOrWhiteSpace(chiTiet.SoVanDon) ? order.HouseBill : chiTiet.SoVanDon,
+                IDctLenhNhapKhoHangNhapKhauChiTiet = chiTiet.ID,
+                SoLuongQuaKho = chiTiet.SoLuongQuaKho,
+                SoLuongQuaTai = chiTiet.SoLuongQuaTai,
+                MaSoThue = order.TaxCode,
+                HoTenNguoiNhanHang = order.CustomerName,
+                SoCMND = order.IdentityNumber,
+                SoDienThoaiNguoiNhanHang = order.PhoneNumber,
+                SoLuongKienXuat = ToInt32Safely(chiTiet.SoLuongKienNhap),
+                KhoiLuongXuat = chiTiet.KhoiLuongNhap,
+                CBMXuat = chiTiet.CBMNhap,
+                IDDanhMucCuaLamHang = chiTiet.ResolvedIDDanhMucCuaLamHang,
+                SoToKhai = order.DeclarationNumber,
+                GhiChu = NullIfEmpty(ghiChu) ?? string.Empty,
+                IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh
+            },
+            DanhSachPhi = phiLuuKho.Data.ChiTietHoaDon
+                .Select(MapPhiLuuKhoApiItem)
+                .ToList()
+        };
+
+        Console.WriteLine($"[LenhXuatKhoHangNhapKhauTempInsertData] {JsonSerializer.Serialize(request.LenhXuatKho, JsonOptions)}");
+        
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/Insert"),
+            request,
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tao lenh xuat kho hang nhap khau tam.");
+
+        if (string.IsNullOrWhiteSpace(envelope!.Data))
+        {
+            throw new InvalidOperationException("Khong the doc ket qua tao lenh xuat kho.");
+        }
+
+        var result = JsonSerializer.Deserialize<LenhXuatKhoHangNhapKhauTempInsertResponse>(envelope.Data, JsonOptions);
+        if (result is null)
+        {
+            throw new InvalidOperationException("Khong the doc ket qua tao lenh xuat kho.");
+        }
+
+        return result;
+    }
+
     public async Task<OnlineOrderWorkflowResult> RunOrderWorkflowAsync(
         long idLenhOnline,
         string houseBill,
@@ -551,9 +619,51 @@ public sealed class OnlineOrderService
         };
     }
 
+    private static PhiLuuKhoApiItem MapPhiLuuKhoApiItem(PhiLuuKhoItem item)
+    {
+        return new PhiLuuKhoApiItem
+        {
+            IDDanhMucCuoc = item.IDDanhMucCuoc,
+            MaDanhMucCuoc = item.MaDanhMucCuoc,
+            TenDanhMucCuoc = item.TenDanhMucCuoc,
+            DienGiai = item.MoTa,
+            DonViTinh = item.DonViTinh,
+            SoLuong = item.SoLuong,
+            NgayLuuKho = item.NgayLuuKho,
+            DonGia = item.DonGia,
+            DonGiaCuoc = item.DonGiaCuoc,
+            DonGiaTraDaiLyTheoHopDong = item.DonGiaTraDaiLyTheoHopDong,
+            DonGiaTraDaiLyThuThem = item.DonGiaTraDaiLyThuThem,
+            TienHang = item.TienHangThucTe,
+            IDDanhMucThueSuat = item.IDDanhMucThueSuat,
+            ThueSuat = item.ThueSuat,
+            TienThue = item.TienThue,
+            ThanhTien = item.TongTien,
+            TongTien = item.TongTien,
+            MaDanhMucTaiKhoanKeToanDoanhThu = item.MaDanhMucTaiKhoanKeToanDoanhThu,
+            MaDanhMucTaiKhoanKeToanThanhToan = item.MaDanhMucTaiKhoanKeToanThanhToan,
+            MaDanhMucTaiKhoanKeToanThue = item.MaDanhMucTaiKhoanKeToanThue
+        };
+    }
+
     private static bool ContainsText(string source, string value)
         => !string.IsNullOrWhiteSpace(source)
            && source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
+
+    private static int ToInt32Safely(decimal value)
+    {
+        if (value >= int.MaxValue)
+        {
+            return int.MaxValue;
+        }
+
+        if (value <= int.MinValue)
+        {
+            return int.MinValue;
+        }
+
+        return decimal.ToInt32(decimal.Round(value, 0, MidpointRounding.AwayFromZero));
+    }
 
     private static DateTime? ParseWorkflowDate(string value)
     {

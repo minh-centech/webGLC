@@ -249,9 +249,9 @@
                             <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow!.ChiTietHouseBill!.ParsedData!.IsHoanThanh)">
                                 @GetChiTietHouseBillStatusLabel(Workflow!.ChiTietHouseBill!.ParsedData!.IsHoanThanh)
                             </span>
-                            <span class="workflow-message" style="margin:0;">
+                           @*  <span class="workflow-message" style="margin:0;">
                                 Trạng thái lấy trực tiếp từ API <strong>/ChiTietHouseBill</strong>.
-                            </span>
+                            </span> *@
                         </div>
 
                         <div class="table-shell compact-table">
@@ -344,6 +344,7 @@
 
         Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
             OrderId,
+            Order.UserId,
             Order.HouseBill,
             Order.ContainerNumber,
             Order.PickupDate,

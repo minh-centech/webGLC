@@ -322,12 +322,12 @@
                         @if (HasChiTietHouseBill)
                         {
                             <div class="workflow-payment-row" style="margin-bottom:12px;">
-                                <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)">
+                                @* <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)">
                                     @GetChiTietHouseBillStatusLabel(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)
                                 </span>
                                 <span class="workflow-message" style="margin:0;">
                                     Trạng thái lấy trực tiếp từ API <strong>/ChiTietHouseBill</strong>.
-                                </span>
+                                </span> *@
                             </div>
 
                         <div class="table-shell compact-table query-table-scroll">
@@ -452,6 +452,133 @@
                         } *@
                     }
                 </article>
+                </section>
+
+                <section class="workflow-grid" style="margin-top:16px;">
+                    <article class="workflow-card workflow-card-wide">
+                        <div class="section-heading">
+                            <h2>Lệnh xuất kho</h2>
+                            <span class="status-chip @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
+                                @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true
+                                    ? $"{Workflow.LenhXuatKhoHangNhapKhauTemps!.Data.Count} mục"
+                                    : "Chưa có dữ liệu")
+                            </span>
+                        </div>
+
+                        @{
+                            var lenhXuatKhoTempMessage = GetLenhXuatKhoTempMessage(Workflow);
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(lenhXuatKhoTempMessage))
+                        {
+                            <div class="portal-alert portal-alert-warning">@lenhXuatKhoTempMessage</div>
+                        }
+                        else
+                        {
+                            <div class="table-shell compact-table query-table-scroll">
+                                <table class="portal-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Số</th>
+                                            <th>Ngày lập</th>
+                                            <th>Ngày gia hạn</th>
+                                            <th>Số vận đơn</th>
+                                            <th>PDF</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Workflow!.LenhXuatKhoHangNhapKhauTemps!.Data)
+                                        {
+                                            <tr>
+                                                <td>@item.So</td>
+                                                <td>@FormatDateTime(item.NgayLap)</td>
+                                                <td>@FormatDateTime(item.NgayGiaHan)</td>
+                                                <td>@item.SoVanDon</td>
+                                                <td>
+                                                    <a class="portal-secondary-action"
+                                                       href="@item.DownloadUrl"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer">
+                                                        Tải PDF
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </article>
+
+                    <article class="workflow-card workflow-card-wide">
+                        <div class="section-heading">
+                            <h2>Biên nhận thanh toán</h2>
+                            <span class="status-chip @(Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
+                                @(Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
+                                    ? $"{Workflow.BienNhanThanhToanHangNhapKhauTemps!.Data.Count} mục"
+                                    : "Chưa có dữ liệu")
+                            </span>
+                        </div>
+
+                        @{
+                            var bienNhanTempMessage = GetBienNhanThanhToanTempMessage(Workflow);
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(bienNhanTempMessage))
+                        {
+                            <div class="portal-alert portal-alert-warning">@bienNhanTempMessage</div>
+                        }
+                        else
+                        {
+                            <div class="table-shell compact-table query-table-scroll">
+                                <table class="portal-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Số</th>
+                                              <th>Ngày lập</th>
+                                              <th>Ngày gia hạn</th>
+                                              <th>Thanh toán</th>
+                                              <th>Thời gian thanh toán</th>
+                                              <th>PDF</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Workflow!.BienNhanThanhToanHangNhapKhauTemps!.Data)
+                                        {
+                                            <tr>
+                                                <td>@item.So</td>
+                                                <td>@FormatDateTime(item.NgayLap)</td>
+                                                <td>@FormatDateTime(item.NgayGiaHan)</td>
+                                                <td>
+                                                    @if (item.DaThanhToan)
+                                                    {
+                                                        <span title="Đã thanh toán" aria-label="Đã thanh toán" style="color:#16a34a; font-size:1.05rem;">
+                                                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span title="Chưa thanh toán" aria-label="Chưa thanh toán" style="color:#dc2626; font-size:1.05rem;">
+                                                            <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>@FormatDateTime(item.ThoiGianThanhToan)</td>
+                                                <td>
+                                                    <a class="portal-secondary-action"
+                                                       href="@item.DownloadUrl"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer">
+                                                        Tải PDF
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </article>
                 </section>
 
                 <div class="workflow-actions no-print">
@@ -826,6 +953,7 @@
             Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync start. OrderId={OrderId}");
             Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
                 OrderId,
+                CurrentUserId,
                 Order.HouseBill,
                 Order.ContainerNumber,
                 Order.PickupDate,
@@ -842,11 +970,11 @@
             var thongQuan = Workflow?.ThongQuan;
             if (thongQuan is null)
             {
-                WorkflowMessage = "Chua th? ki?m tra th?ng quan.";
+                WorkflowMessage = "Chưa có trạng thái thông quan.";
             }
             else if (thongQuan.Success && thongQuan.IsThongQuan)
             {
-                WorkflowMessage = "Tải thông tin.";
+                WorkflowMessage = "Lấy thông tin thành công.";
             }
             else
             {
@@ -915,9 +1043,53 @@
         return "Chưa có dữ liệu truy vấn thông tin.";
     }
 
-    private static string GetPaymentStatusClass(int trangThaiThanhToan)
-        => trangThaiThanhToan switch
+    private static string GetLenhXuatKhoTempMessage(OnlineOrderWorkflowResult? workflow)
+    {
+        if (workflow?.LenhXuatKhoHangNhapKhauTemps is null)
         {
+            return "Chưa có dữ liệu danh sách lệnh xuất kho.";
+        }
+
+        if (!workflow.LenhXuatKhoHangNhapKhauTemps.Success)
+        {
+            return string.IsNullOrWhiteSpace(workflow.LenhXuatKhoHangNhapKhauTemps.Message)
+                ? "Không thể tải danh sách lệnh xuất kho."
+                : workflow.LenhXuatKhoHangNhapKhauTemps.Message;
+        }
+
+        if (workflow.LenhXuatKhoHangNhapKhauTemps.Data.Count == 0)
+        {
+            return "Chưa có lệnh xuất kho.";
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetBienNhanThanhToanTempMessage(OnlineOrderWorkflowResult? workflow)
+    {
+        if (workflow?.BienNhanThanhToanHangNhapKhauTemps is null)
+        {
+            return "Chưa có dữ liệu danh sách biên nhận thanh toán.";
+        }
+
+        if (!workflow.BienNhanThanhToanHangNhapKhauTemps.Success)
+        {
+            return string.IsNullOrWhiteSpace(workflow.BienNhanThanhToanHangNhapKhauTemps.Message)
+                ? "Không thể tải danh sách biên nhận thanh toán."
+                : workflow.BienNhanThanhToanHangNhapKhauTemps.Message;
+        }
+
+        if (workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Count == 0)
+        {
+            return "Chưa có biên nhận thanh toán.";
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetPaymentStatusClass(int trangThaiThanhToan)
+          => trangThaiThanhToan switch
+          {
             0 => "warning",
             1 => "pending",
             2 => "success",

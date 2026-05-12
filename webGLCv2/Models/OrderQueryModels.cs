@@ -296,6 +296,71 @@ public sealed class LenhXuatKhoHangNhapKhauTempInsertResponse
     public string QRCodeThanhToan { get; set; } = string.Empty;
 }
 
+public sealed class LenhXuatKhoHangNhapKhauTempListResponse
+{
+    public bool Success { get; set; }
+    public List<LenhXuatKhoHangNhapKhauTempListItem> Data { get; set; } = [];
+    public string Message { get; set; } = string.Empty;
+}
+
+public sealed class LenhXuatKhoHangNhapKhauTempListItem
+{
+    [JsonPropertyName("ID")]
+    public long ID { get; set; }
+
+    [JsonPropertyName("So")]
+    public string So { get; set; } = string.Empty;
+
+    [JsonPropertyName("NgayLap")]
+    public DateTime? NgayLap { get; set; }
+
+    [JsonPropertyName("NgayGiaHan")]
+    public DateTime? NgayGiaHan { get; set; }
+
+    [JsonPropertyName("IDctLenhNhapKhoHangNhapKhauChiTiet")]
+    public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
+
+    [JsonPropertyName("SoVanDon")]
+    public string SoVanDon { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string DownloadUrl { get; set; } = string.Empty;
+}
+
+public sealed class BienNhanThanhToanHangNhapKhauTempListResponse
+{
+    public bool Success { get; set; }
+    public List<BienNhanThanhToanHangNhapKhauTempListItem> Data { get; set; } = [];
+    public string Message { get; set; } = string.Empty;
+}
+
+public sealed class BienNhanThanhToanHangNhapKhauTempListItem
+{
+    [JsonPropertyName("ID")]
+    public long ID { get; set; }
+
+    [JsonPropertyName("So")]
+    public string So { get; set; } = string.Empty;
+
+    [JsonPropertyName("NgayLap")]
+    public DateTime? NgayLap { get; set; }
+
+    [JsonPropertyName("NgayGiaHan")]
+    public DateTime? NgayGiaHan { get; set; }
+
+    [JsonPropertyName("DaThanhToan")]
+    public bool DaThanhToan { get; set; }
+
+    [JsonPropertyName("ThoiGianThanhToan")]
+    public DateTime? ThoiGianThanhToan { get; set; }
+
+    [JsonPropertyName("NoiDungThanhToan")]
+    public string? NoiDungThanhToan { get; set; }
+
+    [JsonIgnore]
+    public string DownloadUrl { get; set; } = string.Empty;
+}
+
 public sealed class ChiTietHouseBillData
 {
     [JsonPropertyName("ID")]
@@ -452,4 +517,6 @@ public sealed class OnlineOrderWorkflowResult
     public PhiLuuKhoResponse? PhiLuuKho { get; set; }
     public PhiLuuKhoQuaHanResponse? PhiLuuKhoQuaHan { get; set; }
     public ChiTietHouseBillResponse? ChiTietHouseBill { get; set; }
+    public LenhXuatKhoHangNhapKhauTempListResponse? LenhXuatKhoHangNhapKhauTemps { get; set; }
+    public BienNhanThanhToanHangNhapKhauTempListResponse? BienNhanThanhToanHangNhapKhauTemps { get; set; }
 }

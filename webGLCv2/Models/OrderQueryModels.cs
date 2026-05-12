@@ -354,11 +354,25 @@ public sealed class BienNhanThanhToanHangNhapKhauTempListItem
     [JsonPropertyName("ThoiGianThanhToan")]
     public DateTime? ThoiGianThanhToan { get; set; }
 
+    [JsonPropertyName("QRCodeThanhToan")]
+    public string? QRCodeThanhToan { get; set; }
+
+    [JsonPropertyName("TongTien")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal TongTien { get; set; }
+
     [JsonPropertyName("NoiDungThanhToan")]
     public string? NoiDungThanhToan { get; set; }
 
     [JsonIgnore]
     public string DownloadUrl { get; set; } = string.Empty;
+}
+
+public sealed class PdfDownloadResult
+{
+    public byte[] Content { get; set; } = [];
+    public string FileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = "application/pdf";
 }
 
 public sealed class ChiTietHouseBillData

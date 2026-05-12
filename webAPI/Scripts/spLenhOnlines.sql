@@ -240,7 +240,7 @@ go
 
 alter procedure dbo.Update_tblLenhOnlines
 	@ID				bigint,
-	@HoVaTen		nvarchar(255),
+	@HoVaTen		nvarchar(255) = null,
 	@SoDienThoai	nvarchar(50) = null,
 	@SoCMND			nvarchar(50) = null,
 	@SoXe			nvarchar(50) = null,
@@ -252,14 +252,52 @@ alter procedure dbo.Update_tblLenhOnlines
 	@SoCont			nvarchar(50) = null,
 	@NgayLayHang	datetime = null,
 	@SoToKhai		nvarchar(100) = null,
-	@TrangThai		int = 0,
-	@IDDanhMucKhachHangDoiLenh	bigint,
+	@TrangThai		int = null,
+	@IDDanhMucKhachHangDoiLenh	bigint = null,
 	@EditDate		datetime = null out
 as
 begin
 	set nocount on;
 
 	declare @ErrMsg nvarchar(max);
+	declare @CurrentHoVaTen nvarchar(255);
+	declare @CurrentSoDienThoai nvarchar(50);
+	declare @CurrentSoCMND nvarchar(50);
+	declare @CurrentSoXe nvarchar(50);
+	declare @CurrentMaSoThue nvarchar(50);
+	declare @CurrentTenCongTy nvarchar(255);
+	declare @CurrentDiaChi nvarchar(500);
+	declare @CurrentEmail nvarchar(255);
+	declare @CurrentHouseBill nvarchar(100);
+	declare @CurrentSoCont nvarchar(50);
+	declare @CurrentNgayLayHang datetime;
+	declare @CurrentSoToKhai nvarchar(100);
+	declare @CurrentTrangThai int;
+	declare @CurrentIDDanhMucKhachHangDoiLenh bigint;
+
+	select
+		@CurrentHoVaTen = HoVaTen,
+		@CurrentSoDienThoai = SoDienThoai,
+		@CurrentSoCMND = SoCMND,
+		@CurrentSoXe = SoXe,
+		@CurrentMaSoThue = MaSoThue,
+		@CurrentTenCongTy = TenCongTy,
+		@CurrentDiaChi = DiaChi,
+		@CurrentEmail = Email,
+		@CurrentHouseBill = HouseBill,
+		@CurrentSoCont = SoCont,
+		@CurrentNgayLayHang = NgayLayHang,
+		@CurrentSoToKhai = SoToKhai,
+		@CurrentTrangThai = TrangThai,
+		@CurrentIDDanhMucKhachHangDoiLenh = IDDanhMucKhachHangDoiLenh
+	from tblLenhOnlines
+	where ID = @ID;
+
+	if @CurrentHoVaTen is null
+	begin
+		raiserror(N'Ban ghi khong ton tai!', 16, 1);
+		return;
+	end;
 
 	set @HoVaTen = dbo.ChuanHoaChuoi(@HoVaTen);
 	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
@@ -272,13 +310,20 @@ begin
 	set @HouseBill = dbo.ChuanHoaChuoi(@HouseBill);
 	set @SoCont = dbo.ChuanHoaChuoi(@SoCont);
 	set @SoToKhai = dbo.ChuanHoaChuoi(@SoToKhai);
-	set @TrangThai = isnull(@TrangThai, 0);
-
-	if not exists (select 1 from tblLenhOnlines where ID = @ID)
-	begin
-		raiserror(N'Ban ghi khong ton tai!', 16, 1);
-		return;
-	end;
+	set @HoVaTen = isnull(@HoVaTen, @CurrentHoVaTen);
+	set @SoDienThoai = isnull(@SoDienThoai, @CurrentSoDienThoai);
+	set @SoCMND = isnull(@SoCMND, @CurrentSoCMND);
+	set @SoXe = isnull(@SoXe, @CurrentSoXe);
+	set @MaSoThue = isnull(@MaSoThue, @CurrentMaSoThue);
+	set @TenCongTy = isnull(@TenCongTy, @CurrentTenCongTy);
+	set @DiaChi = isnull(@DiaChi, @CurrentDiaChi);
+	set @Email = isnull(@Email, @CurrentEmail);
+	set @HouseBill = isnull(@HouseBill, @CurrentHouseBill);
+	set @SoCont = isnull(@SoCont, @CurrentSoCont);
+	set @NgayLayHang = isnull(@NgayLayHang, @CurrentNgayLayHang);
+	set @SoToKhai = isnull(@SoToKhai, @CurrentSoToKhai);
+	set @TrangThai = isnull(@TrangThai, @CurrentTrangThai);
+	set @IDDanhMucKhachHangDoiLenh = isnull(@IDDanhMucKhachHangDoiLenh, @CurrentIDDanhMucKhachHangDoiLenh);
 
 	if @HoVaTen is null or len(ltrim(rtrim(@HoVaTen))) = 0 or len(ltrim(rtrim(@HoVaTen))) > 255
 	begin

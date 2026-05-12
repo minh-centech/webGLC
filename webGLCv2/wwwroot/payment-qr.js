@@ -117,6 +117,162 @@ window.paymentQr = (function () {
     return null;
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function downloadFile(fileName, contentType, base64Content) {
+    if (!base64Content) {
+      return;
+    }
+
+    const binary = atob(String(base64Content));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([bytes], { type: contentType || "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName || "download.pdf";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function hideReceiptPaymentPopup() {
+    const existing = document.getElementById("receipt-payment-popup-overlay");
+    if (existing) {
+      existing.remove();
+    }
+  }
+
+  async function showReceiptPaymentPopup(options) {
+    hideReceiptPaymentPopup();
+
+    const base64 = options?.base64 || "";
+    const receiptNo = options?.receiptNo || "";
+    const amountText = options?.amountText || "";
+    const src = normalizeImageSource(base64);
+    if (!src) {
+      return;
+    }
+
+    const overlay = document.createElement("div");
+    overlay.id = "receipt-payment-popup-overlay";
+    overlay.style.cssText = "position:fixed; inset:0; z-index:9999999; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(10, 16, 28, 0.72); backdrop-filter:blur(8px);";
+
+    const modal = document.createElement("div");
+    modal.style.cssText = "width:min(920px, 100%); max-height:calc(100vh - 48px); overflow:auto; border-radius:24px; background:#fff; box-shadow:0 30px 80px rgba(15, 23, 42, 0.28); border:1px solid rgba(15, 23, 42, 0.08);";
+    modal.addEventListener("click", event => event.stopPropagation());
+
+    const header = document.createElement("div");
+    header.style.cssText = "display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:24px 24px 0;";
+    header.innerHTML = `
+      <div>
+        <p class="page-kicker">Biên nhận thanh toán</p>
+        <h3>Thông tin chuyển khoản QR</h3>
+      </div>
+    `;
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "payment-modal-close";
+    closeButton.textContent = "×";
+    closeButton.addEventListener("click", hideReceiptPaymentPopup);
+
+    header.appendChild(closeButton);
+
+    const body = document.createElement("div");
+    body.style.cssText = "padding:24px;";
+
+    const topGrid = document.createElement("div");
+    topGrid.className = "field-grid";
+    topGrid.innerHTML = `
+      <div>
+        <label class="portal-label">Số biên nhận</label>
+        <input class="portal-input" value="${escapeHtml(receiptNo)}" readonly />
+      </div>
+      <div>
+        <label class="portal-label">Tổng tiền</label>
+        <input class="portal-input" value="${escapeHtml(amountText)}" readonly />
+      </div>
+    `;
+    body.appendChild(topGrid);
+
+    const grid = document.createElement("div");
+    grid.className = "payment-modal-grid";
+    grid.style.marginTop = "16px";
+
+    const qrCard = document.createElement("div");
+    qrCard.className = "payment-qr-card";
+    qrCard.innerHTML = `
+      <img class="payment-qr-image" src="${src}" alt="QR thanh toán biên nhận" />
+      <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này để chuyển khoản.</p>
+    `;
+
+    const details = document.createElement("div");
+    details.className = "payment-details";
+    details.innerHTML = '<div class="portal-empty-inline">Đang phân tích mã QR thanh toán...</div>';
+
+    grid.appendChild(qrCard);
+    grid.appendChild(details);
+    body.appendChild(grid);
+
+    const footer = document.createElement("div");
+    footer.style.cssText = "display:flex; justify-content:flex-end; padding:0 24px 24px; gap:12px;";
+    const footerClose = document.createElement("button");
+    footerClose.type = "button";
+    footerClose.className = "portal-secondary-action";
+    footerClose.style.padding = "0.85rem 1.2rem";
+    footerClose.textContent = "Đóng";
+    footerClose.addEventListener("click", hideReceiptPaymentPopup);
+    footer.appendChild(footerClose);
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    modal.appendChild(footer);
+    overlay.appendChild(modal);
+    overlay.addEventListener("click", hideReceiptPaymentPopup);
+    document.body.appendChild(overlay);
+
+    const decoded = await decodeFromBase64Image(base64);
+    if (!document.body.contains(overlay)) {
+      return;
+    }
+
+    if (!decoded || !decoded.success) {
+      const message = decoded?.errorMessage || "Không thể đọc thông tin từ mã QR thanh toán.";
+      details.innerHTML = `<div class="portal-alert portal-alert-warning" style="margin-top:8px;">${escapeHtml(message)}</div>`;
+      return;
+    }
+
+    const rows = [];
+    const bankLabel = decoded.bankName || decoded.bankBin || "";
+    rows.push({ label: "Ngân hàng", value: bankLabel });
+    rows.push({ label: "Số tài khoản", value: decoded.accountNumber || "" });
+    rows.push({ label: "Số tiền", value: decoded.amount ? String(decoded.amount) : amountText || "" });
+    if (decoded.transferContent) {
+      rows.push({ label: "Nội dung", value: decoded.transferContent });
+    }
+
+    details.innerHTML = rows.map(row => `
+      <div class="payment-detail-row">
+        <span>${escapeHtml(row.label)}</span>
+        <strong>${escapeHtml(row.value)}</strong>
+      </div>
+    `).join("");
+  }
+
   async function decodeFromBase64Image(base64OrDataUrl) {
     try {
       if (typeof jsQR !== "function") {
@@ -202,6 +358,9 @@ window.paymentQr = (function () {
 
   return {
     decodeFromBase64Image,
+    showReceiptPaymentPopup,
+    hideReceiptPaymentPopup,
+    downloadFile,
     copyText: async function (text) {
       if (!text) {
         return;

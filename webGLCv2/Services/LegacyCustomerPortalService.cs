@@ -432,6 +432,41 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể cập nhật thông tin cá nhân.");
     }
 
+    public async Task UpdateOrderPickupDateAsync(OnlineOrderRecord order, DateTime pickupDate)
+    {
+        if (!long.TryParse(order.Id, out var id))
+        {
+            throw new InvalidOperationException("Không xác định được ID lệnh để cập nhật ngày lấy hàng.");
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/Update",
+            new LenhOnlinesUpdateRequest
+            {
+                ID = id,
+                HoVaTen = order.CustomerName,
+                SoDienThoai = order.PhoneNumber,
+                SoCMND = order.IdentityNumber,
+                SoXe = order.VehicleNumber,
+                MaSoThue = order.TaxCode,
+                TenCongTy = order.CompanyName,
+                DiaChi = order.CompanyAddress,
+                Email = order.CompanyEmail,
+                HouseBill = order.HouseBill,
+                SoCont = order.ContainerNumber,
+                NgayLayHang = pickupDate.Date,
+                SoToKhai = order.DeclarationNumber,
+                TrangThai = order.StatusCode,
+                IDDanhMucKhachHangDoiLenh = order.UserId
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật ngày lấy hàng cho lệnh online.");
+    }
+
     public async Task ChangePasswordAsync(string email, string oldPassword, string newPassword, string newPasswordConfirm)
     {
         var payload = new
@@ -553,6 +588,25 @@ public sealed class LegacyCustomerPortalService
         }
 
         return isActive ? "Đang hoạt động" : "Đã khóa";
+    }
+
+    private sealed class LenhOnlinesUpdateRequest
+    {
+        public long? ID { get; set; }
+        public string HoVaTen { get; set; } = string.Empty;
+        public string? SoDienThoai { get; set; }
+        public string? SoCMND { get; set; }
+        public string? SoXe { get; set; }
+        public string? MaSoThue { get; set; }
+        public string? TenCongTy { get; set; }
+        public string? DiaChi { get; set; }
+        public string? Email { get; set; }
+        public string? HouseBill { get; set; }
+        public string? SoCont { get; set; }
+        public DateTime? NgayLayHang { get; set; }
+        public string? SoToKhai { get; set; }
+        public int TrangThai { get; set; }
+        public long IDDanhMucKhachHangDoiLenh { get; set; }
     }
 }
 

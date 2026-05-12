@@ -204,11 +204,14 @@
             ContainerNumber = queryContainer;
         }
 
-        if (!string.IsNullOrWhiteSpace(queryHouseBill) || !string.IsNullOrWhiteSpace(queryContainer))
+                if (string.IsNullOrWhiteSpace(queryHouseBill))
         {
-            AutoLoaded = true;
-            await SearchAsync();
+            ErrorMessage = "Vui long nhap House Bill truoc khi tim kiem.";
+            return;
         }
+
+        AutoLoaded = true;
+        await SearchAsync();
     }
 
     private async Task SearchAsync()
@@ -223,9 +226,9 @@
         DetailRows = [];
         Results = [];
 
-        if (string.IsNullOrWhiteSpace(normalizedHouseBill) && string.IsNullOrWhiteSpace(normalizedContainer))
+        if (string.IsNullOrWhiteSpace(normalizedHouseBill))
         {
-            ErrorMessage = "Vui lòng nhập House Bill hoặc số Cont trước khi tìm kiếm.";
+            ErrorMessage = "Vui long nhap House Bill truoc khi tim kiem.";
             return;
         }
 
@@ -279,6 +282,11 @@
 
     private void OpenNewOnlineOrder()
     {
+        if (string.IsNullOrWhiteSpace(HouseBill.Trim()))
+        {
+            ErrorMessage = "Vui long nhap House Bill truoc khi tao lenh online.";
+            return;
+        }
         var houseBill = Uri.EscapeDataString(HouseBill.Trim());
         var soCont = Uri.EscapeDataString(ContainerNumber.Trim());
 

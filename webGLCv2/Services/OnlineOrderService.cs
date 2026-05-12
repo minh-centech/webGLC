@@ -533,7 +533,8 @@ public sealed class OnlineOrderService
         };
 
         Console.WriteLine($"[LenhXuatKhoHangNhapKhauTempInsertData] {JsonSerializer.Serialize(request.LenhXuatKho, JsonOptions)}");
-        
+        Console.WriteLine($"[LenhXuatKhoHangNhapKhauTempInsertData request] {JsonSerializer.Serialize(request, JsonOptions)}");
+
         var response = await _httpClient.PostAsJsonAsync(
             BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/Insert"),
             request,
@@ -887,16 +888,16 @@ public sealed class OnlineOrderService
             return Task.FromResult((false, "Vui long nhap ma so thue truoc khi lay thong tin.", string.Empty, string.Empty, string.Empty));
         }
 
-        var samples = new Dictionary<string, (string Name, string Address, string Email)>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["0201930936"] = ("CONG TY CO PHAN DAU TU CONG NGHE CENTECH", "Hai An, Hai Phong", "info@centech.vn"),
-            ["0301464823"] = ("CONG TY TNHH THUONG MAI EVERLINK", "Quan 1, TP. Ho Chi Minh", "admin@everlink.com.vn")
-        };
+        //var samples = new Dictionary<string, (string Name, string Address, string Email)>(StringComparer.OrdinalIgnoreCase)
+        //{
+        //    ["0201930936"] = ("CONG TY CO PHAN DAU TU CONG NGHE CENTECH", "Hai An, Hai Phong", "info@centech.vn"),
+        //    ["0301464823"] = ("CONG TY TNHH THUONG MAI EVERLINK", "Quan 1, TP. Ho Chi Minh", "admin@everlink.com.vn")
+        //};
 
-        if (samples.TryGetValue(normalized, out var match))
-        {
-            return Task.FromResult((true, "Da lay thong tin cong ty theo ma so thue.", match.Name, match.Address, match.Email));
-        }
+        //if (samples.TryGetValue(normalized, out var match))
+        //{
+        //    return Task.FromResult((true, "Da lay thong tin cong ty theo ma so thue.", match.Name, match.Address, match.Email));
+        //}
 
         return Task.FromResult((
             true,
@@ -1110,7 +1111,10 @@ public sealed class OnlineOrderService
                 continue;
             }
 
-            model.DownloadUrl = GetTempDocumentDownloadUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/ViewPdf", model.ID, model.So);
+            model.DownloadUrl = GetTempDocumentDownloadUrl(
+                "/api/ctLenhXuatKhoHangNhapKhauTemp/TaiPDFLenhXuat",
+                "SoLenhXuat",
+                model.So);
             items.Add(model);
         }
 
@@ -1146,23 +1150,75 @@ public sealed class OnlineOrderService
                 continue;
             }
 
-            model.DownloadUrl = GetTempDocumentDownloadUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/ViewPdf", model.ID, model.So);
+            model.DownloadUrl = GetTempDocumentDownloadUrl(
+                "/api/ctBienNhanThanhToanHangNhapKhauTemp/TaiPDFBienNhan",
+                "SoBienNhan",
+                model.So);
             items.Add(model);
         }
 
         return items;
     }
 
-    private static string GetTempDocumentDownloadUrl(string relativePath, long id, string so)
+    public Task<PdfDownloadResult> DownloadLenhXuatKhoHangNhapKhauTempPdfAsync(string soLenhXuat)
+        => DownloadTempPdfAsync(
+            "/api/ctLenhXuatKhoHangNhapKhauTemp/TaiPDFLenhXuat",
+            "SoLenhXuat",
+            soLenhXuat,
+            "LenhXuatKho");
+
+    public Task<PdfDownloadResult> DownloadBienNhanThanhToanHangNhapKhauTempPdfAsync(string soBienNhan)
+        => DownloadTempPdfAsync(
+            "/api/ctBienNhanThanhToanHangNhapKhauTemp/TaiPDFBienNhan",
+            "SoBienNhan",
+            soBienNhan,
+            "BienNhanThanhToan");
+
+    private async Task<PdfDownloadResult> DownloadTempPdfAsync(string relativePath, string queryName, string so, string filePrefix)
     {
-        if (id > 0)
+        if (string.IsNullOrWhiteSpace(so))
         {
-            return $"{relativePath}?id={id}";
+            throw new InvalidOperationException("So khong duoc de trong.");
         }
 
+        var url = $"{BuildWorkflowUrl(relativePath)}?{queryName}={Uri.EscapeDataString(so.Trim())}";
+        using var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        var content = await response.Content.ReadAsByteArrayAsync();
+        var fileName = ExtractFileName(response) ?? $"{filePrefix}-{so.Trim()}.pdf";
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+
+        return new PdfDownloadResult
+        {
+            Content = content,
+            FileName = fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? fileName : $"{fileName}.pdf",
+            ContentType = contentType
+        };
+    }
+
+    private static string? ExtractFileName(HttpResponseMessage response)
+    {
+        var disposition = response.Content.Headers.ContentDisposition;
+        if (disposition is null)
+        {
+            return null;
+        }
+
+        var fileName = disposition.FileNameStar ?? disposition.FileName;
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        return fileName.Trim().Trim('"');
+    }
+
+    private static string GetTempDocumentDownloadUrl(string relativePath, string queryName, string so)
+    {
         if (!string.IsNullOrWhiteSpace(so))
         {
-            return $"{relativePath}?so={Uri.EscapeDataString(so)}";
+            return $"{relativePath}?{queryName}={Uri.EscapeDataString(so)}";
         }
 
         return string.Empty;

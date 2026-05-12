@@ -93,6 +93,18 @@ IF NOT EXISTS (
     SELECT 1
     FROM sys.columns
     WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'NgayLayHang'
+)
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    ADD NgayLayHang DATETIME NULL;
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
       AND name = N'SoThuTuLenh'
 )
 BEGIN
@@ -138,6 +150,15 @@ BEGIN
 END
 GO
 
-ALTER TABLE tblLenhOnlines
-ADD TrangThaiHaiQuan TINYINT NOT NULL 
-    CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'TrangThaiHaiQuan'
+)
+BEGIN
+    ALTER TABLE tblLenhOnlines
+    ADD TrangThaiHaiQuan TINYINT NOT NULL 
+        CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;
+END
+GO

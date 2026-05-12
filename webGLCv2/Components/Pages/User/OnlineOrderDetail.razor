@@ -166,11 +166,11 @@
                                         <tr>
                                             <th>Diễn giải 222</th>
                                             <th>Đơn vị tính</th>
-                                            <th class="text-start">Đơn giá</th>
-                                            <th class="text-start">Tiền hàng</th>
-                                            <th class="text-start">Thuế suất</th>
-                                            <th class="text-start">Tiền thuế</th>
-                                            <th class="text-start">Tổng tiền</th>
+                                            <th class="text-end">Đơn giá</th>
+                                            <th class="text-end">Tiền hàng</th>
+                                            <th class="text-end">Thuế suất</th>
+                                            <th class="text-end">Tiền thuế</th>
+                                            <th class="text-end">Tổng tiền</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -179,21 +179,21 @@
                                             <tr>
                                                 <td>@item.MoTa</td>
                                                 <td>@item.DonViTinh</td>
-                                                <td class="text-start">@FormatMoney(item.DonGia)</td>
-                                                <td class="text-start">@FormatMoney(item.TienHangThucTe)</td>
-                                                <td class="text-start">@FormatVatPercent(item.ThueSuat)</td>
-                                                <td class="text-start">@FormatMoney(item.TienThue)</td>
-                                                <td class="text-start">@FormatMoney(item.TongTien)</td>
+                                                <td class="text-end">@FormatMoney(item.DonGia)</td>
+                                                <td class="text-end">@FormatMoney(item.TienHangThucTe)</td>
+                                                <td class="text-end">@FormatVatPercent(item.ThueSuat)</td>
+                                                <td class="text-end">@FormatMoney(item.TienThue)</td>
+                                                <td class="text-end">@FormatMoney(item.TongTien)</td>
                                             </tr>
                                         }
                                     </tbody>
                                     <tfoot>
                                         <tr class="text-success fw-semibold">
                                             <td colspan="3"><strong>Tổng cộng</strong></td>
-                                            <td class="text-start"><strong>@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</strong></td>
+                                            <td class="text-end"><strong>@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho!))</strong></td>
                                             <td></td>
-                                            <td class="text-start"><strong>@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</strong></td>
-                                            <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</strong></td>
+                                            <td class="text-end"><strong>@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho!))</strong></td>
+                                            <td class="text-end"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!))</strong></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -252,9 +252,9 @@
                                             <tr>
                                                 <th>Mô tả</th>
                                                 <th>Đơn vị tính</th>
-                                                <th class="text-start">Số lượng</th>
-                                                <th class="text-start">Đơn giá</th>
-                                                <th class="text-start">Thành tiền</th>
+                                    <th class="text-end">Số lượng</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-end">Thành tiền</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -263,9 +263,9 @@
                                                 <tr>
                                                     <td>@item.MoTa</td>
                                                     <td>@item.DonViTinh</td>
-                                                    <td class="text-start">@FormatNumber(item.SoLuong)</td>
-                                                    <td class="text-start">@FormatMoney(item.DonGia)</td>
-                                                    <td class="text-start">@FormatMoney(item.ThanhTien)</td>
+                                                    <td class="text-end">@FormatNumber(item.SoLuong)</td>
+                                                    <td class="text-end">@FormatMoney(item.DonGia)</td>
+                                                    <td class="text-end">@FormatMoney(item.ThanhTien)</td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -275,21 +275,21 @@
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                                <td class="text-start">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKhoQuaHan!))</td>
+                                    <td class="text-end">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKhoQuaHan!))</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Phí VAT (@FormatVatPercent(Workflow.PhiLuuKhoQuaHan!.Data!.Vat))</strong></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                                <td class="text-start">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKhoQuaHan!))</td>
+                                    <td class="text-end">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKhoQuaHan!))</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Cộng phí + VAT</strong></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                                <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKhoQuaHan!))</strong></td>
+                                    <td class="text-end"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKhoQuaHan!))</strong></td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -394,7 +394,7 @@
                                         class="portal-secondary-action"
                                         style="background:#c2410c; border-color:#c2410c; color:#fff;"
                                         @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
-                                    Gia hạn biên nhận thanh toán & lệnh xuất kho
+                                    Gia hạn biên nhận thanh toán
                                 </button>
                             }
                         </div>
@@ -413,11 +413,11 @@
                                         <tr>
                                             <th>Diễn giải</th>
                                             <th>Đơn vị tính</th>
-                                            <th class="text-start">Đơn giá</th>
-                                            <th class="text-start">Tiền hàng</th>
-                                            <th class="text-start">Thuế suất</th>
-                                            <th class="text-start">Tiền thuế</th>
-                                            <th class="text-start">Tổng tiền</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-end">Tiền hàng</th>
+                                    <th class="text-end">Thuế suất</th>
+                                    <th class="text-end">Tiền thuế</th>
+                                    <th class="text-end">Tổng tiền</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -426,21 +426,21 @@
                                             <tr>
                                                 <td>@item.MoTa</td>
                                                 <td>@item.DonViTinh</td>
-                                                <td class="text-start">@FormatMoney(item.DonGia)</td>
-                                                <td class="text-start">@FormatMoney(item.TienHangThucTe)</td>
-                                                <td class="text-start">@FormatVatPercent(item.ThueSuat)</td>
-                                                <td class="text-start">@FormatMoney(item.TienThue)</td>
-                                                <td class="text-start">@FormatMoney(item.TongTien)</td>
+                                                <td class="text-end">@FormatMoney(item.DonGia)</td>
+                                                <td class="text-end">@FormatMoney(item.TienHangThucTe)</td>
+                                                <td class="text-end">@FormatVatPercent(item.ThueSuat)</td>
+                                                <td class="text-end">@FormatMoney(item.TienThue)</td>
+                                                <td class="text-end">@FormatMoney(item.TongTien)</td>
                                             </tr>
                                         }
                                     </tbody>
                                     <tfoot>
                                         <tr class="text-success fw-semibold">
                                             <td colspan="3"><strong>Tổng cộng</strong></td>
-                                            <td class="text-start"><strong>@FormatMoney(GetPhiSubtotal(Workflow!.PhiLuuKho!))</strong></td>
+                                            <td class="text-end"><strong>@FormatMoney(GetPhiSubtotal(Workflow!.PhiLuuKho!))</strong></td>
                                             <td></td>
-                                            <td class="text-start"><strong>@FormatMoney(GetPhiVatAmount(Workflow!.PhiLuuKho!))</strong></td>
-                                            <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow!.PhiLuuKho!))</strong></td>
+                                            <td class="text-end"><strong>@FormatMoney(GetPhiVatAmount(Workflow!.PhiLuuKho!))</strong></td>
+                                            <td class="text-end"><strong>@FormatMoney(GetPhiGrandTotal(Workflow!.PhiLuuKho!))</strong></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -559,7 +559,7 @@
                                                 <td>@item.So</td>
                                                 <td>@FormatDateTime(item.NgayLap)</td>
                                                 <td>@FormatDateTime(item.NgayGiaHan)</td>
-                                                <td>@FormatMoney(item.TongTien)</td>
+                                                <td class="text-end">@FormatMoney(item.TongTien)</td>
                                                 <td>
                                                     @if (item.DaThanhToan)
                                                     {
@@ -690,11 +690,11 @@
                                 <tr>
                                     <th>Diễn giải</th>
                                     <th>Đơn vị tính</th>
-                                    <th class="text-start">Đơn giá</th>
-                                    <th class="text-start">Tiền hàng</th>
-                                    <th class="text-start">Thuế suất</th>
-                                    <th class="text-start">Tiền thuế</th>
-                                    <th class="text-start">Tổng tiền</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-end">Tiền hàng</th>
+                                    <th class="text-end">Thuế suất</th>
+                                    <th class="text-end">Tiền thuế</th>
+                                    <th class="text-end">Tổng tiền</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -703,21 +703,21 @@
                                     <tr>
                                         <td>@item.MoTa</td>
                                         <td>@item.DonViTinh</td>
-                                        <td class="text-start">@FormatMoney(item.DonGia)</td>
-                                        <td class="text-start">@FormatMoney(item.TienHangThucTe)</td>
-                                        <td class="text-start">@FormatVatPercent(item.ThueSuat)</td>
-                                        <td class="text-start">@FormatMoney(item.TienThue)</td>
-                                        <td class="text-start">@FormatMoney(item.TongTien)</td>
+                                        <td class="text-end">@FormatMoney(item.DonGia)</td>
+                                        <td class="text-end">@FormatMoney(item.TienHangThucTe)</td>
+                                        <td class="text-end">@FormatVatPercent(item.ThueSuat)</td>
+                                        <td class="text-end">@FormatMoney(item.TienThue)</td>
+                                        <td class="text-end">@FormatMoney(item.TongTien)</td>
                                     </tr>
                                 }
                             </tbody>
                             <tfoot>
                                 <tr class="text-success fw-semibold">
                                     <td colspan="3"><strong>Tổng cộng</strong></td>
-                                    <td class="text-start"><strong>@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho))</strong></td>
+                                    <td class="text-end"><strong>@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKho))</strong></td>
                                     <td></td>
-                                    <td class="text-start"><strong>@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho))</strong></td>
-                                    <td class="text-start"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho))</strong></td>
+                                    <td class="text-end"><strong>@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKho))</strong></td>
+                                    <td class="text-end"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho))</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -781,7 +781,7 @@
                                 <div class="payment-detail-row">
                                     <span>Số tiền</span>
                                     <span style="display:flex; align-items:center; gap:8px;">
-                                        <strong>@FormatMoney(PaymentQrDetails.Amount ?? 0m)</strong>
+                                        <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoney(PaymentQrDetails.Amount ?? 0m)</strong>
                                         <button type="button"
                                                 style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;"
                                                 title="Copy số tiền"
@@ -841,7 +841,7 @@
                         </div>
                         <div>
                             <label class="portal-label">Tổng tiền</label>
-                            <input class="portal-input" value="@FormatMoney(SelectedReceiptPaymentItem.TongTien)" readonly />
+                            <input class="portal-input" style="text-align:right;" value="@FormatMoney(SelectedReceiptPaymentItem.TongTien)" readonly />
                         </div>
                     </div>
                 }
@@ -886,7 +886,7 @@
                                 <div class="payment-detail-row">
                                     <span>Số tiền</span>
                                     <span style="display:flex; align-items:center; gap:8px;">
-                                        <strong>@FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m)</strong>
+                                        <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m)</strong>
                                         <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tiền" aria-label="Copy số tiền" @onclick="() => CopyPaymentQrValueAsync(FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m))">
                                             <i class="fa-regular fa-copy"></i>
                                         </button>
@@ -1645,24 +1645,24 @@
     {
         var active = IsReceiptActionActive(receiptNo, "payment");
         return active
-            ? "padding:0.55rem 0.85rem; background:#38bdf8; border-color:#38bdf8; color:#0f172a;"
-            : "padding:0.55rem 0.85rem; background:#7dd3fc; border-color:#7dd3fc; color:#0f172a;";
+            ? "padding:0.55rem 0.85rem; background:#16a34a; border-color:#16a34a; color:#fff;"
+            : "padding:0.55rem 0.85rem; background:#22c55e; border-color:#22c55e; color:#fff;";
     }
 
     private string GetReceiptDownloadButtonStyle(string? receiptNo)
     {
         var active = IsReceiptActionActive(receiptNo, "download");
         return active
-            ? "padding:0.55rem 0.85rem; background:#f59e0b; border-color:#f59e0b; color:#fff;"
-            : "padding:0.55rem 0.85rem; background:#b45309; border-color:#b45309; color:#fff;";
+            ? "padding:0.55rem 0.85rem; background:#c26b12; border-color:#c26b12; color:#fff;"
+            : "padding:0.55rem 0.85rem; background:#d97706; border-color:#d97706; color:#fff;";
     }
 
     private string GetLenhXuatDownloadButtonStyle(string? receiptNo)
     {
         var active = IsReceiptActionActive(receiptNo, "lenhxuat-download");
         return active
-            ? "padding:0.55rem 0.85rem; background:#f59e0b; border-color:#f59e0b; color:#fff;"
-            : "padding:0.55rem 0.85rem; background:#b45309; border-color:#b45309; color:#fff;";
+            ? "padding:0.55rem 0.85rem; background:#c26b12; border-color:#c26b12; color:#fff;"
+            : "padding:0.55rem 0.85rem; background:#d97706; border-color:#d97706; color:#fff;";
     }
 
     private bool IsReceiptActionActive(string? receiptNo, string kind)
@@ -1958,7 +1958,7 @@
         => vat.ToString("0.##", CultureInfo.GetCultureInfo("vi-VN")) + "%";
 
     private static string FormatMoney(decimal amount)
-        => string.Format(CultureInfo.GetCultureInfo("vi-VN"), "{0:N0} VND", amount);
+        => amount.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
 
     private static string FormatNumber(decimal value)
         => value.ToString("0.###", CultureInfo.GetCultureInfo("vi-VN"));

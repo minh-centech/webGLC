@@ -27,7 +27,7 @@
         <div class="portal-alert portal-alert-success">@InfoMessage</div>
     }
 
-    <EditForm Model="@Draft" OnValidSubmit="HandleSubmitAsync" FormName="new-online-order-form">
+    <EditForm EditContext="@EditContext" OnValidSubmit="HandleSubmitAsync" FormName="new-online-order-form">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -47,10 +47,12 @@
                     <div>
                         <label class="portal-label">Số CMND</label>
                         <InputText class="portal-input" @bind-Value="Draft.IdentityNumber" />
+                        <ValidationMessage For="@(() => Draft.IdentityNumber)" class="validation-message" />
                     </div>
                     <div>
                         <label class="portal-label">Số xe</label>
                         <InputText class="portal-input" @bind-Value="Draft.VehicleNumber" />
+                        <ValidationMessage For="@(() => Draft.VehicleNumber)" class="validation-message" />
                     </div>
 
                     <div>
@@ -123,6 +125,8 @@
 
 @code {
     private OnlineOrderDraft Draft { get; set; } = new();
+    private EditContext EditContext { get; set; } = default!;
+    private ValidationMessageStore ValidationMessages { get; set; } = default!;
     private string CurrentUserKey { get; set; } = "customer";
     private string CurrentUserEmail { get; set; } = string.Empty;
     private long CurrentUserId { get; set; }
@@ -140,6 +144,7 @@
     {
         Draft.OrderDate = DateTime.Today;
         PickupDateText = string.Empty;
+        InitializeEditContext();
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         CurrentUserKey = authState.User.Identity?.Name ?? "customer";
@@ -204,8 +209,33 @@
             return;
         }
 
-        await OnlineOrderService.AddOrderAsync(CurrentUserId, Draft);
-        NavigationManager.NavigateTo("/user/orders", forceLoad: false);
+        var normalizedHouseBill = Draft.HouseBill?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedHouseBill))
+        {
+            var existingOrders = await OnlineOrderService.GetOrdersAsync(
+                CurrentUserId,
+                houseBill: normalizedHouseBill,
+                page: 1,
+                pageSize: 1);
+
+            if (existingOrders.Items.Any(order =>
+                    string.Equals(order.HouseBill?.Trim(), normalizedHouseBill, StringComparison.OrdinalIgnoreCase)))
+            {
+                SetHouseBillValidationError($"House Bill {normalizedHouseBill} da ton tai. Vui long kiem tra lai truoc khi luu.");
+                return;
+            }
+        }
+
+        try
+        {
+            ClearHouseBillValidationError();
+            await OnlineOrderService.AddOrderAsync(CurrentUserId, Draft);
+            NavigationManager.NavigateTo("/user/orders", forceLoad: false);
+        }
+        catch (Exception ex)
+        {
+            InfoMessage = ex.Message;
+        }
     }
 
     private async Task LookupCompanyAsync()
@@ -307,6 +337,7 @@
         {
             OrderDate = DateTime.Today
         };
+        InitializeEditContext();
         SelectedTaxCode = string.Empty;
         PickupDateText = string.Empty;
         InfoMessage = null;
@@ -316,4 +347,43 @@
             SelectCompany(CustomerCompanies[0]);
         }
     }
+
+    private void InitializeEditContext()
+    {
+        EditContext = new EditContext(Draft);
+        ValidationMessages = new ValidationMessageStore(EditContext);
+        EditContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        if (e.FieldIdentifier.FieldName != nameof(OnlineOrderDraft.HouseBill))
+        {
+            return;
+        }
+
+        ClearHouseBillValidationError();
+    }
+
+    private void SetHouseBillValidationError(string message)
+    {
+        ValidationMessages.Clear(HouseBillFieldIdentifier);
+        ValidationMessages.Add(HouseBillFieldIdentifier, message);
+        EditContext.NotifyValidationStateChanged();
+        InfoMessage = null;
+    }
+
+    private void ClearHouseBillValidationError()
+    {
+        if (ValidationMessages is null || EditContext is null)
+        {
+            return;
+        }
+
+        ValidationMessages.Clear(HouseBillFieldIdentifier);
+        EditContext.NotifyValidationStateChanged();
+    }
+
+    private FieldIdentifier HouseBillFieldIdentifier
+        => FieldIdentifier.Create(() => Draft.HouseBill);
 }

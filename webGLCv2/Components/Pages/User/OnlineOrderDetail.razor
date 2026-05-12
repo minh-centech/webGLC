@@ -472,6 +472,19 @@
     }
 </section>
 
+@if (IsLoadingWorkflow)
+{
+    <div style="position:fixed; inset:0; z-index:2500; background:rgba(8, 15, 30, 0.72); backdrop-filter: blur(2px); display:flex; align-items:center; justify-content:center; padding:24px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:14px; color:#fff; text-align:center; max-width:320px;">
+            <div class="spinner-border text-light" role="status" aria-label="Đang truy vấn thông tin"></div>
+            <div>
+                <div style="font-size:1.05rem; font-weight:700;">Đang truy vấn thông tin</div>
+                <div style="opacity:.85;">Vui lòng chờ trong giây lát, hệ thống đang lấy dữ liệu House Bill và phí lưu kho.</div>
+            </div>
+        </div>
+    </div>
+}
+
 @if (IsStorageActionPopupOpen)
 {
     <div class="payment-modal-backdrop" @onclick="CloseStorageActionPopup">
@@ -564,23 +577,110 @@
                 {
                     <div class="payment-modal-grid" style="margin-top:16px;">
                         <div class="payment-qr-card">
-                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.QRCode)" alt="QR thanh toán" />
+                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.QRCodeThanhToan)" alt="QR thanh toán" />
                             <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này.</p>
                         </div>
 
                         <div class="payment-details">
-                            <div class="payment-detail-row">
+                            @* <div class="payment-detail-row">
                                 <span>Số phiếu</span>
                                 <strong>@PaymentInfo.So</strong>
                             </div>
                             <div class="payment-detail-row">
                                 <span>ID</span>
                                 <strong>@PaymentInfo.ID</strong>
-                            </div>
+                            </div> *@
+                            @if (PaymentQrDetails is not null && PaymentQrDetails.Success)
+                            {
+                                <div class="payment-detail-row">
+                                    <span>Ngân hàng</span>
+                                    <span style="display:flex; align-items:center; gap:8px;">
+                                        <strong>@(string.IsNullOrWhiteSpace(PaymentQrDetails.BankName) ? PaymentQrDetails.BankBin : PaymentQrDetails.BankName)</strong>
+                                        <button type="button"
+                                                style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;"
+                                                title="Copy ngân hàng"
+                                                aria-label="Copy ngân hàng"
+                                                @onclick="() => CopyPaymentQrValueAsync(string.IsNullOrWhiteSpace(PaymentQrDetails.BankName) ? PaymentQrDetails.BankBin : PaymentQrDetails.BankName)">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                <div class="payment-detail-row">
+                                    <span>Số tài khoản</span>
+                                    <span style="display:flex; align-items:center; gap:8px;">
+                                        <strong>@PaymentQrDetails.AccountNumber</strong>
+                                        <button type="button"
+                                                style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;"
+                                                title="Copy số tài khoản"
+                                                aria-label="Copy số tài khoản"
+                                                @onclick="() => CopyPaymentQrValueAsync(PaymentQrDetails.AccountNumber)">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                <div class="payment-detail-row">
+                                    <span>Số tiền</span>
+                                    <span style="display:flex; align-items:center; gap:8px;">
+                                        <strong>@FormatMoney(PaymentQrDetails.Amount ?? 0m)</strong>
+                                        <button type="button"
+                                                style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;"
+                                                title="Copy số tiền"
+                                                aria-label="Copy số tiền"
+                                                @onclick="() => CopyPaymentQrValueAsync(FormatMoney(PaymentQrDetails.Amount ?? 0m))">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(PaymentQrDetails.TransferContent))
+                                {
+                                    <div class="payment-detail-row">
+                                        <span>Nội dung</span>
+                                        <span style="display:flex; align-items:center; gap:8px;">
+                                            <strong>@PaymentQrDetails.TransferContent</strong>
+                                            <button type="button"
+                                                    style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;"
+                                                    title="Copy nội dung"
+                                                    aria-label="Copy nội dung"
+                                                    @onclick="() => CopyPaymentQrValueAsync(PaymentQrDetails.TransferContent)">
+                                                <i class="fa-regular fa-copy"></i>
+                                            </button>
+                                        </span>
+                                    </div>
+                                }
+                            }
+                            else if (PaymentQrDetails is not null && !PaymentQrDetails.Success && !string.IsNullOrWhiteSpace(PaymentQrDetails.ErrorMessage))
+                            {
+                                <div class="portal-alert portal-alert-warning" style="margin-top:8px;">
+                                    @PaymentQrDetails.ErrorMessage
+                                </div>
+                            }
                         </div>
                     </div>
                 }
             </div>
+
+            @if (ShowPaymentConfirmDialog)
+            {
+                <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px;" @onclick="ClosePaymentConfirmDialog">
+                    <div class="payment-confirm-modal" style="max-width:520px; width:min(100%, 520px); border-radius:20px; background:linear-gradient(180deg, #fff7d1 0%, #fff1a8 100%); border:1px solid #f3c846; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
+                        <div style="display:flex; align-items:flex-start; gap:14px;">
+                            <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#d97706; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(217, 119, 6, 0.35);">
+                                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                            </div>
+                            <div style="flex:1 1 auto;">
+                                <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#7c2d12;">Xác nhận thanh toán</h4>
+                                <p style="margin:0; color:#7c2d12; line-height:1.65; font-size:0.98rem;">
+                                    Bạn đã chọn ngày lấy hàng là ngày <strong>@FormatDateTime(StorageActionDate)</strong>, bạn có muốn tiếp tục thanh toán không?
+                                </p>
+                            </div>
+                        </div>
+                        <div class="payment-confirm-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:22px;">
+                            <button type="button" class="portal-secondary-action" style="padding:0.85rem 1.15rem;" @onclick="ClosePaymentConfirmDialog">Hủy</button>
+                            <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem;" @onclick="ConfirmPaymentAsync">Tiếp tục thanh toán</button>
+                        </div>
+                    </div>
+                </div>
+            }
 
             <div class="payment-modal-footer" style="gap:12px; padding:14px 18px;">
                 <button type="button" class="portal-secondary-action" style="padding:0.85rem 1.2rem;" @onclick="CloseStorageActionPopup">Đóng</button>
@@ -607,6 +707,7 @@
     private string? ErrorMessage;
     private bool IsLoadingPaymentInfo;
     private LenhXuatKhoHangNhapKhauTempInsertResponse? PaymentInfo;
+    private PaymentQrDecodedInfo? PaymentQrDetails;
     private string? PaymentPopupMessage;
     private int WorkflowRunSequence;
     private bool IsPageLoading = true;
@@ -616,6 +717,7 @@
     private bool IsExecutingStorageAction;
     private bool _shouldInitStorageDatePicker;
     private bool _shouldAutoLoadStorageAction;
+    private bool ShowPaymentConfirmDialog;
     private DateTime? StorageActionDate;
     private string StorageActionDateText = string.Empty;
     private string? StorageActionPopupMessage;
@@ -865,6 +967,13 @@
         }
 
         StorageActionMode = mode;
+        if (mode == StorageActionPopupMode.Payment)
+        {
+            PaymentInfo = null;
+            PaymentQrDetails = null;
+            PaymentPopupMessage = null;
+        }
+
         StorageActionDate = mode == StorageActionPopupMode.Payment
             ? DateTime.Today
             : chiTiet.NgayGiaHanCuoi ?? chiTiet.NgayNhapKho ?? Order.PickupDate ?? DateTime.Today;
@@ -886,12 +995,21 @@
         StorageActionDateText = string.Empty;
         _shouldInitStorageDatePicker = false;
         _shouldAutoLoadStorageAction = false;
+        PaymentQrDetails = null;
+        ShowPaymentConfirmDialog = false;
     }
 
     private async Task OnStorageActionDateInput(ChangeEventArgs args)
     {
         StorageActionDateText = args.Value?.ToString() ?? string.Empty;
         SyncStorageActionDateFromText();
+
+        if (StorageActionMode == StorageActionPopupMode.Payment)
+        {
+            PaymentInfo = null;
+            PaymentQrDetails = null;
+            PaymentPopupMessage = null;
+        }
 
         if (!IsStorageActionPopupOpen || !StorageActionDate.HasValue)
         {
@@ -940,6 +1058,14 @@
 
             Workflow ??= new OnlineOrderWorkflowResult();
             Workflow.PhiLuuKho = response;
+
+            if (!response.Success)
+            {
+                StorageActionPopupMessage = response.Message;
+                WorkflowMessage = response.Message;
+                return;
+            }
+
             WorkflowMessage = StorageActionMode == StorageActionPopupMode.Extend
                 ? "Đã tải dữ liệu phí gia hạn và phí lưu kho."
                 : "Đã tải dữ liệu thành công.";
@@ -1034,11 +1160,29 @@
             return;
         }
 
+        ShowPaymentConfirmDialog = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ClosePaymentConfirmDialog()
+    {
+        ShowPaymentConfirmDialog = false;
+    }
+
+    private async Task ConfirmPaymentAsync()
+    {
+        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null || Workflow?.PhiLuuKho?.Data is null)
+        {
+            return;
+        }
+
+        ShowPaymentConfirmDialog = false;
         SyncStorageActionDateFromText();
 
         IsLoadingPaymentInfo = true;
         PaymentPopupMessage = null;
         PaymentInfo = null;
+        PaymentQrDetails = null;
 
         try
         {
@@ -1052,6 +1196,13 @@
                 Workflow.PhiLuuKho,
                 ngayGiaHan,
                 currentUserId);
+
+            if (PaymentInfo is not null && !string.IsNullOrWhiteSpace(PaymentInfo.QRCodeThanhToan))
+            {
+                PaymentQrDetails = await JSRuntime.InvokeAsync<PaymentQrDecodedInfo?>(
+                    "paymentQr.decodeFromBase64Image",
+                    PaymentInfo.QRCodeThanhToan);
+            }
         }
         catch (Exception ex)
         {
@@ -1069,6 +1220,8 @@
         IsLoadingPaymentInfo = false;
         PaymentPopupMessage = null;
         PaymentInfo = null;
+        PaymentQrDetails = null;
+        ShowPaymentConfirmDialog = false;
         return Task.CompletedTask;
     }
 
@@ -1216,6 +1369,35 @@
         return value.StartsWith("data:image", StringComparison.OrdinalIgnoreCase)
             ? value
             : $"data:image/png;base64,{value}";
+    }
+
+    private sealed class PaymentQrDecodedInfo
+    {
+        public bool Success { get; set; }
+
+        public string? ErrorMessage { get; set; }
+
+        public string? RawPayload { get; set; }
+
+        public string? BankName { get; set; }
+
+        public string? BankBin { get; set; }
+
+        public string? AccountNumber { get; set; }
+
+        public decimal? Amount { get; set; }
+
+        public string? TransferContent { get; set; }
+    }
+
+    private async Task CopyPaymentQrValueAsync(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        await JSRuntime.InvokeVoidAsync("paymentQr.copyText", value);
     }
 
     private static long GetCurrentUserId(ClaimsPrincipal user)

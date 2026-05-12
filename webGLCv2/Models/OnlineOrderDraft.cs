@@ -12,7 +12,10 @@ public sealed class OnlineOrderDraft
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
     public string PhoneNumber { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Vui lòng nhập Số CMND.")]
     public string IdentityNumber { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập Số xe.")]
     public string VehicleNumber { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập mã số thuế.")]

@@ -291,6 +291,15 @@ public sealed class OnlineOrderService
             };
         }
 
+        if (!string.IsNullOrWhiteSpace(envelope.ErrorMsg))
+        {
+            return new PhiLuuKhoResponse
+            {
+                Success = false,
+                Message = envelope.ErrorMsg
+            };
+        }
+
         List<PhiLuuKhoApiItem>? apiItems;
         try
         {
@@ -323,7 +332,7 @@ public sealed class OnlineOrderService
                 DonViTienTe = "VND",
                 TrangThaiThanhToan = 0
             },
-            Message = string.IsNullOrWhiteSpace(envelope.ErrorMsg) ? string.Empty : envelope.ErrorMsg
+            Message = string.Empty
         };
     }
 
@@ -441,7 +450,7 @@ public sealed class OnlineOrderService
                 SoLuongKienXuat = ToInt32Safely(chiTiet.SoLuongKienNhap),
                 KhoiLuongXuat = chiTiet.KhoiLuongNhap,
                 CBMXuat = chiTiet.CBMNhap,
-                IDDanhMucCuaLamHang = chiTiet.ResolvedIDDanhMucCuaLamHang,
+                IDDanhMucCuaLamHang = chiTiet.IDDanhMucCuaLamHang,
                 SoToKhai = order.DeclarationNumber,
                 GhiChu = NullIfEmpty(ghiChu) ?? string.Empty,
                 IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh

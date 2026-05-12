@@ -292,8 +292,8 @@ public sealed class LenhXuatKhoHangNhapKhauTempInsertResponse
     [JsonPropertyName("So")]
     public string So { get; set; } = string.Empty;
 
-    [JsonPropertyName("QRCode")]
-    public string QRCode { get; set; } = string.Empty;
+    [JsonPropertyName("QRCodeThanhToan")]
+    public string QRCodeThanhToan { get; set; } = string.Empty;
 }
 
 public sealed class ChiTietHouseBillData

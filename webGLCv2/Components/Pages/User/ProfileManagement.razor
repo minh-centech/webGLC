@@ -91,10 +91,10 @@
                             <ValidationMessage For="@(() => EnterpriseProfileModel.CompanyPhone)" class="validation-message" />
                         </div>
 
-                        <div class="field-card">
+                       @*  <div class="field-card">
                             <label class="portal-label" for="EnterpriseFax">Số fax</label>
                             <InputText id="EnterpriseFax" class="portal-input" @bind-Value="EnterpriseProfileModel.CompanyFax" />
-                        </div>
+                        </div> *@
 
                         <div class="field-card">
                             <label class="portal-label" for="EnterpriseBusinessLicense">Số giấy phép kinh doanh</label>
@@ -228,6 +228,12 @@
                             <ValidationMessage For="@(() => FormModel.EmailDoanhNghiep)" class="validation-message" />
                         </div>
 
+                        <div class="field-card">
+                            <label class="portal-label" for="EmailDoanhNghiep">Email nhận hoá đơn</label>
+                            <InputText id="EmailDoanhNghiep" class="portal-input" @bind-Value="FormModel.EmailDoanhNghiep" />
+                            <ValidationMessage For="@(() => FormModel.EmailDoanhNghiep)" class="validation-message" />
+                        </div>
+
                         <div class="field-card field-span-3">
                             <label class="portal-label" for="DiaChi">Địa chỉ</label>
                             <InputText id="DiaChi" class="portal-input" @bind-Value="FormModel.DiaChi" />
@@ -240,10 +246,10 @@
                             <ValidationMessage For="@(() => FormModel.SoDienThoaiDoanhNghiep)" class="validation-message" />
                         </div>
 
-                        <div class="field-card">
+                       @*  <div class="field-card">
                             <label class="portal-label" for="SoFax">Số fax</label>
                             <InputText id="SoFax" class="portal-input" @bind-Value="FormModel.SoFax" />
-                        </div>
+                        </div> *@
 
                         <div class="field-card">
                             <label class="portal-label" for="GiayPhepKinhDoanh">Số giấy phép kinh doanh</label>
@@ -270,10 +276,10 @@
                             <InputText id="ChucVu" class="portal-input" @bind-Value="FormModel.ChucVu" />
                         </div>
 
-                        <div class="field-card">
+                       @*  <div class="field-card">
                             <label class="portal-label" for="DoanhNghiepCongTyDuocUyQuyen">Doanh nghiệp/công ty được ủy quyền</label>
                             <InputText id="DoanhNghiepCongTyDuocUyQuyen" class="portal-input" @bind-Value="FormModel.DoanhNghiepCongTyDuocUyQuyen" />
-                        </div>
+                        </div> *@
 
                         <div class="field-card">
                             <label class="portal-label" for="TenDangNhapDangKyDichVu">Tên đăng nhập đăng ký dịch vụ</label>

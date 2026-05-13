@@ -96,7 +96,7 @@
                 <button class="portal-primary-action" @onclick='() => RunWorkflowAsync("button")' disabled="@IsLoadingWorkflow">
                     @(IsLoadingWorkflow ? "Đang truy vấn..." : "Truy vấn thông tin")
                 </button>
-               @*  <button class="portal-secondary-action" @onclick="Query">Tra c?u import check</button> *@
+                @*  <button class="portal-secondary-action" @onclick="Query">Tra c?u import check</button> *@
             </div>
 
             @if (!string.IsNullOrWhiteSpace(WorkflowMessage))
@@ -107,7 +107,7 @@
             @if (Workflow is not null)
             {
                 <section class="workflow-grid">
-                <article class="workflow-card" style="display:none;">
+                    <article class="workflow-card" style="display:none;">
                         <div class="section-heading">
                             <h2>1. Kiểm tra thông quan</h2>
                             <span class="status-chip @GetThongQuanClass(Workflow.ThongQuan)">@GetThongQuanLabel(Workflow.ThongQuan)</span>
@@ -125,8 +125,8 @@
                         {
                             <div class="workflow-payment-row">
                                 <span class="status-chip @GetPaymentStatusClass(Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan)">
-                                   @*  @GetPaymentStatusLabel(Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan) *@
-                                   Chọn nút Thanh toán QRCode để lấy mã thanh toán
+                                    @*  @GetPaymentStatusLabel(Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan) *@
+                                    Chọn nút Thanh toán QRCode để lấy mã thanh toán
                                 </span>
 
                                 @* @if (Workflow.PhiLuuKho!.Data!.TrangThaiThanhToan == 0)
@@ -139,28 +139,28 @@
 
                             
 
-                        <div class="workflow-payment-row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
-                            <span class="workflow-message" style="margin:0;">
-                                Ngày nhập kho: <strong>@FormatDateTime(Workflow!.ChiTietHouseBill!.ParsedData!.NgayNhapKho)</strong>
-                            </span>
-                            <span class="workflow-message" style="margin:0;">
-                                Ngày gia hạn cuối: <strong>@FormatDateTime(Workflow!.ChiTietHouseBill!.ParsedData!.NgayGiaHanCuoi)</strong>
-                            </span>
-                        </div>
+                            <div class="workflow-payment-row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+                                <span class="workflow-message" style="margin:0;">
+                                    Ngày nhập kho: <strong>@FormatDateTime(Workflow!.ChiTietHouseBill!.ParsedData!.NgayNhapKho)</strong>
+                                </span>
+                                <span class="workflow-message" style="margin:0;">
+                                    Ngày gia hạn cuối: <strong>@FormatDateTime(Workflow!.ChiTietHouseBill!.ParsedData!.NgayGiaHanCuoi)</strong>
+                                </span>
+                            </div>
 
-                        <div class="workflow-payment-row no-print" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
-                            <button type="button" class="portal-primary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
-                                Thanh toán
-                            </button>
-                            @if (CanShowExtendAction)
-                            {
-                                <button type="button" class="portal-secondary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
-                                    Gia hạn
+                            <div class="workflow-payment-row no-print" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+                                <button type="button" class="portal-primary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
+                                    Thanh toán
                                 </button>
-                            }
-                        </div>
+                                @if (CanShowExtendAction)
+                                {
+                                    <button type="button" class="portal-secondary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
+                                        Gia hạn
+                                    </button>
+                                }
+                            </div>
 
-                        <div class="table-shell compact-table">
+                            <div class="table-shell compact-table">
                                 <table class="portal-table">
                                     <thead>
                                         <tr>
@@ -252,9 +252,9 @@
                                             <tr>
                                                 <th>Mô tả</th>
                                                 <th>Đơn vị tính</th>
-                                    <th class="text-end">Số lượng</th>
-                                    <th class="text-end">Đơn giá</th>
-                                    <th class="text-end">Thành tiền</th>
+                                                <th class="text-end">Số lượng</th>
+                                                <th class="text-end">Đơn giá</th>
+                                                <th class="text-end">Thành tiền</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -275,21 +275,21 @@
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                    <td class="text-end">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKhoQuaHan!))</td>
+                                                <td class="text-end">@FormatMoney(GetPhiSubtotal(Workflow.PhiLuuKhoQuaHan!))</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Phí VAT (@FormatVatPercent(Workflow.PhiLuuKhoQuaHan!.Data!.Vat))</strong></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                    <td class="text-end">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKhoQuaHan!))</td>
+                                                <td class="text-end">@FormatMoney(GetPhiVatAmount(Workflow.PhiLuuKhoQuaHan!))</td>
                                             </tr>
                                             <tr>
                                                 <td><strong>Cộng phí + VAT</strong></td>
                                                 <td></td>
                                                 <td></td>
                                                 <td></td>
-                                    <td class="text-end"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKhoQuaHan!))</strong></td>
+                                                <td class="text-end"><strong>@FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKhoQuaHan!))</strong></td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -315,7 +315,7 @@
                         </article>
                     }
 
-                <article class="workflow-card workflow-card-wide" style="order:-1;">
+                    <article class="workflow-card workflow-card-wide" style="order:-1;">
                         <div class="section-heading">
                             <h2>Thông tin chi tiết hàng hoá</h2>
                             <span class="status-chip @(HasChiTietHouseBill ? "success" : "neutral")">@(HasChiTietHouseBill ? "Đã lấy dữ liệu thành công" : "Chưa có dữ liệu")</span>
@@ -324,82 +324,76 @@
                         @if (HasChiTietHouseBill)
                         {
                             <div class="workflow-payment-row" style="margin-bottom:12px;">
-                                @* <span class="status-chip @GetChiTietHouseBillStatusClass(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)">
-                                    @GetChiTietHouseBillStatusLabel(Workflow.ChiTietHouseBill!.ParsedData!.TrangThaiKhoa)
-                                </span>
-                                <span class="workflow-message" style="margin:0;">
-                                    Trạng thái lấy trực tiếp từ API <strong>/ChiTietHouseBill</strong>.
-                                </span> *@
                             </div>
 
-                        <div class="table-shell compact-table query-table-scroll">
-                            <table class="portal-table">
-                                <thead>
-                                    <tr>
-                                        <th>Trường</th>
-                                        <th>Giá trị</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{
-                                        var chiTiet = Workflow!.ChiTietHouseBill!.ParsedData!;
-                                    }
-                                    <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
-                                    <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr>
-                                    <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
-                                    <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
-                                    <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
-                                    <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr>
-                                    <tr><td>Số lượng kiện nhập</td><td>@FormatNumber(chiTiet.SoLuongKienNhap)</td></tr>
-                                    <tr><td>Khối lượng nhập</td><td>@FormatNumber(chiTiet.KhoiLuongNhap)</td></tr>
-                                    <tr><td>CBM nhập</td><td>@FormatNumber(chiTiet.CBMNhap)</td></tr>
-                                   @*  <tr><td>Đơn giá luu kho</td><td>@FormatMoney(chiTiet.DonGiaLuuKho)</td></tr>
+                            <div class="table-shell compact-table query-table-scroll">
+                                <table class="portal-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Trường</th>
+                                            <th>Giá trị</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            var chiTiet = Workflow!.ChiTietHouseBill!.ParsedData!;
+                                        }
+                                        <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
+                                        @* <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr> *@
+                                        <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
+                                        <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
+                                        <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
+                                        @* <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr> *@
+                                        <tr><td>Số lượng kiện nhập</td><td>@FormatNumber(chiTiet.SoLuongKienNhap)</td></tr>
+                                        <tr><td>Khối lượng nhập</td><td>@FormatNumber(chiTiet.KhoiLuongNhap)</td></tr>
+                                        <tr><td>CBM nhập</td><td>@FormatNumber(chiTiet.CBMNhap)</td></tr>
+                                        @*  <tr><td>Đơn giá luu kho</td><td>@FormatMoney(chiTiet.DonGiaLuuKho)</td></tr>
                                     <tr><td>Đơn giá giao nh?n</td><td>@FormatMoney(chiTiet.DonGiaGiaoNhan)</td></tr>
                                     <tr><td>Đơn giá b?c x?p</td><td>@FormatMoney(chiTiet.DonGiaBocXep)</td></tr>
                                     <tr><td>Đơn giá qu?n l�</td><td>@FormatMoney(chiTiet.DonGiaQuanLy)</td></tr> *@
-                                    <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
-                                    <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
-                                    <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
-                                    <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
-                                    <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr>
-                                    <tr><td>EDO</td><td>@chiTiet.EDO</td></tr>
-                                    <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr>
-                                    <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
-                                    <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
-                                    <tr><td>Mã danh mục đại lý</td><td>@chiTiet.MaDanhMucDaiLy</td></tr>
-                                    @* <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
-                                    <tr><td>Số seal</td><td>@chiTiet.SoSeal</td></tr>
-                                    <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
-                                    <tr><td>Master Bill</td><td>@chiTiet.MasterBill</td></tr>
-                                    <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
-                                    <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
-                                    <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
-                                    <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
-                                    <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                        <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
+                                        <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
+                                        <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
+                                        <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
+                                        <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr>
+                                        <tr><td>EDO</td><td>@chiTiet.EDO</td></tr>
+                                        @* <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> *@
+                                        <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
+                                        <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
+                                        <tr><td>Mã danh mục đại lý</td><td>@chiTiet.MaDanhMucDaiLy</td></tr>
+                                        @* <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
+                                        <tr><td>Số seal</td><td>@chiTiet.SoSeal</td></tr>
+                                        <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
+                                        <tr><td>Master Bill</td><td>@chiTiet.MasterBill</td></tr>
+                                        <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
+                                        <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
+                                        <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
+                                        <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
+                                        <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
-                        <div class="workflow-payment-row no-print" style="margin-top:12px; gap:12px; flex-wrap:wrap;">
-                            @if (CanShowCreateAction)
-                            {
-                                <button type="button" class="portal-primary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
-                                    Tạo biên nhận thanh toán & lệnh xuất kho
-                                </button>
-                            }
+                            <div class="workflow-payment-row no-print" style="margin-top:12px; gap:12px; flex-wrap:wrap;">
+                                @if (CanShowCreateAction)
+                                {
+                                    <button type="button" class="portal-primary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
+                                        Tạo biên nhận thanh toán & lệnh xuất kho
+                                    </button>
+                                }
 
-                            @if (CanShowExtendAction)
-                            {
-                                <button type="button"
-                                        class="portal-secondary-action"
-                                        style="background:#c2410c; border-color:#c2410c; color:#fff;"
-                                        @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
-                                    Gia hạn biên nhận thanh toán
-                                </button>
-                            }
-                        </div>
+                                @if (CanShowExtendAction)
+                                {
+                                    <button type="button"
+                                            class="portal-secondary-action"
+                                            style="background:#c2410c; border-color:#c2410c; color:#fff;"
+                                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
+                                        Gia hạn biên nhận thanh toán
+                                    </button>
+                                }
+                            </div>
 
-                        @* @if (HasPhiLuuKho)
+                            @* @if (HasPhiLuuKho)
                         {
                             <div class="workflow-payment-row" style="margin-top:12px;">
                                 <span class="status-chip @GetPaymentStatusClass(Workflow!.PhiLuuKho!.Data!.TrangThaiThanhToan)">
@@ -459,8 +453,8 @@
                                 </div>
                             }
                         } *@
-                    }
-                </article>
+                        }
+                    </article>
                 </section>
 
                 <section class="workflow-grid" style="margin-top:16px;">
@@ -469,7 +463,7 @@
                             <h2>Lệnh xuất kho đã tạo</h2>
                             <span class="status-chip @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
                                 @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true
-                                    ? $"{Workflow.LenhXuatKhoHangNhapKhauTemps!.Data.Count} mục"
+                                    ? $"Vui lòng thanh toán các biên nhận để tải lệnh xuất kho"
                                     : "Chưa có dữ liệu")
                             </span>
                         </div>
@@ -488,9 +482,9 @@
                                 <table class="portal-table">
                                     <thead>
                                         <tr>
-                                            <th>Số</th>
+                                            <th>Mã lệnh</th>
                                             <th>Ngày lập</th>
-                                            <th>Ngày gia hạn</th>
+                                            <th>Hạn lưu kho</th>
                                             <th>Số vận đơn</th>
                                             <th>PDF</th>
                                         </tr>
@@ -501,7 +495,11 @@
                                             <tr>
                                                 <td>@item.So</td>
                                                 <td>@FormatDateTime(item.NgayLap)</td>
-                                                <td>@FormatDateTime(item.NgayGiaHan)</td>
+                                                <td>
+                                                    <span class="status-badge @GetStorageExpiryStatusClass(item.NgayGiaHan)">
+                                                        @FormatDateTime(item.NgayGiaHan)
+                                                    </span>
+                                                </td>
                                                 <td>@item.SoVanDon</td>
                                                 <td>
                                                     <button type="button"
@@ -543,13 +541,13 @@
                                 <table class="portal-table">
                                     <thead>
                                         <tr>
-                                            <th>Số</th>
-                                              <th>Ngày lập</th>
-                                              <th>Ngày gia hạn</th>
-                                              <th>Tổng tiền</th>
-                                              <th>Thanh toán</th>
-                                              <th>Thời gian thanh toán</th>
-                                              <th>Hành động</th>
+                                            <th>Số biên nhận</th>
+                                            <th>Ngày lập</th>
+                                            <th>Ngày gia hạn</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Thanh toán</th>
+                                            <th>Thời gian thanh toán</th>
+                                            <th>Hành động</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -559,18 +557,18 @@
                                                 <td>@item.So</td>
                                                 <td>@FormatDateTime(item.NgayLap)</td>
                                                 <td>@FormatDateTime(item.NgayGiaHan)</td>
-                                                <td class="text-end">@FormatMoney(item.TongTien)</td>
+                                                <td class="text-start">@FormatMoney(item.TongTien)</td>
                                                 <td>
                                                     @if (item.DaThanhToan)
                                                     {
                                                         <span title="Đã thanh toán" aria-label="Đã thanh toán" style="color:#16a34a; font-size:1.05rem;">
-                                                            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                                                            <span class="status-badge status-paid">Đã thanh toán</span>
                                                         </span>
                                                     }
                                                     else
                                                     {
                                                         <span title="Chưa thanh toán" aria-label="Chưa thanh toán" style="color:#dc2626; font-size:1.05rem;">
-                                                            <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i>
+                                                            <span class="status-badge status-unpaid">Chưa thanh toán</span>
                                                         </span>
                                                     }
                                                 </td>
@@ -593,7 +591,7 @@
                                                                     class="portal-secondary-action"
                                                                     style="@GetReceiptDownloadButtonStyle(item.So)"
                                                                     @onclick="() => DownloadBienNhanPdfAsync(item)">
-                                                                 Tải PDF
+                                                                Tải PDF
                                                             </button>
                                                         }
 
@@ -660,6 +658,7 @@
                     <div>
                         <label class="portal-label">
                             @(StorageActionMode == StorageActionPopupMode.Extend ? "Chọn ngày gia hạn" : "Chọn ngày lấy hàng")
+                            <span style="color:red">(*) Bắt buộc</span>
                         </label>
                         <input class="portal-input"
                                id="storageActionDateInput"
@@ -673,7 +672,7 @@
 
                 @if (!string.IsNullOrWhiteSpace(StorageActionPopupMessage))
                 {
-                    <div class="portal-alert portal-alert-error" style="margin-top:12px;">@StorageActionPopupMessage</div>
+                    <div class="portal-alert portal-alert-error" style="margin-top:12px;">@StorageActionPopupMessage<br />Vui lòng chọn lại ngày hợp lệ!</div>
                 }
 
                 @if (Workflow?.PhiLuuKho?.Data is not null)
@@ -819,111 +818,111 @@
                 }
             </div>
 
-@if (IsReceiptPaymentPopupOpen)
-{
-    <div style="position:fixed; inset:0; z-index:999999; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(10, 16, 28, 0.72); backdrop-filter:blur(8px);" @onclick="CloseReceiptPaymentPopup">
-        <div style="width:min(920px, 100%); max-height:calc(100vh - 48px); overflow:auto; border-radius:24px; background:#fff; box-shadow:0 30px 80px rgba(15, 23, 42, 0.28); border:1px solid rgba(15, 23, 42, 0.08);" @onclick:stopPropagation="true">
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:24px 24px 0;">
-                <div>
-                    <p class="page-kicker">Biên nhận thanh toán</p>
-                    <h3>Thông tin chuyển khoản QR</h3>
-                </div>
-                <button type="button" class="payment-modal-close" @onclick="CloseReceiptPaymentPopup">×</button>
-            </div>
-
-            <div style="padding:24px;">
-                @if (SelectedReceiptPaymentItem is not null)
-                {
-                    <div class="field-grid">
-                        <div>
-                            <label class="portal-label">Số biên nhận</label>
-                            <input class="portal-input" value="@SelectedReceiptPaymentItem.So" readonly />
-                        </div>
-                        <div>
-                            <label class="portal-label">Tổng tiền</label>
-                            <input class="portal-input" style="text-align:right;" value="@FormatMoney(SelectedReceiptPaymentItem.TongTien)" readonly />
-                        </div>
-                    </div>
-                }
-
-                @if (IsLoadingReceiptPaymentInfo)
-                {
-                    <div class="portal-empty-inline" style="margin-top:16px;">Đang phân tích mã QR thanh toán...</div>
-                }
-                else if (!string.IsNullOrWhiteSpace(ReceiptPaymentPopupMessage))
-                {
-                    <div class="portal-alert portal-alert-error" style="margin-top:16px;">@ReceiptPaymentPopupMessage</div>
-                }
-                else if (!string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrBase64))
-                {
-                    <div class="payment-modal-grid" style="margin-top:16px;">
-                        <div class="payment-qr-card">
-                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(SelectedReceiptPaymentQrBase64)" alt="QR thanh toán biên nhận" />
-                            <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này để chuyển khoản.</p>
+            @if (IsReceiptPaymentPopupOpen)
+            {
+                <div style="position:fixed; inset:0; z-index:999999; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(10, 16, 28, 0.72); backdrop-filter:blur(8px);" @onclick="CloseReceiptPaymentPopup">
+                    <div style="width:min(920px, 100%); max-height:calc(100vh - 48px); overflow:auto; border-radius:24px; background:#fff; box-shadow:0 30px 80px rgba(15, 23, 42, 0.28); border:1px solid rgba(15, 23, 42, 0.08);" @onclick:stopPropagation="true">
+                        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:24px 24px 0;">
+                            <div>
+                                <p class="page-kicker">Biên nhận thanh toán</p>
+                                <h3>Thông tin chuyển khoản QR</h3>
+                            </div>
+                            <button type="button" class="payment-modal-close" @onclick="CloseReceiptPaymentPopup">×</button>
                         </div>
 
-                        <div class="payment-details">
-                            @if (SelectedReceiptPaymentQrDetails is not null && SelectedReceiptPaymentQrDetails.Success)
+                        <div style="padding:24px;">
+                            @if (SelectedReceiptPaymentItem is not null)
                             {
-                                <div class="payment-detail-row">
-                                    <span>Ngân hàng</span>
-                                    <span style="display:flex; align-items:center; gap:8px;">
-                                        <strong>@(string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.BankName) ? SelectedReceiptPaymentQrDetails.BankBin : SelectedReceiptPaymentQrDetails.BankName)</strong>
-                                        <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy ngân hàng" aria-label="Copy ngân hàng" @onclick="() => CopyPaymentQrValueAsync(string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.BankName) ? SelectedReceiptPaymentQrDetails.BankBin : SelectedReceiptPaymentQrDetails.BankName)">
-                                            <i class="fa-regular fa-copy"></i>
-                                        </button>
-                                    </span>
-                                </div>
-                                <div class="payment-detail-row">
-                                    <span>Số tài khoản</span>
-                                    <span style="display:flex; align-items:center; gap:8px;">
-                                        <strong>@SelectedReceiptPaymentQrDetails.AccountNumber</strong>
-                                        <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tài khoản" aria-label="Copy số tài khoản" @onclick="() => CopyPaymentQrValueAsync(SelectedReceiptPaymentQrDetails.AccountNumber)">
-                                            <i class="fa-regular fa-copy"></i>
-                                        </button>
-                                    </span>
-                                </div>
-                                <div class="payment-detail-row">
-                                    <span>Số tiền</span>
-                                    <span style="display:flex; align-items:center; gap:8px;">
-                                        <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m)</strong>
-                                        <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tiền" aria-label="Copy số tiền" @onclick="() => CopyPaymentQrValueAsync(FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m))">
-                                            <i class="fa-regular fa-copy"></i>
-                                        </button>
-                                    </span>
-                                </div>
-                                @if (!string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.TransferContent))
-                                {
-                                    <div class="payment-detail-row">
-                                        <span>Nội dung</span>
-                                        <span style="display:flex; align-items:center; gap:8px;">
-                                            <strong>@SelectedReceiptPaymentQrDetails.TransferContent</strong>
-                                            <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy nội dung" aria-label="Copy nội dung" @onclick="() => CopyPaymentQrValueAsync(SelectedReceiptPaymentQrDetails.TransferContent)">
-                                                <i class="fa-regular fa-copy"></i>
-                                            </button>
-                                        </span>
+                                <div class="field-grid">
+                                    <div>
+                                        <label class="portal-label">Số biên nhận</label>
+                                        <input class="portal-input" value="@SelectedReceiptPaymentItem.So" readonly />
                                     </div>
-                                }
+                                    <div>
+                                        <label class="portal-label">Tổng tiền</label>
+                                        <input class="portal-input" style="text-align:right;" value="@FormatMoney(SelectedReceiptPaymentItem.TongTien)" readonly />
+                                    </div>
+                                </div>
                             }
-                            else if (SelectedReceiptPaymentQrDetails is not null && !SelectedReceiptPaymentQrDetails.Success && !string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.ErrorMessage))
+
+                            @if (IsLoadingReceiptPaymentInfo)
                             {
-                                <div class="portal-alert portal-alert-warning" style="margin-top:8px;">
-                                    @SelectedReceiptPaymentQrDetails.ErrorMessage
+                                <div class="portal-empty-inline" style="margin-top:16px;">Đang phân tích mã QR thanh toán...</div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(ReceiptPaymentPopupMessage))
+                            {
+                                <div class="portal-alert portal-alert-error" style="margin-top:16px;">@ReceiptPaymentPopupMessage</div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrBase64))
+                            {
+                                <div class="payment-modal-grid" style="margin-top:16px;">
+                                    <div class="payment-qr-card">
+                                        <img class="payment-qr-image" src="@GetQrCodeDataUrl(SelectedReceiptPaymentQrBase64)" alt="QR thanh toán biên nhận" />
+                                        <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này để chuyển khoản.</p>
+                                    </div>
+
+                                    <div class="payment-details">
+                                        @if (SelectedReceiptPaymentQrDetails is not null && SelectedReceiptPaymentQrDetails.Success)
+                                        {
+                                            <div class="payment-detail-row">
+                                                <span>Ngân hàng</span>
+                                                <span style="display:flex; align-items:center; gap:8px;">
+                                                    <strong>@(string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.BankName) ? SelectedReceiptPaymentQrDetails.BankBin : SelectedReceiptPaymentQrDetails.BankName)</strong>
+                                                    <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy ngân hàng" aria-label="Copy ngân hàng" @onclick="() => CopyPaymentQrValueAsync(string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.BankName) ? SelectedReceiptPaymentQrDetails.BankBin : SelectedReceiptPaymentQrDetails.BankName)">
+                                                        <i class="fa-regular fa-copy"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            <div class="payment-detail-row">
+                                                <span>Số tài khoản</span>
+                                                <span style="display:flex; align-items:center; gap:8px;">
+                                                    <strong>@SelectedReceiptPaymentQrDetails.AccountNumber</strong>
+                                                    <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tài khoản" aria-label="Copy số tài khoản" @onclick="() => CopyPaymentQrValueAsync(SelectedReceiptPaymentQrDetails.AccountNumber)">
+                                                        <i class="fa-regular fa-copy"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            <div class="payment-detail-row">
+                                                <span>Số tiền</span>
+                                                <span style="display:flex; align-items:center; gap:8px;">
+                                                    <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m)</strong>
+                                                    <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tiền" aria-label="Copy số tiền" @onclick="() => CopyPaymentQrValueAsync(FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m))">
+                                                        <i class="fa-regular fa-copy"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.TransferContent))
+                                            {
+                                                <div class="payment-detail-row">
+                                                    <span>Nội dung</span>
+                                                    <span style="display:flex; align-items:center; gap:8px;">
+                                                        <strong>@SelectedReceiptPaymentQrDetails.TransferContent</strong>
+                                                        <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy nội dung" aria-label="Copy nội dung" @onclick="() => CopyPaymentQrValueAsync(SelectedReceiptPaymentQrDetails.TransferContent)">
+                                                            <i class="fa-regular fa-copy"></i>
+                                                        </button>
+                                                    </span>
+                                                </div>
+                                            }
+                                        }
+                                        else if (SelectedReceiptPaymentQrDetails is not null && !SelectedReceiptPaymentQrDetails.Success && !string.IsNullOrWhiteSpace(SelectedReceiptPaymentQrDetails.ErrorMessage))
+                                        {
+                                            <div class="portal-alert portal-alert-warning" style="margin-top:8px;">
+                                                @SelectedReceiptPaymentQrDetails.ErrorMessage
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
                             }
                         </div>
+
+                        <div style="display:flex; justify-content:flex-end; padding:0 24px 24px; gap:12px;">
+                            <button type="button" class="portal-secondary-action" style="padding:0.85rem 1.2rem;" @onclick="CloseReceiptPaymentPopup">Đóng</button>
+                        </div>
                     </div>
-                }
-            </div>
+                </div>
+            }
 
-            <div style="display:flex; justify-content:flex-end; padding:0 24px 24px; gap:12px;">
-                <button type="button" class="portal-secondary-action" style="padding:0.85rem 1.2rem;" @onclick="CloseReceiptPaymentPopup">Đóng</button>
-            </div>
-        </div>
-    </div>
-}
-
-@if (ShowPaymentConfirmDialog)
+            @if (ShowPaymentConfirmDialog)
             {
                 <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px;" @onclick="ClosePaymentConfirmDialog">
                     <div class="payment-confirm-modal" style="max-width:520px; width:min(100%, 520px); border-radius:20px; background:linear-gradient(180deg, #fff7d1 0%, #fff1a8 100%); border:1px solid #f3c846; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
@@ -1236,11 +1235,11 @@
     private static string GetPaymentStatusClass(int trangThaiThanhToan)
           => trangThaiThanhToan switch
           {
-            0 => "warning",
-            1 => "pending",
-            2 => "success",
-            _ => "neutral"
-        };
+              0 => "warning",
+              1 => "pending",
+              2 => "success",
+              _ => "neutral"
+          };
 
     private static string GetPaymentStatusLabel(int trangThaiThanhToan)
         => trangThaiThanhToan switch
@@ -1256,6 +1255,18 @@
 
     private static string GetChiTietHouseBillStatusLabel(bool trangThaiKhoa)
         => trangThaiKhoa ? "Đã khoá" : "Chua khóa";
+
+    private static string GetStorageExpiryStatusClass(DateTime? ngayGiaHan)
+    {
+        if (!ngayGiaHan.HasValue)
+        {
+            return "status-paid";
+        }
+
+        return ngayGiaHan.Value.Date < DateTime.Today
+            ? "status-overdue"
+            : "status-paid";
+    }
 
     private string GetStorageActionPopupTitle()
         => StorageActionMode == StorageActionPopupMode.Extend
@@ -1292,12 +1303,11 @@
         }
 
         StorageActionMode = mode;
-        if (mode == StorageActionPopupMode.Payment)
-        {
-            PaymentInfo = null;
-            PaymentQrDetails = null;
-            PaymentPopupMessage = null;
-        }
+        PaymentInfo = null;
+        PaymentQrDetails = null;
+        PaymentPopupMessage = null;
+        StorageActionPopupMessage = null;
+        WorkflowMessage = null;
 
         StorageActionDate = mode == StorageActionPopupMode.Payment
             ? DateTime.Today
@@ -1305,10 +1315,10 @@
         StorageActionDateText = StorageActionDate.HasValue
             ? StorageActionDate.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))
             : string.Empty;
-        StorageActionPopupMessage = null;
         IsStorageActionPopupOpen = true;
         _shouldInitStorageDatePicker = true;
-        _shouldAutoLoadStorageAction = mode == StorageActionPopupMode.Payment;
+        _shouldAutoLoadStorageAction = mode == StorageActionPopupMode.Payment
+            || mode == StorageActionPopupMode.Extend;
     }
 
     private void CloseStorageActionPopup()
@@ -1391,7 +1401,8 @@
                 return;
             }
 
-            if (StorageActionMode == StorageActionPopupMode.Payment)
+            if (StorageActionMode == StorageActionPopupMode.Payment
+                || StorageActionMode == StorageActionPopupMode.Extend)
             {
                 CanShowPaymentQrButton = true;
             }

@@ -1330,7 +1330,7 @@ select {
 }
 
 .query-table-scroll {
-    max-height: 420px;
+    max-height: 300px;
     overflow-y: auto;
     overflow-x: auto;
     background: var(--portal-surface);
@@ -1575,6 +1575,39 @@ select {
     opacity: 0;
     pointer-events: auto;
     cursor: pointer;
+}
+
+/* Style chung cho các Badge trạng thái */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+    text-align: center;
+    min-width: 100px;
+    border: 1px solid transparent;
+}
+
+/* Class Đã thanh toán - Màu Xanh */
+.status-paid {
+    background-color: #e8f5e9; /* Xanh lá nhạt */
+    color: #2e7d32; /* Chữ xanh đậm */
+    border-color: #c8e6c9;
+}
+
+/* Class Hạn quá ngày - Màu Đỏ */
+.status-overdue {
+    background-color: #ffebee;
+    color: #c62828;
+    border-color: #ffcdd2;
+}
+
+/* Class Chưa thanh toán - Màu Đỏ */
+.status-unpaid {
+    background-color: #ffebee; /* Đỏ nhạt */
+    color: #c62828; /* Chữ đỏ đậm */
+    border-color: #ffcdd2;
 }
 
 @media print {

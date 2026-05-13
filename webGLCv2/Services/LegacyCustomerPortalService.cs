@@ -13,10 +13,12 @@ public sealed class LegacyCustomerPortalService
     };
 
     private readonly HttpClient _httpClient;
+    private readonly EmailHelper _emailHelper;
 
-    public LegacyCustomerPortalService(HttpClient httpClient)
+    public LegacyCustomerPortalService(HttpClient httpClient, EmailHelper emailHelper)
     {
         _httpClient = httpClient;
+        _emailHelper = emailHelper;
     }
     public async Task<AuthenticatedUserDto> LoginAsync(string email, string password)
     {
@@ -91,6 +93,66 @@ public sealed class LegacyCustomerPortalService
         response.EnsureSuccessStatusCode();
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
         EnsureSuccess(envelope, "Không thể cập nhật trạng thái tài khoản.");
+    }
+
+    public async Task ApproveAccountAndNotifyAsync(string id, string email)
+    {
+        await SetAccountActiveAsync(id, true);
+        await _emailHelper.SendEmailAsync(email, EmailHelper.AccountApprovedSuccessTemplateId);
+    }
+
+    public async Task<OnlineOrderRecord?> FindOnlineOrderByHouseBillAsync(string houseBill)
+    {
+        if (string.IsNullOrWhiteSpace(houseBill))
+        {
+            return null;
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/List",
+            new
+            {
+                HouseBill = houseBill.Trim(),
+                Page = 1,
+                PageSize = 1
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể kiểm tra lệnh online theo House Bill.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        var root = document.RootElement;
+        var itemsElement = root.TryGetProperty("Items", out var itemsValue) ? itemsValue : root;
+
+        if (itemsElement.ValueKind != JsonValueKind.Array || itemsElement.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        var item = itemsElement[0];
+        return new OnlineOrderRecord
+        {
+            Id = GetString(item, "ID"),
+            OrderCode = GetString(item, "OrderCode"),
+            UserId = GetLong(item, "IDDanhMucKhachHangDoiLenh"),
+            UserEmail = GetString(item, "UserEmail"),
+            CustomerName = GetString(item, "HoVaTen"),
+            PhoneNumber = GetString(item, "SoDienThoai"),
+            IdentityNumber = GetString(item, "SoCMND"),
+            VehicleNumber = GetString(item, "SoXe"),
+            TaxCode = GetString(item, "MaSoThue"),
+            CompanyName = GetString(item, "TenCongTy"),
+            CompanyAddress = GetString(item, "DiaChi"),
+            CompanyEmail = GetString(item, "Email"),
+            HouseBill = GetString(item, "HouseBill"),
+            ContainerNumber = GetString(item, "SoCont"),
+            DeclarationNumber = GetString(item, "SoToKhai"),
+            StatusCode = GetInt(item, "TrangThai"),
+            Status = GetString(item, "TrangThaiText")
+        };
     }
 
     public async Task<AccountDocumentDetails> GetAccountDocumentsAsync(string id)
@@ -315,6 +377,12 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể cập nhật trạng thái duyệt doanh nghiệp.");
     }
 
+    public async Task ApproveEnterpriseAndNotifyAsync(LegacyCompanyProfile company, string email)
+    {
+        await SetEnterpriseApprovalAsync(company, true);
+        await _emailHelper.SendEmailAsync(email, EmailHelper.AccountApprovedSuccessTemplateId);
+    }
+
     public async Task UpdateCompanyProfileAsync(
         LegacyCompanyProfile company,
         string companyName,
@@ -412,6 +480,38 @@ public sealed class LegacyCustomerPortalService
 
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
         EnsureSuccess(envelope, "Không thể gửi đăng ký tài khoản.");
+    }
+
+    public async Task<string> RecoverPasswordAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email is required.", nameof(email));
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/DanhMucKhachHangDoiLenh/RecoverPassword",
+            new { Email = email.Trim() },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cấp lại mật khẩu.");
+
+        var newPassword = envelope?.Data?.Trim();
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            throw new InvalidOperationException("Không thể tạo mật khẩu mới.");
+        }
+
+        return newPassword;
+    }
+
+    public async Task RecoverPasswordAndNotifyAsync(string email)
+    {
+        var newPassword = await RecoverPasswordAsync(email);
+        await _emailHelper.SendPasswordResetEmailAsync(email, newPassword);
     }
 
     public async Task UpdatePersonalProfileAsync(string accountId, string fullName, string phoneNumber, string? billingEmail, string? email = null)

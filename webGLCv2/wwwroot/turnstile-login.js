@@ -1,11 +1,17 @@
-﻿window.glcTurnstile = {
+window.glcTurnstile = {
     renderLogin: function (elementId, siteKey) {
+        window.glcTurnstile.render(elementId, siteKey, "login-turnstile-token");
+    },
+    renderRegister: function (elementId, siteKey) {
+        window.glcTurnstile.render(elementId, siteKey, "register-turnstile-token");
+    },
+    render: function (elementId, siteKey, tokenInputId) {
         const host = document.getElementById(elementId);
         if (!host || !siteKey) {
             return;
         }
 
-        const tokenInput = document.getElementById("login-turnstile-token");
+        const tokenInput = document.getElementById(tokenInputId);
         if (tokenInput) {
             tokenInput.value = "";
         }

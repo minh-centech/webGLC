@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Components
 @using System.Globalization
@@ -16,6 +17,11 @@
             <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo House Bill hoặc số container để theo dõi tiếp nhận và thông quan.</p>
         </div>
     </header>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="portal-alert portal-alert-warning" style="margin-bottom: 16px;">@ErrorMessage</div>
+    }
 
     <section class="workspace-card">
         <div class="section-heading">
@@ -42,50 +48,53 @@
 
     @if (ThongQuanResult is not null || ChiTietResult is not null)
     {
-        <section class="workspace-card">
-            <div class="section-heading">
-                <h2>Kết quả tra cứu</h2>
-                <p>@GetResultSummary()</p>
-            </div>
+        @if (ChiTietResult?.Success == true && ChiTietResult.ParsedData is not null)
+        {
+            <section class="workspace-card">
+                <div class="section-heading">
+                    <h2>Kết quả tra cứu</h2>
+                    <p>@GetResultSummary()</p>
+                </div>
 
-            <div class="workflow-grid">
-                <article class="workflow-card">
-                    <div class="section-heading" style="display:flex; align-items:center; justify-content:space-between; gap: 12px;">
-                        <h2>Tình trạng thông quan</h2>
+                <div class="workflow-grid">
+                    <article class="workflow-card">
+                        <div class="section-heading" style="display:flex; align-items:center; justify-content:space-between; gap: 12px;">
+                            <h2>Tình trạng thông quan</h2>
+                           
+                            @if (CanShowCreateOnlineOrderButton)
+                            {
+                                <button type="button"
+                                        class="portal-primary-action"
+                                        @onclick="OpenOnlineOrderAction">
+                                    @(HasExistingOnlineOrder ? "Xem chi tiết" : "Tạo lệnh online")
+                                </button>
+                            }
+                        </div>
                         <span class="status-chip @GetThongQuanClass(ThongQuanResult)">
                             @GetThongQuanLabel(ThongQuanResult)
                         </span>
-                        @if (ThongQuanResult?.Success == true && ThongQuanResult.IsThongQuan)
-                        {
-                            <button type="button"
-                                    class="portal-primary-action"
-                                    @onclick="OpenNewOnlineOrder">
-                                Tạo lệnh online
-                            </button>
-                        }
-                    </div>
-                    <p class="workflow-message">@GetThongQuanMessage()</p>
-                </article>
+                    </article>
 
-                <article class="workflow-card" style="display:none;">
-                    <div class="section-heading">
-                        <h2>Chi tiết House Bill</h2>
-                        <span class="status-chip @GetChiTietClass(ChiTietResult?.ParsedData)">
-                            @GetChiTietLabel(ChiTietResult?.ParsedData)
-                        </span>
-                    </div>
-                    <p class="workflow-message">@GetChiTietMessage()</p>
-                </article>
-            </div>
-        </section>
+                    <article class="workflow-card" style="display:none;">
+                        <div class="section-heading">
+                            <h2>Chi tiết House Bill</h2>
+                            <span class="status-chip @GetChiTietClass(ChiTietResult?.ParsedData)">
+                                @GetChiTietLabel(ChiTietResult?.ParsedData)
+                            </span>
+                        </div>
+                        <p class="workflow-message">@GetChiTietMessage()</p>
+                    </article>
+                </div>
+            </section>
+        }
     }
 
     @if (DetailRows.Count > 0)
     {
         <section class="workspace-card">
             <div class="section-heading">
-                <h2>Bảng chi tiết House Bill</h2>
-                <p>Hiển thị toàn bộ trường dữ liệu trả về từ API chi tiết House Bill.</p>
+                <h2>Thông tin chi tiết House Bill</h2>
+                <p>Lấy dữ liệu thành công.</p>
             </div>
 
             <div class="table-shell" style="max-height: 560px; overflow-y: auto;">
@@ -168,6 +177,22 @@
     }
 </section>
 
+@if (IsNoDataModalOpen)
+    {
+        <div class="portal-modal-backdrop" @onclick="CloseNoDataModal">
+            <div class="portal-modal" @onclick:stopPropagation="true">
+                <div>
+                    <h3>Không có dữ liệu trên hệ thống</h3>
+                    <div class="portal-alert portal-alert-error" style="margin-top: 12px;">@NoDataModalMessage</div>
+                </div>
+
+                <div class="portal-modal-actions">
+                    <button type="button" class="portal-primary-action" @onclick="CloseNoDataModal">Đóng lại</button>
+                </div>
+        </div>
+    </div>
+}
+
 @code {
     [SupplyParameterFromQuery(Name = "houseBill")]
     private string? HouseBillFromQuery { get; set; }
@@ -181,8 +206,14 @@
     private List<DetailRow> DetailRows { get; set; } = [];
     private string SearchMessage { get; set; } = string.Empty;
     private string ErrorMessage { get; set; } = string.Empty;
+    private string NoDataModalMessage { get; set; } = string.Empty;
+    private OnlineOrderRecord? ExistingOnlineOrder { get; set; }
+    private long? ExistingOnlineOrderId { get; set; }
     private bool AutoLoaded;
     private bool IsSearching;
+    private bool IsNoDataModalOpen;
+    private bool HasExistingOnlineOrder => ExistingOnlineOrder is not null;
+    private bool CanShowCreateOnlineOrderButton => ChiTietResult?.Success == true && ChiTietResult.ParsedData is not null;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -206,7 +237,7 @@
 
                 if (string.IsNullOrWhiteSpace(queryHouseBill))
         {
-            ErrorMessage = "Vui long nhap House Bill truoc khi tim kiem.";
+            ErrorMessage = "Vui lòng nhập số House Bill trước khi tìm kiếm.";
             return;
         }
 
@@ -221,14 +252,18 @@
 
         SearchMessage = string.Empty;
         ErrorMessage = string.Empty;
+        NoDataModalMessage = string.Empty;
+        IsNoDataModalOpen = false;
         ThongQuanResult = null;
         ChiTietResult = null;
         DetailRows = [];
         Results = [];
+        ExistingOnlineOrder = null;
+        ExistingOnlineOrderId = null;
 
         if (string.IsNullOrWhiteSpace(normalizedHouseBill))
         {
-            ErrorMessage = "Vui long nhap House Bill truoc khi tim kiem.";
+            ErrorMessage = "Vui lòng nhập House Bill trước khi tìm kiếm.";
             return;
         }
 
@@ -248,6 +283,24 @@
 
             try
             {
+                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillAsync(normalizedHouseBill, normalizedContainer);
+            }
+            catch
+            {
+                OpenNoDataModal("API kiểm tra chi tiết House Bill không trả về dữ liệu hoặc bị lỗi.");
+                return;
+            }
+
+            if (ChiTietResult is null || !ChiTietResult.Success || ChiTietResult.ParsedData is null)
+            {
+                OpenNoDataModal(string.IsNullOrWhiteSpace(ChiTietResult?.Message)
+                    ? "API kiểm tra chi tiết House Bill không trả về dữ liệu hợp lệ."
+                    : ChiTietResult.Message);
+                return;
+            }
+
+            try
+            {
                 ThongQuanResult = await OnlineOrderService.CheckThongQuanAsync(normalizedHouseBill, normalizedContainer);
             }
             catch (Exception ex)
@@ -257,14 +310,16 @@
 
             try
             {
-                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillAsync(normalizedHouseBill, normalizedContainer);
-                DetailRows = BuildDetailRows(ChiTietResult?.ParsedData);
-                Results = BuildSummaryRows(ThongQuanResult, ChiTietResult?.ParsedData, normalizedHouseBill, normalizedContainer);
+                ExistingOnlineOrder = await LegacyCustomerPortalService.FindOnlineOrderByHouseBillAsync(normalizedHouseBill);
+                ExistingOnlineOrderId = long.TryParse(ExistingOnlineOrder?.Id, out var existingId) ? existingId : null;
             }
             catch (Exception ex)
             {
-                ErrorMessage = AppendError(ErrorMessage, $"Không thể lấy chi tiết House Bill: {ex.Message}");
+                ErrorMessage = AppendError(ErrorMessage, $"Không thể kiểm tra lệnh online hiện có: {ex.Message}");
             }
+
+            DetailRows = BuildDetailRows(ChiTietResult.ParsedData);
+            Results = BuildSummaryRows(ThongQuanResult, ChiTietResult.ParsedData, normalizedHouseBill, normalizedContainer);
 
             if (string.IsNullOrWhiteSpace(ErrorMessage))
             {
@@ -280,6 +335,29 @@
     private static string AppendError(string current, string next)
         => string.IsNullOrWhiteSpace(current) ? next : $"{current} {next}";
 
+    private void OpenNoDataModal(string message)
+    {
+        NoDataModalMessage = message;
+        IsNoDataModalOpen = true;
+    }
+
+    private void CloseNoDataModal()
+    {
+        IsNoDataModalOpen = false;
+        NoDataModalMessage = string.Empty;
+    }
+
+    private void OpenOnlineOrderAction()
+    {
+        if (ExistingOnlineOrderId.HasValue)
+        {
+            NavigationManager.NavigateTo($"/user/orders/{ExistingOnlineOrderId.Value}");
+            return;
+        }
+
+        OpenNewOnlineOrder();
+    }
+
     private void OpenNewOnlineOrder()
     {
         if (string.IsNullOrWhiteSpace(HouseBill.Trim()))
@@ -287,10 +365,16 @@
             ErrorMessage = "Vui long nhap House Bill truoc khi tao lenh online.";
             return;
         }
-        var houseBill = Uri.EscapeDataString(HouseBill.Trim());
-        var soCont = Uri.EscapeDataString(ContainerNumber.Trim());
 
-        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}");
+        var parsedData = ChiTietResult?.ParsedData;
+        var soContValue = parsedData?.SoContainer ?? ContainerNumber.Trim();
+        var soVanDonValue = parsedData?.SoVanDon ?? ContainerNumber.Trim();
+
+        var houseBill = Uri.EscapeDataString(HouseBill.Trim());
+        var soCont = Uri.EscapeDataString(soContValue);
+        var soVanDon = Uri.EscapeDataString(soVanDonValue);
+
+        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}");
     }
 
     private string GetResultSummary()
@@ -398,7 +482,7 @@
             new DetailRow("Số House Bill", detail.SoHouseBill),
             new DetailRow("Số Cont", detail.SoCont),
             new DetailRow("Master Bill", detail.MasterBill),
-            new DetailRow("Trạng thái khóa", FormatBool(!detail.TrangThaiKhoa)),
+            //new DetailRow("Trạng thái khóa", FormatBool(!detail.TrangThaiKhoa)),
             new DetailRow("Mô tả hàng hóa", detail.MoTaHangHoa),
             new DetailRow("Chủ hàng", detail.ChuHang),
             new DetailRow("Đơn vị tính", detail.MaDanhMucDonViTinh),
@@ -415,7 +499,7 @@
             new DetailRow("Hàng quá tải", FormatBool(detail.HangQuaTai)),
             new DetailRow("Số lượng quá tải", FormatDecimal(detail.SoLuongQuaTai)),
             new DetailRow("EDO", detail.EDO),
-            new DetailRow("Mã cửa làm hàng", detail.MaDanhMucCuaLamHang),
+            // new DetailRow("Mã cửa làm hàng", detail.MaDanhMucCuaLamHang),
             new DetailRow("Ngày nhập kho", FormatDate(detail.NgayNhapKho)),
             new DetailRow("Ngày gia hạn cuối", FormatDate(detail.NgayGiaHanCuoi)),
             new DetailRow("Mã đại lý", detail.MaDanhMucDaiLy),

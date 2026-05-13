@@ -4,6 +4,8 @@
 @attribute [AllowAnonymous]
 @inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
 @inject IJSRuntime JSRuntime
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject EmailHelper EmailHelper
 
 <PageTitle>Dang nhap khach hang</PageTitle>
 <HeadContent>
@@ -89,8 +91,15 @@
     <div class="portal-modal-backdrop" @onclick="HideForgotPasswordPopup">
         <div class="portal-modal" @onclick:stopPropagation="true">
             <h3>Quên mật khẩu</h3>
-            <p>Quý khách vui lòng liên hệ Quản trị viên để được hỗ trợ cấp lại mật khẩu tài khoản.</p>
+            <p>Vui lòng nhập email đăng ký để hệ thống kiểm tra và cấp lại mật khẩu mới.</p>
+            <label class="portal-label" for="forgot-email">Email</label>
+            <input id="forgot-email" class="portal-input" type="email" @bind="ForgotPasswordEmail" placeholder="name@company.com" />
+            @if (!string.IsNullOrWhiteSpace(ForgotPasswordMessage))
+            {
+                <div class="portal-alert @(ForgotPasswordIsError ? "portal-alert-error" : "portal-alert-success")">@ForgotPasswordMessage</div>
+            }
             <div class="portal-modal-actions">
+                <button type="button" class="portal-primary-action" disabled="@IsForgotPasswordBusy" @onclick="SubmitForgotPasswordAsync">Gửi mật khẩu mới</button>
                 <button type="button" class="portal-primary-action" @onclick="HideForgotPasswordPopup">Đóng lại</button>
             </div>
         </div>
@@ -107,25 +116,80 @@
     [SupplyParameterFromQuery]
     public string? Email { get; set; }
 
+    [SupplyParameterFromQuery(Name = "reload")]
+    public string? ReloadToken { get; set; }
+
     private bool IsForgotPasswordPopupOpen { get; set; }
+    private bool IsForgotPasswordBusy { get; set; }
+    private bool ForgotPasswordIsError { get; set; }
+    private string? ForgotPasswordEmail { get; set; }
+    private string? ForgotPasswordMessage { get; set; }
+    private string? _lastTurnstileReloadToken;
+    private bool _shouldRenderTurnstile = true;
     private string SiteKey => TurnstileConfiguration.Value.SiteKey;
     private bool HasTurnstileConfiguration =>
         !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
         && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
 
+    protected override void OnParametersSet()
+    {
+        if (!string.Equals(_lastTurnstileReloadToken, ReloadToken, StringComparison.Ordinal))
+        {
+            _lastTurnstileReloadToken = ReloadToken;
+            _shouldRenderTurnstile = true;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && HasTurnstileConfiguration)
+        if (_shouldRenderTurnstile && HasTurnstileConfiguration)
         {
+            _shouldRenderTurnstile = false;
             await JSRuntime.InvokeVoidAsync("glcTurnstile.renderLogin", "login-turnstile", SiteKey);
         }
     }
 
     private void ShowForgotPasswordPopup()
-        => IsForgotPasswordPopupOpen = true;
+    {
+        ForgotPasswordMessage = null;
+        ForgotPasswordIsError = false;
+        IsForgotPasswordPopupOpen = true;
+    }
 
     private void HideForgotPasswordPopup()
         => IsForgotPasswordPopupOpen = false;
+
+    private async Task SubmitForgotPasswordAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ForgotPasswordEmail))
+        {
+            ForgotPasswordMessage = "Vui lòng nhập email.";
+            ForgotPasswordIsError = true;
+            return;
+        }
+
+        IsForgotPasswordBusy = true;
+        ForgotPasswordMessage = null;
+        ForgotPasswordIsError = false;
+
+        try
+        {
+            var newPassword = await LegacyCustomerPortalService.RecoverPasswordAsync(ForgotPasswordEmail);
+            await EmailHelper.SendPasswordResetEmailAsync(ForgotPasswordEmail, newPassword);
+            Console.WriteLine($"Mật khẩu mới: { newPassword}.");
+            ForgotPasswordMessage = $"Mật khẩu mới đã được gửi đến email: {ForgotPasswordEmail}.";
+            ForgotPasswordIsError = false;
+        }
+        catch (Exception ex)
+        {
+            ForgotPasswordMessage = ex.Message;
+            ForgotPasswordIsError = true;
+        }
+        finally
+        {
+            IsForgotPasswordBusy = false;
+        }
+    }
 }
 
 

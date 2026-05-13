@@ -390,7 +390,7 @@ public sealed class OnlineOrderService
         {
             result.Success = false;
             result.Message = string.IsNullOrWhiteSpace(result.Message)
-                ? "Khong the phan tich thong tin truy van house bill."
+                ? "Không tìm thấy số HouseBill trong hệ thống! Vui lòng kiểm tra lại."
                 : result.Message;
         }
 

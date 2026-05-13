@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 var legacyApiSection = builder.Configuration.GetSection(LegacyApiOptions.SectionName);
 var onlineOrderWorkflowSection = builder.Configuration.GetSection(OnlineOrderWorkflowOptions.SectionName);
 var turnstileSection = builder.Configuration.GetSection(TurnstileOptions.SectionName);
+var emailSenderSection = builder.Configuration.GetSection(EmailSenderOptions.SectionName);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
@@ -26,6 +27,7 @@ builder.Services.AddAuthorization();
 builder.Services.Configure<LegacyApiOptions>(legacyApiSection);
 builder.Services.Configure<OnlineOrderWorkflowOptions>(onlineOrderWorkflowSection);
 builder.Services.Configure<TurnstileOptions>(turnstileSection);
+builder.Services.Configure<EmailSenderOptions>(emailSenderSection);
 
 builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
 {
@@ -43,7 +45,8 @@ builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
 builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>
 {
     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-    return new LegacyCustomerPortalService(httpClientFactory.CreateClient("LegacyApi"));
+    var emailHelper = serviceProvider.GetRequiredService<EmailHelper>();
+    return new LegacyCustomerPortalService(httpClientFactory.CreateClient("LegacyApi"), emailHelper);
 });
 
 builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
@@ -52,6 +55,8 @@ builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
     var workflowOptions = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OnlineOrderWorkflowOptions>>();
     return new OnlineOrderService(httpClientFactory.CreateClient("LegacyApi"), workflowOptions);
 });
+
+builder.Services.AddScoped<EmailHelper>();
 
 builder.Services.AddHttpClient<TurnstileValidationService>();
 

@@ -312,6 +312,42 @@ namespace cenBUS
                 throw new Exception(ex.Message);
             }
         }
+
+        public static bool ResetPassword(string ConnectionString, object Email, object NewPassword, object NewPasswordConfirm, object IDDanhMucNguoiSuDungEdit)
+        {
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(ConnectionString))
+                {
+                    sqlConnection.Open();
+                    using (SqlCommand cmd = sqlConnection.CreateCommand())
+                    {
+                        cmd.CommandType = CommandType.Text;
+                        cmd.CommandText = @"
+update DanhMucKhachHangDoiLenh
+set [Password] = @NewPassword,
+    IDDanhMucNguoiSuDungEdit = @IDDanhMucNguoiSuDungEdit,
+    EditDate = getdate()
+where Email = @Email";
+
+                        List<SqlParameter> sqlParameters = new List<SqlParameter>();
+                        sqlParameters.Add(new SqlParameter("@Email", Email));
+                        sqlParameters.Add(new SqlParameter("@NewPassword", NewPassword));
+                        sqlParameters.Add(new SqlParameter("@NewPasswordConfirm", NewPasswordConfirm));
+                        sqlParameters.Add(new SqlParameter("@IDDanhMucNguoiSuDungEdit", IDDanhMucNguoiSuDungEdit));
+
+                        cmd.Parameters.AddRange(sqlParameters.ToArray());
+                        cmd.ExecuteNonQuery();
+                    }
+                    sqlConnection.Close();
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         public static bool Delete(string ConnectionString, object ID)
         {
             try

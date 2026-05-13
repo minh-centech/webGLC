@@ -457,6 +457,59 @@ begin
 end
 go
 ------------
+alter procedure Update_DanhMucKhachHangDoiLenh_ResetPassword
+	@Email						nvarchar(128),
+	@NewPassword				nvarchar(256),
+	@NewPasswordConfirm			nvarchar(256),
+	@IDDanhMucNguoiSuDungEdit	bigint,
+	@EditDate					datetime = null out
+as
+begin
+	set nocount on;
+	declare @ErrMsg nvarchar(max), @countID int;
+
+	if @Email is null or len(ltrim(rtrim(@Email))) = 0 or len(ltrim(rtrim(@Email))) > 128
+	begin
+		raiserror(N'Email không được bỏ trống hoặc dài hơn 128 ký tự!', 16, 1);
+		return;
+	end;
+
+	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email));
+	if @countID = 0 
+	begin
+		raiserror(N'Email không tồn tại!', 16, 1);
+		return;
+	end;
+
+	if @NewPassword is null or len(@NewPassword) > 64
+	begin
+		raiserror(N'Password mới không được bỏ trống hoặc dài hơn 64 ký tự!', 16, 1);
+		return;
+	end;
+
+	if cast(@NewPassword as varbinary(max)) <> cast(@NewPasswordConfirm as varbinary(max))
+	begin
+		raiserror(N'Password mới không khớp nhau!', 16, 1);
+		return;
+	end;
+
+	begin tran
+	begin try
+		update DanhMucKhachHangDoiLenh set
+			Password = @NewPassword,
+			IDDanhMucNguoiSuDungEdit = @IDDanhMucNguoiSuDungEdit,
+			EditDate = @EditDate
+		where Email = @Email;
+	commit tran
+	end try
+	begin catch
+		if @@TRANCOUNT > 0 rollback tran;
+		select @ErrMsg = ERROR_MESSAGE();
+		raiserror(@ErrMsg, 16, 1);
+	end catch;
+end
+go
+------------
 alter procedure Delete_DanhMucKhachHangDoiLenh
 	@ID			bigint
 as

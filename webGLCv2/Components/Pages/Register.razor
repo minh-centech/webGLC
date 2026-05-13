@@ -1,8 +1,16 @@
-﻿@page "/register"
+@page "/register"
 @rendermode InteractiveServer
 @layout EmptyLayout
 @attribute [AllowAnonymous]
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject EmailHelper EmailHelper
+@inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
+@inject TurnstileValidationService TurnstileValidationService
+@inject IJSRuntime JSRuntime
+
+<HeadContent>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+</HeadContent>
 
 <PageTitle>Đăng ký tài khoản</PageTitle>
 
@@ -55,6 +63,7 @@
             <EditForm Model="@Model" OnValidSubmit="@SubmitAsync" class="register-form" FormName="register-form">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
+                <input type="hidden" id="register-turnstile-token" name="cf-turnstile-response" @bind="RegisterTurnstileToken" @bind:event="oninput" />
 
                 <div class="field-grid">
                     <div class="field-card">
@@ -75,6 +84,12 @@
                         </div>
 
                         <div class="field-grid">
+
+                            <div class="field-card">
+                                <label class="portal-label" for="MaSoThue">Mã số thuế</label>
+                                <InputText id="MaSoThue" class="portal-input" @bind-Value="Model.MaSoThue" />
+                            </div>
+
                             <div class="field-card wide">
                                 <label class="portal-label" for="TenDoanhNghiep">Tên doanh nghiệp</label>
                                 <InputText id="TenDoanhNghiep" class="portal-input" @bind-Value="Model.TenDoanhNghiep" />
@@ -86,12 +101,7 @@
                             </div>
 
                             <div class="field-card">
-                                <label class="portal-label" for="MaSoThue">Mã số thuế</label>
-                                <InputText id="MaSoThue" class="portal-input" @bind-Value="Model.MaSoThue" />
-                            </div>
-
-                            <div class="field-card">
-                                <label class="portal-label" for="SoDienThoaiDoanhNghiep">Số điện thoại doanh nghiệp</label>
+                                <label class="portal-label" for="SoDienThoaiDoanhNghiep">Số điện thoại</label>
                                 <InputText id="SoDienThoaiDoanhNghiep" class="portal-input" @bind-Value="Model.SoDienThoaiDoanhNghiep" />
                             </div>
 
@@ -101,13 +111,18 @@
                             </div>
 
                             <div class="field-card">
-                                <label class="portal-label" for="SoFax">Số fax</label>
-                                <InputText id="SoFax" class="portal-input" @bind-Value="Model.SoFax" />
+                                <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
+                                <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="Model.EmailXuatHoaDon" />
                             </div>
 
+                            @* <div class="field-card">
+                                <label class="portal-label" for="SoFax">Số fax</label>
+                                <InputText id="SoFax" class="portal-input" @bind-Value="Model.SoFax" />
+                            </div> *@
+
                             <div class="field-card wide">
-                                <label class="portal-label" for="GiayPhepKinhDoanh">Giấy phép kinh doanh</label>
-                                <InputText id="GiayPhepKinhDoanh" class="portal-input" @bind-Value="Model.GiayPhepKinhDoanh" />
+                                <label class="portal-label" for="GiayPhepKinhDoanh">Số GPKD</label>
+                                <InputText id="GiayPhepKinhDoanh" placeholder="Số giấy phép kinh doanh" class="portal-input" @bind-Value="Model.GiayPhepKinhDoanh" />
                             </div>
 
                             <div class="field-card">
@@ -130,10 +145,10 @@
                                 <InputText id="ChucVu" class="portal-input" @bind-Value="Model.ChucVu" />
                             </div>
 
-                            <div class="field-card wide">
+                            @* <div class="field-card wide">
                                 <label class="portal-label" for="DoanhNghiepCongTyDuocUyQuyen">Doanh nghiệp/Công ty được ủy quyền</label>
                                 <InputText id="DoanhNghiepCongTyDuocUyQuyen" class="portal-input" @bind-Value="Model.DoanhNghiepCongTyDuocUyQuyen" />
-                            </div>
+                            </div> *@
                         </div>
                     </section>
                 }
@@ -169,6 +184,12 @@
                         </div>
 
                         <div class="field-card">
+                            <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
+                            <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" />
+                        </div>
+                        <div style="grid-column: 1 / -1;"></div>
+
+                        <div class="field-card">
                             <label class="portal-label" for="Password">Mật khẩu</label>
                             <InputText id="Password" type="password" class="portal-input" @bind-Value="Model.Password" />
                             <ValidationMessage For="@(() => Model.Password)" class="validation-message" />
@@ -180,15 +201,12 @@
                             <ValidationMessage For="@(() => Model.PasswordConfirm)" class="validation-message" />
                         </div>
 
-                        <div class="field-card">
+                        @* <div class="field-card">
                             <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
                             <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="Model.EmailXuatHoaDon" />
-                        </div>
+                        </div> *@
 
-                        <div class="field-card">
-                            <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
-                            <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" />
-                        </div>
+                        
                     </div>
                 </section>
 
@@ -248,6 +266,9 @@
     private bool IsSubmitting { get; set; }
     private string? ErrorMessage { get; set; }
     private string? SuccessMessage { get; set; }
+    private string? _lastTurnstileReloadToken;
+    private bool _shouldRenderTurnstile = true;
+    private string? RegisterTurnstileToken { get; set; }
     private string CitizenCardStatus { get; set; } = "Chưa tải tài liệu.";
     private string BusinessLicenseStatus { get; set; } = "Chưa tải tài liệu.";
     private string EportFormStatus { get; set; } = "Chưa tải tài liệu.";
@@ -255,10 +276,39 @@
 
     private bool IsEnterprise => Model.LoaiTaiKhoan == 2;
 
+    private string SiteKey => TurnstileConfiguration.Value.SiteKey;
+    private bool HasTurnstileConfiguration =>
+        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
+        && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
+
+    protected override void OnParametersSet()
+    {
+        if (!string.Equals(_lastTurnstileReloadToken, RegisterTurnstileToken, StringComparison.Ordinal))
+        {
+            _lastTurnstileReloadToken = RegisterTurnstileToken;
+            _shouldRenderTurnstile = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldRenderTurnstile && HasTurnstileConfiguration)
+        {
+            _shouldRenderTurnstile = false;
+            await JSRuntime.InvokeVoidAsync("glcTurnstile.renderRegister", "register-turnstile", SiteKey);
+        }
+    }
+
     private async Task SubmitAsync()
     {
         ErrorMessage = null;
         SuccessMessage = null;
+
+        if (!HasTurnstileConfiguration)
+        {
+            ErrorMessage = "Chưa cấu hình Cloudflare Turnstile. Vui lòng liên hệ quản trị viên.";
+            return;
+        }
 
         if (!ValidateBeforeSubmit())
         {
@@ -269,10 +319,35 @@
 
         try
         {
+            var turnstileToken = RegisterTurnstileToken;
+            if (string.IsNullOrWhiteSpace(turnstileToken))
+            {
+                ErrorMessage = "Vui lòng xác thực bảo mật Cloudflare trước khi đăng ký.";
+                return;
+            }
+
+            var turnstileResult = await TurnstileValidationService.ValidateDetailedAsync(
+                turnstileToken,
+                null,
+                CancellationToken.None);
+
+            if (!turnstileResult.Success)
+            {
+                ErrorMessage = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
+                    ? "Xác thực Turnstile không thành công. Vui lòng thử lại."
+                    : $"Xác thực Turnstile không thành công: {turnstileResult.ErrorDetail}";
+                _shouldRenderTurnstile = true;
+                RegisterTurnstileToken = null;
+                return;
+            }
+
             await LegacyCustomerPortalService.RegisterAccountAsync(Model);
+            await EmailHelper.SendEmailAsync(Model.Email, EmailHelper.RegistrationPendingApprovalTemplateId);
             SuccessMessage = "Hệ thống đã tiếp nhận yêu cầu đăng ký. Quản trị viên sẽ kiểm tra hồ sơ và phản hồi qua email.";
             Model = new RegisterAccountModel();
             ResetUploadStatuses();
+            RegisterTurnstileToken = null;
+            _shouldRenderTurnstile = true;
         }
         catch (Exception ex)
         {

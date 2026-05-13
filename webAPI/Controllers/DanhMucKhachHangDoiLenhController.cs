@@ -394,15 +394,28 @@ namespace webAPI.Controllers
             try
             {
                 coreCommon.GlobalVariables.IDDonVi = GlobalVariables.IDDanhMucDonVi;
-                long Password = coreDAO.ConnectionDAO.MaxAutoID(GlobalVariables.ConnectionString);
+                //long Password = coreDAO.ConnectionDAO.MaxAutoID(GlobalVariables.ConnectionString);
+                string newPass = Guid.NewGuid().ToString("n").Substring(0, 8);
                 object PartnerGUID = DanhMucKhachHangDoiLenhBUS.GetPartnerGUIDByEmail(GlobalVariables.ConnectionString, GlobalVariables.IDDanhMucDonVi, GlobalVariables.IDDanhMucKhachHangDoiLenh, objLogin.Email);
-                bool OK = DanhMucKhachHangDoiLenhBUS.InsertRecoverPasswordLog(GlobalVariables.ConnectionString, GlobalVariables.IDDanhMucDonVi, objLogin.Email, coreCommon.coreCommon.EncryptString(coreCommon.coreCommon.stringParse(Password), coreCommon.coreCommon.stringParse(PartnerGUID)), GlobalVariables.IDDanhMucNguoiSuDungGuest);
                 if (!coreCommon.coreCommon.IsNull(PartnerGUID))
                 {
+                    var plainPassword = newPass;
+                    var encryptedPassword = coreCommon.coreCommon.EncryptString(plainPassword, coreCommon.coreCommon.stringParse(PartnerGUID));
                     coreCommon.GlobalVariables.IDDonVi = Code.GlobalVariables.IDDanhMucDonVi;
-                    //MyMailer.SendMail(DanhMucThamSoHeThongBUS.GetGiaTri(cenCommon.ThamSoHeThong.MaThamSoEmail_MailAddress).ToString(), DanhMucThamSoHeThongBUS.GetGiaTri(cenCommon.ThamSoHeThong.MaThamSoEmail_MailPassword).ToString(), coreCommon.coreCommon.stringParse(objLogin.Email), "Cấp lại tài khoản G-Fortune", @"<h1>Xin chào, Password mới của bạn là <b>" + Password.ToString() + @"</b>!</h1>");
+                    bool OK = DanhMucKhachHangDoiLenhBUS.ResetPassword(
+                        GlobalVariables.ConnectionString,
+                        objLogin.Email,
+                        encryptedPassword,
+                        encryptedPassword,
+                        GlobalVariables.IDDanhMucNguoiSuDungGuest);
+
+                    if (!OK)
+                    {
+                        throw new Exception(ErrMsg);
+                    }
+
                     response.Status = 0;
-                    response.Data = Password.ToString();
+                    response.Data = plainPassword;
                     response.ErrorMsg = String.Empty;
                 }
                 else

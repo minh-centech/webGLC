@@ -295,7 +295,7 @@
         IsSubmitting = true;
         try
         {
-            await LegacyCustomerPortalService.SetAccountActiveAsync(Details.Id, true);
+            await LegacyCustomerPortalService.ApproveAccountAndNotifyAsync(Details.Id, Details.Email);
             Details.IsActive = true;
             FeedbackMessage = "Đã phê duyệt và kích hoạt tài khoản thành công.";
             FeedbackIsError = false;
@@ -344,7 +344,7 @@
 
         try
         {
-            await LegacyCustomerPortalService.SetEnterpriseApprovalAsync(company, true);
+            await LegacyCustomerPortalService.ApproveEnterpriseAndNotifyAsync(company, Details?.Email ?? company.EmailDoanhNghiep);
             company.IsActive = true;
             FeedbackMessage = $"Đã phê duyệt doanh nghiệp: {company.TenDoanhNghiep}.";
             FeedbackIsError = false;

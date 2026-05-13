@@ -90,7 +90,7 @@ begin
 		EditDate,
 		count(1) over() as TotalCount
 	from Filtered
-	order by ID desc
+	order by NgayLamLenh desc, ID desc
 	offset (@Page - 1) * @PageSize rows
 	fetch next @PageSize rows only;
 end

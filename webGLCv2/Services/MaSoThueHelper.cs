@@ -29,6 +29,15 @@ namespace webGLCv2.Services
         ///   "loai_hinh_dn": "Công ty cổ phần ngoài NN",
         ///  "nganh_nghe_chinh": "Lập trình máy vi tính"
         /// }
+        /// Cách gọi 
+        /// private List<KeyValuePair<string, string>> TaxLookupResult { get; set; } = new();
+        ///  var helperResult = await TaxHelper.ProcessTaxInfo(taxCode);
+        ///  using var doc = JsonDocument.Parse(helperResult);
+        ///   var root = doc.RootElement;
+        /// foreach (var prop in root.EnumerateObject())
+        ///  {
+        ///      TaxLookupResult.Add(new KeyValuePair<string, string>(NormalizeTaxLookupLabel(prop.Name), prop.Value.ToString()));
+        /// }
         /// </summary>
         public MaSoThueHelper()
         {
@@ -45,14 +54,21 @@ namespace webGLCv2.Services
             {
                 // BƯỚC 1: Gọi API VietQR để lấy tên công ty
                 string companyName = await GetCompanyNameFromApi(masothue);
+
                 if (string.IsNullOrEmpty(companyName)) return "Không tìm thấy tên công ty từ API.";
 
                 // Chuyển tên thành không dấu và thay dấu cách bằng '-'
                 string slugName = ConvertToUnaccentedSlug(companyName);
+
                 string scrapeUrl = $"https://masothue.com/{masothue}-{slugName}";
+
+                Console.WriteLine($"Du lieu lay ten cong ty scrapeUrl: {scrapeUrl}");
 
                 // BƯỚC 2: Cào dữ liệu từ masothue.com
                 var taxData = await ScrapeTaxTable(scrapeUrl);
+                string logString = string.Join("; ", taxData.Select(x => $"{x.Key}: {x.Value}"));
+
+                Console.WriteLine($"Du lieu lay tu masothue: {logString} ");
 
                 return JsonConvert.SerializeObject(taxData, Newtonsoft.Json.Formatting.Indented);
             }
@@ -65,75 +81,161 @@ namespace webGLCv2.Services
         private async Task<string> GetCompanyNameFromApi(string mst, int retryCount = 0)
         {
             string apiUrl = $"https://api.vietqr.io/v2/business/{mst}";
-            var response = await _httpClient.GetAsync(apiUrl);
 
-            if (response.StatusCode == (HttpStatusCode)429) // Too many requests
+            try
             {
-                if (retryCount < 3) // Thử lại tối đa 3 lần
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                // Nếu khác 200 thì retry
+                if (!response.IsSuccessStatusCode)
                 {
-                    Thread.Sleep(2000); // Đợi 2 giây trước khi thử lại
+                    if (retryCount < 3)
+                    {
+                        await Task.Delay(700); // nghỉ 700ms rồi thử lại
+                        return await GetCompanyNameFromApi(mst, retryCount + 1);
+                    }
+
+                    throw new Exception($"API VietQR lỗi: {(int)response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var json = JObject.Parse(content);
+
+                if (json["code"]?.ToString() == "00")
+                {
+                    return json["data"]?["name"]?.ToString();
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                // Retry nếu lỗi mạng hoặc exception khác
+                if (retryCount < 3)
+                {
+                    await Task.Delay(700);
                     return await GetCompanyNameFromApi(mst, retryCount + 1);
                 }
-                throw new Exception("API VietQR báo lỗi: Too many requests sau nhiều lần thử.");
+
+                throw new Exception("Lỗi gọi API VietQR", ex);
             }
-
-            var content = await response.Content.ReadAsStringAsync();
-            var json = JObject.Parse(content);
-
-            if (json["code"]?.ToString() == "00")
-            {
-                return json["data"]?["name"]?.ToString();
-            }
-
-            return null;
         }
 
         private async Task<Dictionary<string, string>> ScrapeTaxTable(string url)
         {
             var result = new Dictionary<string, string>();
-            var web = new HtmlWeb();
-            var doc = await web.LoadFromWebAsync(url);
-            var table = doc.DocumentNode.SelectSingleNode("//table[contains(@class, 'table-taxinfo')]");
 
-            if (table != null)
+            try
             {
-                // 1. Lấy tên công ty từ header
-                var headerName = table.SelectSingleNode(".//thead//th")?.InnerText.Trim();
-                if (!string.IsNullOrEmpty(headerName))
-                    result.Add("ten_cong_ty", headerName);
+                var web = new HtmlWeb();
 
-                // 2. Duyệt các dòng trong tbody
-                var rows = table.SelectNodes(".//tbody/tr");
-                if (rows != null)
+                // Giả lập trình duyệt thật
+                web.PreRequest = (request) =>
                 {
-                    foreach (var row in rows)
+                    request.UserAgent =
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                        "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                        "Chrome/136.0.0.0 Safari/537.36";
+
+                    request.Accept =
+                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
+
+                    request.Headers.Add("Accept-Language", "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7");
+                    request.Headers.Add("Cache-Control", "no-cache");
+                    request.Headers.Add("Pragma", "no-cache");
+                    request.Headers.Add("Upgrade-Insecure-Requests", "1");
+
+                    request.AutomaticDecompression =
+                        DecompressionMethods.GZip |
+                        DecompressionMethods.Deflate;
+
+                    request.Timeout = 15000;
+
+                    return true;
+                };
+
+                var doc = await web.LoadFromWebAsync(url);
+
+                var table = doc.DocumentNode
+                    .SelectSingleNode("//table[contains(@class, 'table-taxinfo')]");
+
+                if (table != null)
+                {
+                    // 1. Lấy tên công ty từ header
+                    var headerName = table
+                        .SelectSingleNode(".//thead//th")
+                        ?.InnerText
+                        .Trim();
+
+                    if (!string.IsNullOrWhiteSpace(headerName))
                     {
-                        var cells = row.SelectNodes("td");
-                        if (cells != null && cells.Count >= 2)
+                        result["ten_cong_ty"] = HtmlEntity.DeEntitize(headerName);
+                    }
+
+                    // 2. Duyệt tbody
+                    var rows = table.SelectNodes(".//tbody/tr");
+
+                    if (rows != null)
+                    {
+                        foreach (var row in rows)
                         {
-                            // Lấy text gốc của key (ví dụ: "Mã số thuế")
-                            string rawKey = Regex.Replace(cells[0].InnerText, @"\t|\n|\r", "").Trim();
+                            var cells = row.SelectNodes("td");
 
-                            // Chuyển key thành không dấu, viết thường, thay cách bằng "_"
-                            string cleanKey = ConvertToUnaccentedSlug(rawKey).Replace("-", "_");
-
-                            // Xử lý lấy giá trị sạch (Value)
-                            string value = cells[1].InnerText.Trim();
-                            value = Regex.Replace(value, @"\s+", " ");
-
-                            // Loại bỏ text rác của button nếu có
-                            if (value.Contains("Ẩn số điện thoại"))
-                                value = value.Replace("Ẩn số điện thoại", "").Trim();
-
-                            // Chỉ add những trường có key hợp lệ (loại bỏ dòng "Cập nhật mã số thuế...")
-                            if (!string.IsNullOrEmpty(cleanKey) && !result.ContainsKey(cleanKey) && !cleanKey.Contains("cap_nhat_ma_so_thue"))
+                            if (cells != null && cells.Count >= 2)
                             {
-                                result.Add(cleanKey, value);
+                                // KEY
+                                string rawKey = HtmlEntity.DeEntitize(cells[0].InnerText);
+
+                                rawKey = Regex.Replace(rawKey, @"\t|\n|\r", "")
+                                    .Trim();
+
+                                string cleanKey = ConvertToUnaccentedSlug(rawKey)
+                                    .Replace("-", "_");
+
+                                string value = "";
+
+                                // Nếu là người đại diện -> chỉ lấy tên trong thẻ <a>
+                                if (cleanKey == "nguoi_dai_dien")
+                                {
+                                    var aNode = cells[1]
+                                        .SelectSingleNode(".//span[@itemprop='name']/a");
+
+                                    if (aNode != null)
+                                    {
+                                        value = HtmlEntity.DeEntitize(aNode.InnerText)
+                                            .Trim();
+                                    }
+                                }
+                                else
+                                {
+                                    // VALUE bình thường
+                                    value = HtmlEntity.DeEntitize(cells[1].InnerText);
+
+                                    value = Regex.Replace(value, @"\s+", " ")
+                                        .Trim();
+
+                                    // Loại text rác
+                                    value = value.Replace("Ẩn số điện thoại", "")
+                                                 .Trim();
+                                }
+
+                                // Bỏ dòng rác
+                                if (!string.IsNullOrWhiteSpace(cleanKey)
+                                    && !result.ContainsKey(cleanKey)
+                                    && !cleanKey.Contains("cap_nhat_ma_so_thue"))
+                                {
+                                    result.Add(cleanKey, value);
+                                }
                             }
                         }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Scrape lỗi: {ex.Message}");
+            }
+
             return result;
         }
 

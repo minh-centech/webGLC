@@ -12,8 +12,17 @@ window.glcTurnstile = {
         }
 
         const tokenInput = document.getElementById(tokenInputId);
+        const syncToken = (value) => {
+            if (!tokenInput) {
+                return;
+            }
+
+            tokenInput.value = value || "";
+            tokenInput.dispatchEvent(new Event("input", { bubbles: true }));
+        };
+
         if (tokenInput) {
-            tokenInput.value = "";
+            syncToken("");
         }
 
         const render = () => {
@@ -28,19 +37,13 @@ window.glcTurnstile = {
                 theme: "light",
                 language: "auto",
                 callback: function (token) {
-                    if (tokenInput) {
-                        tokenInput.value = token || "";
-                    }
+                    syncToken(token);
                 },
                 "expired-callback": function () {
-                    if (tokenInput) {
-                        tokenInput.value = "";
-                    }
+                    syncToken("");
                 },
                 "error-callback": function () {
-                    if (tokenInput) {
-                        tokenInput.value = "";
-                    }
+                    syncToken("");
                 }
             });
         };

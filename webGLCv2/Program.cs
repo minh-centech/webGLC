@@ -49,6 +49,8 @@ builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>
     return new LegacyCustomerPortalService(httpClientFactory.CreateClient("LegacyApi"), emailHelper);
 });
 
+builder.Services.AddScoped<MaSoThueHelper>();
+
 builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
 {
     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();

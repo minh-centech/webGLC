@@ -162,11 +162,11 @@
                         <ValidationMessage For="@(() => PersonalProfileModel.PhoneNumber)" class="validation-message" />
                     </div>
 
-                    <div class="field-card">
-                        <label class="portal-label" for="BillingEmail">Email xuất hóa đơn</label>
-                        <InputText id="BillingEmail" class="portal-input" @bind-Value="PersonalProfileModel.BillingEmail" />
+                    @* <div class="field-card">
+                        <label class="portal-label" for="Email">Email cá nhân</label>
+                        <InputText id="BillingEmail" class="portal-input" @bind-Value="PersonalProfileModel.Email" />
                         <ValidationMessage For="@(() => PersonalProfileModel.BillingEmail)" class="validation-message" />
-                    </div>
+                    </div> *@
 
                     <div class="field-card field-span-3">
                         <label class="portal-label" for="CurrentPassword">Mật khẩu cũ</label>
@@ -325,7 +325,7 @@
                                 <th>Email</th>
                                 <th>Email xuất hóa đơn</th>
                                 <th>Thao tác</th>
-                                <th>Trang thai duyet</th>
+                                <th>Trạng thái duyệt</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -447,16 +447,23 @@
             {
                 Companies.AddRange(await LegacyCustomerPortalService.GetCompaniesByCustomerAsync(AccountId));
 
+                var accountDetails = await LegacyCustomerPortalService.GetAccountDocumentsAsync(AccountId);
+
+                Console.WriteLine($"AccountId: {AccountId}");
+                Console.WriteLine($"accountDetails: {accountDetails.Email}");
                 if (AccountType == 1)
                 {
-                    var accountDetails = await LegacyCustomerPortalService.GetAccountDocumentsAsync(AccountId);
                     PersonalProfileModel.FullName = accountDetails.Name;
                     PersonalProfileModel.PhoneNumber = accountDetails.Phone;
                     PersonalProfileModel.BillingEmail = string.IsNullOrWhiteSpace(accountDetails.BillingEmail)
                         ? accountDetails.Email
                         : accountDetails.BillingEmail;
-                    AccountEmail = string.IsNullOrWhiteSpace(accountDetails.Email) ? AccountEmail : accountDetails.Email;
                 }
+
+                AccountEmail = string.IsNullOrWhiteSpace(accountDetails.Email)
+                    ? AccountEmail
+                    : accountDetails.Email;
+                Console.WriteLine($"AccountEmail: {AccountEmail}");
             }
 
             CurrentCompany = Companies.FirstOrDefault();
@@ -529,10 +536,19 @@
                 AccountId,
                 PersonalProfileModel.FullName,
                 PersonalProfileModel.PhoneNumber,
-                PersonalProfileModel.BillingEmail);
+                PersonalProfileModel.BillingEmail,
+                AccountEmail
+            );
 
             if (hasAnyPasswordInput)
             {
+                if (string.IsNullOrWhiteSpace(AccountEmail))
+                {
+                    FeedbackMessage = "Không xác định được email tài khoản để đổi mật khẩu.";
+                    FeedbackIsError = true;
+                    return;
+                }
+
                 await LegacyCustomerPortalService.ChangePasswordAsync(
                     AccountEmail,
                     PersonalProfileModel.CurrentPassword,
@@ -751,6 +767,9 @@
 
         [EmailAddress(ErrorMessage = "Email xuất hóa đơn không đúng định dạng.")]
         public string BillingEmail { get; set; } = string.Empty;
+
+        //[EmailAddress(ErrorMessage = "Email cá nhân không đúng định dạng.")]
+        //public string Email { get; set; } = string.Empty;
 
         public string CurrentPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;

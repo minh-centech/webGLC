@@ -3,10 +3,12 @@
 @layout EmptyLayout
 @attribute [AllowAnonymous]
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject MaSoThueHelper MaSoThueHelper
 @inject EmailHelper EmailHelper
 @inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
 @inject TurnstileValidationService TurnstileValidationService
 @inject IJSRuntime JSRuntime
+@using System.Text.Json
 
 <HeadContent>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
@@ -63,7 +65,6 @@
             <EditForm Model="@Model" OnValidSubmit="@SubmitAsync" class="register-form" FormName="register-form">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-                <input type="hidden" id="register-turnstile-token" name="cf-turnstile-response" @bind="RegisterTurnstileToken" @bind:event="oninput" />
 
                 <div class="field-grid">
                     <div class="field-card">
@@ -85,40 +86,58 @@
 
                         <div class="field-grid">
 
-                            <div class="field-card">
+                            <div class="field-card wide" style="grid-column: 1 / -1;">
                                 <label class="portal-label" for="MaSoThue">Mã số thuế</label>
-                                <InputText id="MaSoThue" class="portal-input" @bind-Value="Model.MaSoThue" />
+                                <div class="input-action-row">
+                                    <InputText id="MaSoThue" class="portal-input input-action-field" @bind-Value="Model.MaSoThue" />
+                                    <button type="button" class="portal-primary-action" disabled="@IsLookupBusy" @onclick="LookupEnterpriseInfoAsync">Lấy thông tin doanh nghiệp</button>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(LookupStatus))
+                                {
+                                    <div class="portal-alert @(LookupIsError ? "portal-alert-error" : "portal-alert-success")" style="margin-top:10px;">
+                                        @LookupStatus
+                                    </div>
+                                }
                             </div>
 
-                            <div class="field-card wide">
+                            <div class="field-card wide" style="grid-column: 1 / -1;">
                                 <label class="portal-label" for="TenDoanhNghiep">Tên doanh nghiệp</label>
-                                <InputText id="TenDoanhNghiep" class="portal-input" @bind-Value="Model.TenDoanhNghiep" />
+                                @* <InputText id="TenDoanhNghiep" class="portal-input" @bind-Value="Model.TenDoanhNghiep" /> *@
+                                <InputTextArea id="TenDoanhNghiep"
+                                               class="portal-input"
+                                               @bind-Value="Model.TenDoanhNghiep"
+                                               rows="2"
+                                               style="resize:  vertical; min-height: 60px;" />
+                            </div>
+
+                            <div class="field-card wide" style="grid-column: 1 / -1;">
+                                <label class="portal-label" for="DiaChi">Địa chỉ</label>
+                                @* <InputText id="DiaChi" class="portal-input" @bind-Value="Model.DiaChi" /> *@
+                                <InputTextArea id="DiaChi"
+                                               class="portal-input"
+                                               @bind-Value="Model.DiaChi"
+                                               rows="4"
+                                               style="resize: vertical; min-height: 100px;" />
                             </div>
 
                             <div class="field-card wide">
-                                <label class="portal-label" for="DiaChi">Địa chỉ</label>
-                                <InputText id="DiaChi" class="portal-input" @bind-Value="Model.DiaChi" />
-                            </div>
-
-                            <div class="field-card">
                                 <label class="portal-label" for="SoDienThoaiDoanhNghiep">Số điện thoại</label>
                                 <InputText id="SoDienThoaiDoanhNghiep" class="portal-input" @bind-Value="Model.SoDienThoaiDoanhNghiep" />
                             </div>
 
-                            <div class="field-card">
-                                <label class="portal-label" for="EmailDoanhNghiep">Email doanh nghiệp</label>
-                                <InputText id="EmailDoanhNghiep" class="portal-input" @bind-Value="Model.EmailDoanhNghiep" />
-                            </div>
+                            <div class="field-card wide" style="grid-column: 1 / -1;">
+                                <div class="two-col-grid">
+                                    <div class="field-card">
+                                        <label class="portal-label" for="DaiDienCoThamQuyen">Đại diện có thẩm quyền</label>
+                                        <InputText id="DaiDienCoThamQuyen" class="portal-input" @bind-Value="Model.DaiDienCoThamQuyen" />
+                                    </div>
 
-                            <div class="field-card">
-                                <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
-                                <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="Model.EmailXuatHoaDon" />
+                                    <div class="field-card">
+                                        <label class="portal-label" for="ChucVu">Chức vụ</label>
+                                        <InputText id="ChucVu" class="portal-input" @bind-Value="Model.ChucVu" />
+                                    </div>
+                                </div>
                             </div>
-
-                            @* <div class="field-card">
-                                <label class="portal-label" for="SoFax">Số fax</label>
-                                <InputText id="SoFax" class="portal-input" @bind-Value="Model.SoFax" />
-                            </div> *@
 
                             <div class="field-card wide">
                                 <label class="portal-label" for="GiayPhepKinhDoanh">Số GPKD</label>
@@ -130,19 +149,25 @@
                                 <InputDate id="NgayCap" class="portal-input" @bind-Value="Model.NgayCap" />
                             </div>
 
-                            <div class="field-card">
+                            <div class="field-card wide">
                                 <label class="portal-label" for="NoiCap">Nơi cấp</label>
                                 <InputText id="NoiCap" class="portal-input" @bind-Value="Model.NoiCap" />
                             </div>
 
-                            <div class="field-card">
-                                <label class="portal-label" for="DaiDienCoThamQuyen">Đại diện có thẩm quyền</label>
-                                <InputText id="DaiDienCoThamQuyen" class="portal-input" @bind-Value="Model.DaiDienCoThamQuyen" />
-                            </div>
+                           
 
-                            <div class="field-card">
-                                <label class="portal-label" for="ChucVu">Chức vụ</label>
-                                <InputText id="ChucVu" class="portal-input" @bind-Value="Model.ChucVu" />
+                            <div class="field-card wide" style="grid-column: 1 / -1;">
+                                <div class="two-col-grid">
+                                    <div class="field-card">
+                                        <label class="portal-label" for="EmailDoanhNghiep">Email doanh nghiệp</label>
+                                        <InputText id="EmailDoanhNghiep" class="portal-input" @bind-Value="Model.EmailDoanhNghiep" />
+                                    </div>
+
+                                    <div class="field-card">
+                                        <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
+                                        <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="Model.EmailXuatHoaDon" />
+                                    </div>
+                                </div>
                             </div>
 
                             @* <div class="field-card wide">
@@ -150,6 +175,7 @@
                                 <InputText id="DoanhNghiepCongTyDuocUyQuyen" class="portal-input" @bind-Value="Model.DoanhNghiepCongTyDuocUyQuyen" />
                             </div> *@
                         </div>
+
                     </section>
                 }
 
@@ -248,6 +274,16 @@
                     </div>
                 </section>
 
+                <section class="register-section-card">
+                    <div class="section-heading">
+                        <h3>Xác thực Cloudflare</h3>
+                        <p>Hoàn tất xác thực bảo mật trước khi gửi đăng ký.</p>
+                    </div>
+
+                    <input type="hidden" id="register-turnstile-token" name="cf-turnstile-response" @bind="RegisterTurnstileToken" @bind:event="oninput" />
+                    <div id="register-turnstile" class="turnstile-host"></div>
+                </section>
+
                 <div class="register-actions">
                     <a class="portal-secondary-action" href="/login">Hủy</a>
                     <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
@@ -274,10 +310,17 @@
     private string EportFormStatus { get; set; } = "Chưa tải tài liệu.";
     private string PersonalFormStatus { get; set; } = "Chưa tải tài liệu.";
 
+    private bool IsLookupBusy { get; set; }
+    private string LookupStatus { get; set; } = string.Empty;
+    private bool LookupIsError { get; set; }
+
     private bool IsEnterprise => Model.LoaiTaiKhoan == 2;
 
     private string SiteKey => TurnstileConfiguration.Value.SiteKey;
-    private bool HasTurnstileConfiguration =>
+    private bool HasTurnstileUiConfiguration =>
+        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey);
+
+    private bool HasTurnstileValidationConfiguration =>
         !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
         && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
 
@@ -292,7 +335,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_shouldRenderTurnstile && HasTurnstileConfiguration)
+        if (_shouldRenderTurnstile && HasTurnstileUiConfiguration)
         {
             _shouldRenderTurnstile = false;
             await JSRuntime.InvokeVoidAsync("glcTurnstile.renderRegister", "register-turnstile", SiteKey);
@@ -304,7 +347,7 @@
         ErrorMessage = null;
         SuccessMessage = null;
 
-        if (!HasTurnstileConfiguration)
+        if (!HasTurnstileValidationConfiguration)
         {
             ErrorMessage = "Chưa cấu hình Cloudflare Turnstile. Vui lòng liên hệ quản trị viên.";
             return;
@@ -357,6 +400,78 @@
         {
             IsSubmitting = false;
         }
+    }
+
+    private async Task LookupEnterpriseInfoAsync()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        LookupStatus = string.Empty;
+        LookupIsError = false;
+
+        var taxCode = Model.MaSoThue?.Trim();
+        if (string.IsNullOrWhiteSpace(taxCode))
+        {
+            LookupStatus = "Vui lòng nhập mã số thuế trước khi lấy thông tin.";
+            LookupIsError = true;
+            ResetEnterpriseLookupFields();
+            return;
+        }
+
+        IsLookupBusy = true;
+        try
+        {
+            var payload = await MaSoThueHelper.ProcessTaxInfo(taxCode);
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                LookupStatus = "Vui lòng nhập dữ liệu về doanh nghiệp thủ công, do hệ thống không lấy được dữ liệu về mã số thuế.";
+                LookupIsError = true;
+                ResetEnterpriseLookupFields();
+                return;
+            }
+
+            using var document = JsonDocument.Parse(payload);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || root.EnumerateObject().Count() == 0)
+            {
+                LookupStatus = "Vui lòng nhập dữ liệu về doanh nghiệp thủ công, do hệ thống không lấy được dữ liệu về mã số thuế.";
+                LookupIsError = true;
+                ResetEnterpriseLookupFields();
+                return;
+            }
+
+            Model.MaSoThue = GetString(root, "ma_so_thue", taxCode);
+            Model.TenDoanhNghiep = GetString(root, "ten_cong_ty");
+            Model.DiaChi = FirstNonEmpty(
+                GetString(root, "dia_chi_thue"));
+            Model.SoDienThoaiDoanhNghiep = GetString(root, "dien_thoai");
+            Model.DaiDienCoThamQuyen = GetString(root, "nguoi_dai_dien");
+            Model.EmailDoanhNghiep = GetString(root, "email");
+
+            LookupStatus = "Đã lấy thành công thông tin doanh nghiệp. Quý khách vui lòng kiểm tra lại các trường dữ liệu đã tự động điền bởi hệ thống!";
+            LookupIsError = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            LookupStatus = "Vui lòng nhập dữ liệu về doanh nghiệp thủ công, do hệ thống không lấy được dữ liệu về mã số thuế.";
+            LookupIsError = true;
+            ResetEnterpriseLookupFields();
+        }
+        finally
+        {
+            IsLookupBusy = false;
+        }
+    }
+
+    private void ResetEnterpriseLookupFields()
+    {
+        Model.TenDoanhNghiep = string.Empty;
+        Model.DiaChi = string.Empty;
+        Model.SoDienThoaiDoanhNghiep = string.Empty;
+        Model.EmailDoanhNghiep = string.Empty;
+        Model.EmailXuatHoaDon = string.Empty;
+        Model.DaiDienCoThamQuyen = string.Empty;
     }
 
     private bool ValidateBeforeSubmit()
@@ -463,12 +578,21 @@
         }
     }
 
+    private static string GetString(JsonElement element, string propertyName, string fallback = "")
+        => element.TryGetProperty(propertyName, out var property) && property.ValueKind != JsonValueKind.Null
+            ? property.ToString() ?? fallback
+            : fallback;
+
+    private static string FirstNonEmpty(params string[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
     private void ResetUploadStatuses()
     {
         CitizenCardStatus = "Chưa tải tài liệu.";
         BusinessLicenseStatus = "Chưa tải tài liệu.";
         EportFormStatus = "Chưa tải tài liệu.";
         PersonalFormStatus = "Chưa tải tài liệu.";
+        LookupStatus = string.Empty;
     }
 }
 

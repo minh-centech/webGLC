@@ -6,18 +6,6 @@ using webGLCv2.Models;
 
 namespace webGLCv2.Services;
 
-/*
- * private List<KeyValuePair<string, string>> TaxLookupResult { get; set; } = new();
- *  var helperResult = await TaxHelper.ProcessTaxInfo(taxCode);
-    using var doc = JsonDocument.Parse(helperResult);
-    var root = doc.RootElement;
-
-    foreach (var prop in root.EnumerateObject())
-    {
-        TaxLookupResult.Add(new KeyValuePair<string, string>(NormalizeTaxLookupLabel(prop.Name), prop.Value.ToString()));
-    }
-
- */
 public sealed class EmailHelper
 {
     public const string RegistrationSuccessTemplateId = "registration-success";

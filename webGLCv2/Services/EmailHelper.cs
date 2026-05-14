@@ -1,10 +1,23 @@
 using System.Net;
 using System.Net.Mail;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using webGLCv2.Models;
 
 namespace webGLCv2.Services;
 
+/*
+ * private List<KeyValuePair<string, string>> TaxLookupResult { get; set; } = new();
+ *  var helperResult = await TaxHelper.ProcessTaxInfo(taxCode);
+    using var doc = JsonDocument.Parse(helperResult);
+    var root = doc.RootElement;
+
+    foreach (var prop in root.EnumerateObject())
+    {
+        TaxLookupResult.Add(new KeyValuePair<string, string>(NormalizeTaxLookupLabel(prop.Name), prop.Value.ToString()));
+    }
+
+ */
 public sealed class EmailHelper
 {
     public const string RegistrationSuccessTemplateId = "registration-success";
@@ -14,10 +27,12 @@ public sealed class EmailHelper
     public const string AccountApprovedSuccessTemplateId = "account-approved-success";
 
     private readonly EmailSenderOptions _options;
+    private readonly ILogger<EmailHelper> _logger;
 
-    public EmailHelper(IOptions<EmailSenderOptions> options)
+    public EmailHelper(IOptions<EmailSenderOptions> options, ILogger<EmailHelper> logger)
     {
         _options = options.Value;
+        _logger = logger;
     }
 
     public async Task SendEmailAsync(string toEmail, string templateId)
@@ -27,7 +42,21 @@ public sealed class EmailHelper
             throw new ArgumentException("toEmail is required.", nameof(toEmail));
         }
 
+        var normalizedToEmail = toEmail.Trim();
+        _logger.LogInformation(
+            "EmailHelper.SendEmailAsync start. TemplateId={TemplateId}, ToEmail={ToEmail}, SmtpHost={SmtpHost}, SmtpPort={SmtpPort}, UseSsl={UseSsl}",
+            templateId,
+            normalizedToEmail,
+            _options.Host,
+            _options.Port,
+            _options.SSL);
+
         var template = ResolveTemplate(templateId);
+        _logger.LogDebug(
+            "EmailHelper.SendEmailAsync template resolved. Subject={Subject}, BodyLength={BodyLength}",
+            template.Subject,
+            template.Body?.Length ?? 0);
+
         using var message = new MailMessage
         {
             From = new MailAddress(_options.Username, _options.EmailSender),
@@ -36,7 +65,12 @@ public sealed class EmailHelper
             IsBodyHtml = true
         };
 
-        message.To.Add(toEmail.Trim());
+        message.To.Add(normalizedToEmail);
+        _logger.LogDebug(
+            "EmailHelper.SendEmailAsync message prepared. From={From}, To={To}, Subject={Subject}",
+            _options.Username,
+            normalizedToEmail,
+            template.Subject);
 
         using var client = new SmtpClient(_options.Host, _options.Port)
         {
@@ -44,7 +78,17 @@ public sealed class EmailHelper
             Credentials = new NetworkCredential(_options.Username, _options.Password)
         };
 
-        await client.SendMailAsync(message);
+        try
+        {
+            _logger.LogInformation("EmailHelper.SendEmailAsync calling SMTP server.");
+            await client.SendMailAsync(message);
+            _logger.LogInformation("EmailHelper.SendEmailAsync success. ToEmail={ToEmail}, TemplateId={TemplateId}", normalizedToEmail, templateId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "EmailHelper.SendEmailAsync failed. ToEmail={ToEmail}, TemplateId={TemplateId}", normalizedToEmail, templateId);
+            throw;
+        }
     }
 
     public async Task SendPasswordResetEmailAsync(string toEmail, string newPassword)
@@ -59,15 +103,30 @@ public sealed class EmailHelper
             throw new ArgumentException("newPassword is required.", nameof(newPassword));
         }
 
+        var normalizedToEmail = toEmail.Trim();
+        var normalizedPassword = newPassword.Trim();
+
+        _logger.LogInformation(
+            "EmailHelper.SendPasswordResetEmailAsync start. ToEmail={ToEmail}, PasswordLength={PasswordLength}, SmtpHost={SmtpHost}, SmtpPort={SmtpPort}, UseSsl={UseSsl}",
+            normalizedToEmail,
+            normalizedPassword.Length,
+            _options.Host,
+            _options.Port,
+            _options.SSL);
+
         using var message = new MailMessage
         {
             From = new MailAddress(_options.Username, _options.EmailSender),
             Subject = "Mật khẩu mới của bạn",
-            Body = $"<p>Hệ thống đã tạo mật khẩu mới cho tài khoản của bạn.</p><p><strong>Mật khẩu mới:</strong> {newPassword.Trim()}</p><p>Vui lòng đăng nhập và thay đổi mật khẩu ngay sau khi truy cập.</p>",
+            Body = $"<p>Hệ thống đã tạo mật khẩu mới cho tài khoản của bạn.</p><p><strong>Mật khẩu mới:</strong> {normalizedPassword}</p><p>Vui lòng đăng nhập và thay đổi mật khẩu ngay sau khi truy cập.</p>",
             IsBodyHtml = true
         };
 
-        message.To.Add(toEmail.Trim());
+        message.To.Add(normalizedToEmail);
+        _logger.LogDebug(
+            "EmailHelper.SendPasswordResetEmailAsync message prepared. From={From}, To={To}",
+            _options.Username,
+            normalizedToEmail);
 
         using var client = new SmtpClient(_options.Host, _options.Port)
         {
@@ -75,7 +134,17 @@ public sealed class EmailHelper
             Credentials = new NetworkCredential(_options.Username, _options.Password)
         };
 
-        await client.SendMailAsync(message);
+        try
+        {
+            _logger.LogInformation("EmailHelper.SendPasswordResetEmailAsync calling SMTP server.");
+            await client.SendMailAsync(message);
+            _logger.LogInformation("EmailHelper.SendPasswordResetEmailAsync success. ToEmail={ToEmail}", normalizedToEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "EmailHelper.SendPasswordResetEmailAsync failed. ToEmail={ToEmail}", normalizedToEmail);
+            throw;
+        }
     }
 
     private static EmailTemplate ResolveTemplate(string templateId)
@@ -97,7 +166,7 @@ public sealed class EmailHelper
                 "<p>Yêu cầu lấy lại mật khẩu của bạn đã được xử lý thành công. Bạn có thể đăng nhập lại bằng mật khẩu mới.</p>"),
             AccountApprovedSuccessTemplateId => new EmailTemplate(
                 "Tài khoản đã được phê duyệt",
-               @"<p>Xin chúc mừng!</p>
+                @"<p>Xin chúc mừng!</p>
                 <p>Hồ sơ đăng ký của bạn trên hệ thống <strong>everWareHouse</strong> đã được phê duyệt thành công.</p>
                 <p>Hiện tại, tài khoản của bạn đã được kích hoạt đầy đủ các tính năng. Bạn có thể đăng nhập vào hệ thống ngay bây giờ để bắt đầu sử dụng dịch vụ.</p>
                 <p>Trân trọng,<br />

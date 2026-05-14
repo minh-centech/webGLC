@@ -12,6 +12,24 @@ namespace webGLCv2.Services
     {
         private readonly HttpClient _httpClient;
 
+        /// <summary>
+        /// response 
+        /// {
+        ///  "ten_cong_ty": "CÔNG TY CỔ PHẦN EVERLINK",
+        /// "ma_so_thue": "0202097428",
+        /// "dia_chi_thue": "Số 15, Tầng 2, Tòa nhà Đình Vũ Plaza Km 108, bên trái tuyến, Phường Đông Hải, TP Hải Phòng, Việt Nam",
+        ///  "dia_chi": "Số 15, Tầng 2, Tòa nhà Đình Vũ Plaza Km 108, bên trái tuyến của đường quốc lộ 5 kéo dài từ Đình Vũ về Hà Nội, Phường Đông Hải 2, Quận Hải An, Thành phố Hải Phòng, Việt Nam",
+        ///  "tinh_trang": "Đang hoạt động",
+        ///  "ten_quoc_te": "EVERLINK JOINT STOCK COMPANY",
+        /// "ten_viet_tat": "EVERLINK JSC",
+        /// "nguoi_dai_dien": "NGUYỄN QUANG MINH",
+        /// "dien_thoai": "0904026669",
+        /// "ngay_hoat_dong": "2021-04-07",
+        /// "quan_ly_boi": "Thuế cơ sở 1 thành phố Hải Phòng",
+        ///   "loai_hinh_dn": "Công ty cổ phần ngoài NN",
+        ///  "nganh_nghe_chinh": "Lập trình máy vi tính"
+        /// }
+        /// </summary>
         public MaSoThueHelper()
         {
             // Khởi tạo HttpClient với cơ chế tự động giải nén nếu có

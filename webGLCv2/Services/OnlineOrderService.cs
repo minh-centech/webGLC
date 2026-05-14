@@ -18,6 +18,7 @@ public sealed class OnlineOrderService
     private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
     private const string ChiTietHouseBillApiPath = "/api/ctLenhNhapKhoHangNhapKhau/ListValidSoVanDonXuatKho";
     private const string ThongTinThanhToanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ThongTinThanhToan";
+    private const string MaSoThueLookupApiPath = "/api/DanhMucKhachHang/ListValidMaSoThue";
 
     private readonly HttpClient _httpClient;
     private readonly OnlineOrderWorkflowOptions _workflowOptions;
@@ -227,6 +228,49 @@ public sealed class OnlineOrderService
             };
     }
 
+    public async Task<CompanyTaxLookupResult?> LookupCompanyByMaSoThueAsync(string maSoThue)
+    {
+        var normalizedMaSoThue = NullIfEmpty(maSoThue);
+        if (string.IsNullOrWhiteSpace(normalizedMaSoThue))
+        {
+            return null;
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+           BuildWorkflowUrl(MaSoThueLookupApiPath),
+            new { MaSoThue = normalizedMaSoThue },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the tra cuu ma so thue.");
+
+        if (string.IsNullOrWhiteSpace(envelope!.Data))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(envelope.Data);
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        var item = root[0];
+        return new CompanyTaxLookupResult
+        {
+            MaSoThue = GetString(item, "MaSoThue"),
+            Ten = GetString(item, "Ten"),
+            DiaChi = GetString(item, "DiaChi"),
+            Email = GetString(item, "Email"),
+            SoDienThoai = GetString(item, "SoDienThoai"),
+            NguoiDaiDien = GetString(item, "NguoiDaiDien"),
+            ChucVuNguoiDaiDien = GetString(item, "ChucVuNguoiDaiDien")
+        };
+    }
+
     public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string? ngayGiaHan)
         => await GetPhiLuuKhoAsync(houseBill, string.Empty, ngayGiaHan);
 
@@ -357,11 +401,11 @@ public sealed class OnlineOrderService
             };
     }
 
-    public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont="")
+    public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont = "")
     {
         var response = await _httpClient.PostAsJsonAsync(
             BuildWorkflowUrl(ChiTietHouseBillApiPath),
-            new { SoVanDon = houseBill, SoCont= soCont },
+            new { SoVanDon = houseBill, SoCont = soCont },
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
@@ -594,32 +638,32 @@ public sealed class OnlineOrderService
         result.ChiTietHouseBill = await GetChiTietHouseBillAsync(houseBill, soCont);
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.Response={JsonSerializer.Serialize(result.ChiTietHouseBill, JsonOptions)}");
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.IsHoanThanh={result.ChiTietHouseBill?.ParsedData?.IsHoanThanh}");
-          if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
-          {
-              Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
-              result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
-          }
+        if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
+        {
+            Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
+            result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
+        }
 
-          var chiTietResult = result.ChiTietHouseBill;
-          var chiTiet = chiTietResult?.ParsedData;
-          if (chiTiet is not null)
-          {
-              Console.WriteLine($"{tracePrefix}Calling LenhXuatKhoHangNhapKhauTemp/ListTemp...");
-              result.LenhXuatKhoHangNhapKhauTemps = await GetLenhXuatKhoHangNhapKhauTempListAsync(
-                  idDanhMucKhachHangDoiLenh,
-                  houseBill);
-              Console.WriteLine($"{tracePrefix}LenhXuatKhoHangNhapKhauTemp/ListTemp.Response={JsonSerializer.Serialize(result.LenhXuatKhoHangNhapKhauTemps, JsonOptions)}");
+        var chiTietResult = result.ChiTietHouseBill;
+        var chiTiet = chiTietResult?.ParsedData;
+        if (chiTiet is not null)
+        {
+            Console.WriteLine($"{tracePrefix}Calling LenhXuatKhoHangNhapKhauTemp/ListTemp...");
+            result.LenhXuatKhoHangNhapKhauTemps = await GetLenhXuatKhoHangNhapKhauTempListAsync(
+                idDanhMucKhachHangDoiLenh,
+                houseBill);
+            Console.WriteLine($"{tracePrefix}LenhXuatKhoHangNhapKhauTemp/ListTemp.Response={JsonSerializer.Serialize(result.LenhXuatKhoHangNhapKhauTemps, JsonOptions)}");
 
-              Console.WriteLine($"{tracePrefix}Calling BienNhanThanhToanHangNhapKhauTemp/ListTemp...");
-              result.BienNhanThanhToanHangNhapKhauTemps = await GetBienNhanThanhToanHangNhapKhauTempListAsync(
-                  chiTiet.ID,
-                  idDanhMucKhachHangDoiLenh);
-              Console.WriteLine($"{tracePrefix}BienNhanThanhToanHangNhapKhauTemp/ListTemp.Response={JsonSerializer.Serialize(result.BienNhanThanhToanHangNhapKhauTemps, JsonOptions)}");
-          }
+            Console.WriteLine($"{tracePrefix}Calling BienNhanThanhToanHangNhapKhauTemp/ListTemp...");
+            result.BienNhanThanhToanHangNhapKhauTemps = await GetBienNhanThanhToanHangNhapKhauTempListAsync(
+                chiTiet.ID,
+                idDanhMucKhachHangDoiLenh);
+            Console.WriteLine($"{tracePrefix}BienNhanThanhToanHangNhapKhauTemp/ListTemp.Response={JsonSerializer.Serialize(result.BienNhanThanhToanHangNhapKhauTemps, JsonOptions)}");
+        }
 
-          //Khong cap nhat lai chi tiet
-          //Console.WriteLine($"{tracePrefix}Upserting LenhOnlineChiTiet...");
-          //await UpsertLenhOnlineChiTietAsync(idLenhOnline, houseBill, soCont, invoiceDownloadUrl, result, traceTag);
+        //Khong cap nhat lai chi tiet
+        //Console.WriteLine($"{tracePrefix}Upserting LenhOnlineChiTiet...");
+        //await UpsertLenhOnlineChiTietAsync(idLenhOnline, houseBill, soCont, invoiceDownloadUrl, result, traceTag);
 
         Console.WriteLine($"{tracePrefix}RunOrderWorkflowAsync end.");
         return result;
@@ -992,6 +1036,17 @@ public sealed class OnlineOrderService
 
     private static string? NullIfEmpty(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    public sealed class CompanyTaxLookupResult
+    {
+        public string MaSoThue { get; set; } = string.Empty;
+        public string Ten { get; set; } = string.Empty;
+        public string DiaChi { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string SoDienThoai { get; set; } = string.Empty;
+        public string NguoiDaiDien { get; set; } = string.Empty;
+        public string ChucVuNguoiDaiDien { get; set; } = string.Empty;
+    }
 
     private string BuildWorkflowUrl(string relativePath)
     {

@@ -9,7 +9,6 @@
 @using Microsoft.AspNetCore.Components
 @using System.Security.Claims
 @using System.Globalization
-@using System.Text.Json
 
 <PageTitle>Thêm lệnh online</PageTitle>
 
@@ -71,7 +70,12 @@
                         else
                         {
                             <div class="input-action-row">
-                                <InputText class="portal-input input-action-field" @bind-Value="Draft.TaxCode" @bind:event="oninput" placeholder="Nhập mã số thuế" />
+                                <input class="portal-input input-action-field tax-code-trigger"
+                                       value="@Draft.TaxCode"
+                                       readonly
+                                       placeholder="Nhập mã số thuế"
+                                       @onclick="OpenTaxLookupPopup"
+                                       @onfocus="OpenTaxLookupPopup" />
                                 <button type="button" class="portal-secondary-action" @onclick="OpenTaxLookupPopup">Tra cứu MST</button>
                             </div>
                         }
@@ -134,7 +138,14 @@
             <div class="field-grid">
                 <div class="field-card wide">
                     <label class="portal-label">Mã số thuế</label>
-                    <input class="portal-input" @bind="TaxLookupInput" @bind:event="oninput" placeholder="Nhập mã số thuế" />
+                    <div class="input-action-row" style="align-items:flex-end;">
+                        <div class="input-action-row input-action-field" style="gap:8px; align-items:flex-end;">
+                            <input class="portal-input input-action-field" @bind="TaxLookupInput" @bind:event="oninput" placeholder="Nhập mã số thuế" />
+                            
+                        </div>
+                        <button type="button" class="portal-primary-action" disabled="@TaxLookupIsBusy" @onclick="SearchTaxLookupAsync">Tìm kiếm</button>
+                        <button type="button" class="portal-secondary-action lookup-clear-action" disabled="@TaxLookupIsBusy" @onclick="ClearTaxLookupAsync" title="Xóa mã số thuế" aria-label="Xóa mã số thuế">Xóa mã số thuế</button>
+                    </div>
                 </div>
             </div>
 
@@ -158,14 +169,13 @@
                         </tbody>
                     </table>
                 </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px;">
-                    <button type="button" class="portal-primary-action" @onclick="ApplyTaxLookupResultAsync" disabled="@TaxLookupIsBusy">Dùng dữ liệu này</button>
-                </div>
             }
 
-            <div class="portal-modal-actions" style="justify-content:flex-end; margin-top:16px;">
-                <button type="button" class="portal-primary-action" disabled="@TaxLookupIsBusy" @onclick="SearchTaxLookupAsync">Tìm kiếm</button>
+            <div class="portal-modal-actions tax-lookup-actions" style="justify-content:flex-end; gap:12px; margin-top:16px;">
+                @if (TaxLookupResult.Count > 0)
+                {
+                    <button type="button" class="portal-primary-action" @onclick="ApplyTaxLookupResultAsync" disabled="@TaxLookupIsBusy">Dùng dữ liệu này</button>
+                }
                 <button type="button" class="portal-secondary-action" @onclick="CloseTaxLookupPopup">Đóng</button>
             </div>
         </div>
@@ -183,7 +193,6 @@
     private string SelectedTaxCode { get; set; } = string.Empty;
     private string? InfoMessage { get; set; }
     private string PickupDateText { get; set; } = string.Empty;
-    private readonly MaSoThueHelper TaxHelper = new();
     [SupplyParameterFromQuery(Name = "houseBill")]
     private string? HouseBillFromQuery { get; set; }
     [SupplyParameterFromQuery(Name = "soCont")]
@@ -316,21 +325,32 @@
         }
     }
 
-    private void OpenTaxLookupPopup()
+    private async Task OpenTaxLookupPopup()
     {
         TaxLookupInput = Draft.TaxCode;
         TaxLookupMessage = null;
         TaxLookupIsError = false;
         TaxLookupResult.Clear();
         IsTaxLookupPopupOpen = true;
+
+        if (!string.IsNullOrWhiteSpace(TaxLookupInput))
+        {
+            await SearchTaxLookupAsync();
+        }
+        else
+        {
+            TaxLookupMessage = "Vui lòng nhập mã số thuế trước khi tra cứu.";
+            TaxLookupIsError = true;
+        }
     }
 
-    private void CloseTaxLookupPopup()
+    private async Task CloseTaxLookupPopup()
     {
         IsTaxLookupPopupOpen = false;
         TaxLookupIsBusy = false;
         TaxLookupMessage = null;
         TaxLookupIsError = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SearchTaxLookupAsync()
@@ -350,16 +370,41 @@
         TaxLookupIsBusy = true;
         try
         {
-            var helperResult = await TaxHelper.ProcessTaxInfo(taxCode);
-            using var doc = JsonDocument.Parse(helperResult);
-            var root = doc.RootElement;
-
-            foreach (var prop in root.EnumerateObject())
+            var result = await OnlineOrderService.LookupCompanyByMaSoThueAsync(taxCode);
+            if (result is null)
             {
-                TaxLookupResult.Add(new KeyValuePair<string, string>(NormalizeTaxLookupLabel(prop.Name), prop.Value.ToString()));
+                TaxLookupMessage = "Không tìm thấy dữ liệu phù hợp cho mã số thuế này.";
+                TaxLookupIsError = true;
+                return;
             }
 
-            TaxLookupMessage = "Đã tải dữ liệu tra cứu. Bấm 'Dùng dữ liệu này' để tự động điền.";
+            TaxLookupResult.Add(new KeyValuePair<string, string>("Mã số thuế", result.MaSoThue));
+            TaxLookupResult.Add(new KeyValuePair<string, string>("Tên công ty", result.Ten));
+            TaxLookupResult.Add(new KeyValuePair<string, string>("Địa chỉ", result.DiaChi));
+
+            if (!string.IsNullOrWhiteSpace(result.Email))
+            {
+                TaxLookupResult.Add(new KeyValuePair<string, string>("Email", result.Email));
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.SoDienThoai))
+            {
+                TaxLookupResult.Add(new KeyValuePair<string, string>("Số điện thoại", result.SoDienThoai));
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.NguoiDaiDien))
+            {
+                TaxLookupResult.Add(new KeyValuePair<string, string>("Người đại diện", result.NguoiDaiDien));
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ChucVuNguoiDaiDien))
+            {
+                TaxLookupResult.Add(new KeyValuePair<string, string>("Chức vụ người đại diện", result.ChucVuNguoiDaiDien));
+            }
+
+            await ApplyTaxLookupResultToDraftAsync();
+            TaxLookupMessage = "Đã tải dữ liệu tra cứu và tự động điền vào form.";
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -372,67 +417,100 @@
         }
     }
 
-    private Task ApplyTaxLookupResultAsync()
+    private async Task ClearTaxLookupAsync()
     {
-        var taxCode = GetTaxLookupValue("ma_so_thue");
+        TaxLookupInput = string.Empty;
+        TaxLookupResult.Clear();
+        TaxLookupMessage = "Đã xoá dữ liệu tra cứu.";
+        TaxLookupIsError = false;
+
+        SelectedTaxCode = string.Empty;
+        Draft.TaxCode = string.Empty;
+        Draft.CompanyName = string.Empty;
+        Draft.CompanyAddress = string.Empty;
+        Draft.CompanyEmail = string.Empty;
+        Draft.PhoneNumber = string.Empty;
+
+        EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.TaxCode));
+        EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyName));
+        EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyAddress));
+        EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyEmail));
+        EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.PhoneNumber));
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ApplyTaxLookupResultAsync()
+    {
+        await ApplyTaxLookupResultToDraftAsync();
+        await CloseTaxLookupPopup();
+        InfoMessage = "Đã tự động điền thông tin doanh nghiệp từ MST.";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task ApplyTaxLookupResultToDraftAsync()
+    {
+        var taxCode = GetTaxLookupValue("mã số thuế");
         if (!string.IsNullOrWhiteSpace(taxCode))
         {
+            SelectedTaxCode = taxCode;
             Draft.TaxCode = taxCode;
+            EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.TaxCode));
         }
 
-        var companyName = GetTaxLookupValue("ten_cong_ty");
+        var companyName = GetTaxLookupValue("tên công ty");
         if (!string.IsNullOrWhiteSpace(companyName))
         {
             Draft.CompanyName = companyName;
+            EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyName));
         }
 
-        var address = GetTaxLookupValue("dia_chi");
-        if (string.IsNullOrWhiteSpace(address))
-        {
-            address = GetTaxLookupValue("dia_chi_thue");
-        }
-
+        var address = GetTaxLookupValue("địa chỉ");
         if (!string.IsNullOrWhiteSpace(address))
         {
             Draft.CompanyAddress = address;
+            EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyAddress));
         }
 
-        var phone = GetTaxLookupValue("dien_thoai");
+        var email = GetTaxLookupValue("email");
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            Draft.CompanyEmail = email;
+            EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyEmail));
+        }
+
+        var phone = GetTaxLookupValue("số điện thoại");
         if (!string.IsNullOrWhiteSpace(phone))
         {
             Draft.PhoneNumber = phone;
+            EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.PhoneNumber));
         }
 
-        CloseTaxLookupPopup();
-        InfoMessage = "Đã tự động điền thông tin doanh nghiệp từ MST.";
+        if (IsEnterprise && !string.IsNullOrWhiteSpace(taxCode))
+        {
+            var selectedCompany = CustomerCompanies.FirstOrDefault(company =>
+                string.Equals(company.MaSoThue, taxCode, StringComparison.OrdinalIgnoreCase));
+
+            if (selectedCompany is null)
+            {
+                CustomerCompanies.Insert(0, new LegacyCompanyProfile
+                {
+                    MaSoThue = taxCode,
+                    TenDoanhNghiep = Draft.CompanyName,
+                    DiaChi = Draft.CompanyAddress,
+                    EmailDoanhNghiep = Draft.CompanyEmail
+                });
+            }
+        }
+
         return Task.CompletedTask;
     }
 
     private string GetTaxLookupValue(string key)
     {
-        var item = TaxLookupResult.FirstOrDefault(x => string.Equals(NormalizeKey(x.Key), key, StringComparison.OrdinalIgnoreCase));
+        var normalizedKey = NormalizeKey(key);
+        var item = TaxLookupResult.FirstOrDefault(x => string.Equals(NormalizeKey(x.Key), normalizedKey, StringComparison.OrdinalIgnoreCase));
         return item.Value;
-    }
-
-    private static string NormalizeTaxLookupLabel(string key)
-    {
-        return key switch
-        {
-            "ten_cong_ty" => "Tên công ty",
-            "ma_so_thue" => "Mã số thuế",
-            "dia_chi_thue" => "Địa chỉ thuế",
-            "dia_chi" => "Địa chỉ",
-            "tinh_trang" => "Tình trạng",
-            "ten_quoc_te" => "Tên quốc tế",
-            "ten_viet_tat" => "Tên viết tắt",
-            "nguoi_dai_dien" => "Người đại diện",
-            "dien_thoai" => "Điện thoại",
-            "ngay_hoat_dong" => "Ngày hoạt động",
-            "quan_ly_boi" => "Quản lý bởi",
-            "loai_hinh_dn" => "Loại hình DN",
-            "nganh_nghe_chinh" => "Ngành nghề chính",
-            _ => key.Replace("_", " ")
-        };
     }
 
     private static string NormalizeKey(string value)

@@ -281,9 +281,21 @@ select {
     flex: 1 1 auto;
 }
 
+.tax-code-trigger {
+    cursor: pointer;
+}
+
 .input-action-row .portal-secondary-action {
     min-width: 118px;
     white-space: nowrap;
+}
+
+.lookup-clear-action {
+    min-width: 40px;
+    width: 40px;
+    padding: 0;
+    font-size: 1.25rem;
+    line-height: 1;
 }
 
 .stat-card,
@@ -461,6 +473,8 @@ select {
 
 .portal-primary-action {
     background: linear-gradient(135deg, var(--portal-primary) 0%, #4bb56a 100%);
+    min-width: max-content; /* Đảm bảo chiều rộng ít nhất bằng nội dung chữ */
+    padding: 0 15px; /* Đảm bảo khoảng cách hai bên chữ đẹp mắt */
     color: white;
 }
 
@@ -499,6 +513,8 @@ select {
     background: var(--portal-surface-soft);
     border: 1px solid var(--portal-border);
     color: var(--portal-text);
+    min-width: max-content; /* Đảm bảo chiều rộng ít nhất bằng nội dung chữ */
+    padding: 0 15px; /* Đảm bảo khoảng cách hai bên chữ đẹp mắt */
 }
 
 .portal-alert {
@@ -934,6 +950,14 @@ select {
 .portal-modal-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.portal-modal-actions.tax-lookup-actions .portal-primary-action,
+.portal-modal-actions.tax-lookup-actions .portal-secondary-action {
+    min-height: 40px;
+    height: 40px;
 }
 
 .register-shell {

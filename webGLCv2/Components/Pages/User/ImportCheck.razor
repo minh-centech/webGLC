@@ -40,7 +40,7 @@
             </div>
             <div class="search-actions-block">
                 <button type="button" class="portal-primary-action" @onclick="SearchAsync" disabled="@IsSearching">
-                    @(IsSearching ? "Đang tìm kiếm..." : "Tìm kiếm dữ liệu")
+                    @(IsSearching ? "Đang lấy dữ liệu! Vui lòng đợi trong ít phút..." : "Tra cứu dữ liệu")
                 </button>
             </div>
         </div>
@@ -64,7 +64,7 @@
                             @if (CanShowCreateOnlineOrderButton)
                             {
                                 <button type="button"
-                                        class="portal-primary-action"
+                                        class="portal-primary-action import-check-action-button"
                                         @onclick="OpenOnlineOrderAction">
                                     @(HasExistingOnlineOrder ? "Xem chi tiết" : "Tạo lệnh online")
                                 </button>
@@ -177,6 +177,17 @@
     }
 </section>
 
+@if (IsSearching)
+{
+    <div class="portal-modal-backdrop loading-overlay" aria-live="polite" aria-busy="true">
+        <div class="portal-modal loading-modal">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <h3>Đang kiểm tra tình trạng thông quan</h3>
+            <p>Thông tin thông quan đang được đối chiếu với hệ thống Hải quan điện tử. Quá trình này có thể mất vài phút tùy theo thời gian phản hồi từ hệ thống.</p>
+        </div>
+    </div>
+}
+
 @if (IsNoDataModalOpen)
     {
         <div class="portal-modal-backdrop" @onclick="CloseNoDataModal">
@@ -213,7 +224,10 @@
     private bool IsSearching;
     private bool IsNoDataModalOpen;
     private bool HasExistingOnlineOrder => ExistingOnlineOrder is not null;
-    private bool CanShowCreateOnlineOrderButton => ChiTietResult?.Success == true && ChiTietResult.ParsedData is not null;
+    private bool CanShowCreateOnlineOrderButton
+        => ChiTietResult?.Success == true
+           && ChiTietResult.ParsedData is not null
+           && ThongQuanResult?.Success == true;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -301,7 +315,10 @@
 
             try
             {
-                ThongQuanResult = await OnlineOrderService.CheckThongQuanAsync(normalizedHouseBill, normalizedContainer);
+                ThongQuanResult = await OnlineOrderService.CheckThongQuanAsync(
+                    normalizedHouseBill,
+                    normalizedContainer,
+                    ChiTietResult.ParsedData);
             }
             catch (Exception ex)
             {
@@ -369,12 +386,14 @@
         var parsedData = ChiTietResult?.ParsedData;
         var soContValue = parsedData?.SoContainer ?? ContainerNumber.Trim();
         var soVanDonValue = parsedData?.SoVanDon ?? ContainerNumber.Trim();
+        var soToKhaiValue = ThongQuanResult?.Data?.SoToKhai ?? parsedData?.SoToKhai ?? string.Empty;
 
         var houseBill = Uri.EscapeDataString(HouseBill.Trim());
         var soCont = Uri.EscapeDataString(soContValue);
         var soVanDon = Uri.EscapeDataString(soVanDonValue);
+        var soToKhai = Uri.EscapeDataString(soToKhaiValue);
 
-        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}");
+        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}&soToKhai={soToKhai}");
     }
 
     private string GetResultSummary()
@@ -399,7 +418,7 @@
             null => "Chưa tra cứu",
             { Success: true, IsThongQuan: true } => "Đã thông quan",
             { Success: true, IsThongQuan: false } => "Chưa thông quan",
-            _ => "Lỗi"
+            _ => "Lỗi khi tra cứu tình trạng thông quan! Vui lòng ấn nút Tra cứu dữ liệu để thử lại"
         };
 
     private string GetThongQuanMessage()

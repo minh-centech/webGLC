@@ -7,6 +7,8 @@ public sealed class ThongQuanCheckResponse
     public bool Success { get; set; }
     public bool IsThongQuan { get; set; }
     public string Message { get; set; } = string.Empty;
+    public string RawData { get; set; } = string.Empty;
+    public TraCuuToKhaiData? Data { get; set; }
 }
 
 public sealed class PhiLuuKhoResponse
@@ -14,6 +16,30 @@ public sealed class PhiLuuKhoResponse
     public bool Success { get; set; }
     public PhiLuuKhoData? Data { get; set; }
     public string Message { get; set; } = string.Empty;
+}
+
+public sealed class TraCuuToKhaiData
+{
+    public string SoHieuPhuongTienVanTai { get; set; } = string.Empty;
+    public string SoChuyen { get; set; } = string.Empty;
+    public string NgayTauDen { get; set; } = string.Empty;
+    public string SoVanDon { get; set; } = string.Empty;
+    public string SoDinhDanhHangHoa { get; set; } = string.Empty;
+    public string SoToKhai { get; set; } = string.Empty;
+    public string NgayToKhai { get; set; } = string.Empty;
+    public string MaHaiQuanDangKyToKhai { get; set; } = string.Empty;
+    public string MaLoaiHinh { get; set; } = string.Empty;
+    public string MaHaiQuanGiamSat { get; set; } = string.Empty;
+    public string SoLuong { get; set; } = string.Empty;
+    public string DonViTinh { get; set; } = string.Empty;
+    public string ViTriKho { get; set; } = string.Empty;
+    public string MoTaHangHoa { get; set; } = string.Empty;
+    public string GhiChu { get; set; } = string.Empty;
+    public string ThoiGianKetXuatDuLieu { get; set; } = string.Empty;
+    public string LuongToKhai { get; set; } = string.Empty;
+    public string TrangThaiToKhai { get; set; } = string.Empty;
+    public string MaDoanhNghiep { get; set; } = string.Empty;
+    public string TenDoanhNghiep { get; set; } = string.Empty;
 }
 
 public sealed class PhiLuuKhoQuaHanResponse
@@ -473,6 +499,9 @@ public sealed class ChiTietHouseBillData
     [JsonPropertyName("MasterBill")]
     public string MasterBill { get; set; } = string.Empty;
 
+    [JsonPropertyName("SoToKhai")]
+    public string SoToKhai { get; set; } = string.Empty;
+
     [JsonPropertyName("MaDanhMucHangTau")]
     public string MaDanhMucHangTau { get; set; } = string.Empty;
 
@@ -484,6 +513,15 @@ public sealed class ChiTietHouseBillData
 
     [JsonPropertyName("NgayTauDen")]
     public DateTime? NgayTauDen { get; set; }
+
+    [JsonPropertyName("NgayTauDenEIM")]
+    public string NgayTauDenEIM { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoDinhDanhHangHoa")]
+    public string SoDinhDanhHangHoa { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoHieuPhuongTienVanTai")]
+    public string SoHieuPhuongTienVanTai { get; set; } = string.Empty;
 
     [JsonPropertyName("GhiChu")]
     public string GhiChu { get; set; } = string.Empty;

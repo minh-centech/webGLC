@@ -610,7 +610,7 @@ public sealed class LegacyCustomerPortalService
         return result ?? new LegacyUploadPdfResult();
     }
 
-    private async Task<LegacyCompanyProfile?> GetLatestEnterpriseProfileAsync(string accountId)
+    public async Task<LegacyCompanyProfile?> GetLatestEnterpriseProfileAsync(string accountId)
     {
         var envelope = await _httpClient.GetFromJsonAsync<ApiEnvelope>(
             $"api/DanhMucKhachHangDoiLenh/ListDoanhNghiepByKhachHang?khachHangId={Uri.EscapeDataString(accountId)}",

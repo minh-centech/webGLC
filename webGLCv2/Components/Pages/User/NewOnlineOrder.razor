@@ -104,8 +104,8 @@
                         <input class="portal-input" value="@Draft.OrderDate.ToString("dd/MM/yyyy")" readonly />
                     </div>
                     <div>
-                        <label class="portal-label">Nhập số Cont</label>
-                        <InputText class="portal-input" @bind-Value="Draft.ContainerNumber" />
+                        <label class="portal-label">Số Cont</label>
+                        <InputText disabled class="portal-input" @bind-Value="Draft.ContainerNumber" />
                         <ValidationMessage For="@(() => Draft.ContainerNumber)" class="validation-message" />
                     </div>
                     <div>
@@ -115,7 +115,7 @@
                     </div>
                     <div>
                         <label class="portal-label">Số tờ khai</label>
-                        <InputText class="portal-input" @bind-Value="Draft.DeclarationNumber" />
+                        <InputText disabled class="portal-input" @bind-Value="Draft.DeclarationNumber" />
                     </div>
                 </div>
             </section>
@@ -199,6 +199,8 @@
     private string? SoContFromQuery { get; set; }
     [SupplyParameterFromQuery(Name = "soVanDon")]
     private string? SoVanDonFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "soToKhai")]
+    private string? SoToKhaiFromQuery { get; set; }
     private bool AppliedQueryDefaults { get; set; }
     private bool IsTaxLookupPopupOpen { get; set; }
     private bool TaxLookupIsBusy { get; set; }
@@ -232,6 +234,7 @@
         var houseBill = HouseBillFromQuery?.Trim();
         var soCont = SoContFromQuery?.Trim();
         var soVanDon = SoVanDonFromQuery?.Trim();
+        var soToKhai = SoToKhaiFromQuery?.Trim();
 
         if (!string.IsNullOrWhiteSpace(houseBill))
         {
@@ -248,7 +251,15 @@
             Draft.ContainerNumber = soVanDon;
         }
 
-        if (!string.IsNullOrWhiteSpace(houseBill) || !string.IsNullOrWhiteSpace(soCont) || !string.IsNullOrWhiteSpace(soVanDon))
+        if (!string.IsNullOrWhiteSpace(soToKhai))
+        {
+            Draft.DeclarationNumber = soToKhai;
+        }
+
+        if (!string.IsNullOrWhiteSpace(houseBill)
+            || !string.IsNullOrWhiteSpace(soCont)
+            || !string.IsNullOrWhiteSpace(soVanDon)
+            || !string.IsNullOrWhiteSpace(soToKhai))
         {
             AppliedQueryDefaults = true;
         }

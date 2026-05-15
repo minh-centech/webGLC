@@ -1,0 +1,126 @@
+@page "/register-success"
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+@rendermode InteractiveServer
+
+<PageTitle>Đăng ký thành công | everWareHouse GLC</PageTitle>
+
+<section class="portal-empty-state compact">
+    <div class="brand-container">
+        <img class="login-brand-image" src="/images/glc-logo.png" alt="GLC logo" />
+    </div>
+
+    <div class="success-card">
+        <div class="portal-empty-icon success-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+
+        <h1>Đăng ký thành công</h1>
+
+        <div class="message-body">
+            <p>Yêu cầu đăng ký tài khoản của Quý khách đã được ghi nhận thành công trên hệ thống <strong>everWareHouse GLC</strong>.</p>
+            <p>Quản trị viên sẽ tiến hành phê duyệt hồ sơ và thông báo kết quả trực tiếp qua Email của Quý khách trong thời gian sớm nhất.</p>
+        </div>
+
+        <div class="form-actions">
+            <a class="portal-primary-action" href="/login">
+                <i class="fa fa-sign-in-alt"></i> Đi tới đăng nhập
+            </a>
+        </div>
+    </div>
+
+    <footer class="support-footer">
+        <p><strong>Hỗ trợ kỹ thuật:</strong></p>
+        <p>Tel: (84-225) 3979 550 — (84-225) 3262 156</p>
+        <p>Fax: (84-225) 3200 039</p>
+    </footer>
+</section>
+
+<style>
+    .portal-empty-state.compact {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        text-align: center;
+        background-color: #f9fafb;
+    }
+
+    .brand-container {
+        margin-bottom: 30px;
+    }
+
+    .login-brand-image {
+        max-width: 180px;
+        height: auto;
+    }
+
+    .success-card {
+        background: white;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .success-icon {
+        color: #10b981;
+        background-color: #ecfdf5;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    h1 {
+        color: #111827;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
+
+    .message-body {
+        color: #4b5563;
+        line-height: 1.6;
+        margin-bottom: 30px;
+    }
+
+    .portal-primary-action {
+        display: inline-block;
+        background-color: #0056b3; /* Chỉnh theo màu brand của GLC */
+        color: white;
+        padding: 12px 24px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+
+        .portal-primary-action:hover {
+            background-color: #004494;
+            color: white;
+        }
+
+    .support-footer {
+        margin-top: 40px;
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.5;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 20px;
+        width: 100%;
+        max-width: 500px;
+    }
+
+        .support-footer p {
+            margin: 2px 0;
+        }
+</style>

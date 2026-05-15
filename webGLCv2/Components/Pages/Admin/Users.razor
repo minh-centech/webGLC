@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject OnlineOrderService OnlineOrderService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Quản trị tài khoản</PageTitle>
 
@@ -163,7 +165,8 @@
                  account.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Phone.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Id.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
-            .OrderBy(account => account.IsLockAccount)
+            .OrderByDescending(account => !account.IsActive && !account.IsLockAccount)
+            .ThenBy(account => account.IsLockAccount)
             .ThenByDescending(account => account.IsActive)
             .ThenBy(account => account.Name)
             .ToList();
@@ -290,6 +293,40 @@
             if (account.IsLockAccount || !account.IsActive)
             {
                 nextIsLock = false;
+            }
+
+            var actionLabel = nextIsLock ? "khóa" : "kích hoạt";
+            var confirmed = await JSRuntime.InvokeAsync<bool>(
+                "confirm",
+                $"Bạn có chắc chắn muốn {actionLabel} tài khoản {account.Email} không?");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            if (!nextIsLock && account.AccountType == 2)
+            {
+                var companyProfile = await LegacyCustomerPortalService.GetLatestEnterpriseProfileAsync(account.Id);
+                if (companyProfile is not null)
+                {
+                    var glcLookup = await OnlineOrderService.LookupCompanyByMaSoThueAsync(companyProfile.MaSoThue);
+                    var upsertResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
+                        companyProfile.MaSoThue,
+                        glcLookup?.Ten ?? companyProfile.TenDoanhNghiep,
+                        glcLookup?.DiaChi ?? companyProfile.DiaChi,
+                        companyProfile.MaSoThue,
+                        glcLookup?.NguoiDaiDien ?? companyProfile.DaiDienCoThamQuyen,
+                        glcLookup?.ChucVuNguoiDaiDien ?? companyProfile.ChucVu,
+                        glcLookup?.Email ?? companyProfile.EmailDoanhNghiep,
+                        glcLookup?.SoDienThoai ?? companyProfile.SoDienThoaiDoanhNghiep,
+                        string.Empty,
+                        glcLookup is null);
+
+                    if (!upsertResult.Success)
+                    {
+                        throw new InvalidOperationException(upsertResult.Message);
+                    }
+                }
             }
 
             await LegacyCustomerPortalService.SetAccountStateAsync(account.Id, true, nextIsLock);

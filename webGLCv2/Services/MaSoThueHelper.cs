@@ -89,7 +89,7 @@ namespace webGLCv2.Services
                 // Nếu khác 200 thì retry
                 if (!response.IsSuccessStatusCode)
                 {
-                    if (retryCount < 3)
+                    if (retryCount < 4)
                     {
                         await Task.Delay(700); // nghỉ 700ms rồi thử lại
                         return await GetCompanyNameFromApi(mst, retryCount + 1);
@@ -99,6 +99,7 @@ namespace webGLCv2.Services
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response API VietQR {content}");
                 var json = JObject.Parse(content);
 
                 if (json["code"]?.ToString() == "00")
@@ -111,12 +112,12 @@ namespace webGLCv2.Services
             catch (Exception ex)
             {
                 // Retry nếu lỗi mạng hoặc exception khác
-                if (retryCount < 3)
+                if (retryCount < 4)
                 {
                     await Task.Delay(700);
                     return await GetCompanyNameFromApi(mst, retryCount + 1);
                 }
-
+                Console.WriteLine($"Lỗi gọi API VietQR {ex.ToString()}");
                 throw new Exception("Lỗi gọi API VietQR", ex);
             }
         }
@@ -241,25 +242,42 @@ namespace webGLCv2.Services
 
         private string ConvertToUnaccentedSlug(string text)
         {
-            if (string.IsNullOrWhiteSpace(text)) return "";
+            if (string.IsNullOrWhiteSpace(text))
+                return "";
 
-            // Chuyển sang chữ thường
+            // Chuyển thường
             text = text.ToLower().Trim();
 
-            // Thay thế các ký tự có dấu
-            string[] accents = { "aàảãáạăằẳẵắặâầẩẫấậ", "dđ", "eèẻẽéẹêềểễếệ", "iìỉĩíị", "oòỏõóọôồổỗốộơờởỡớợ", "uùủũúụưừửữứự", "yỳỷỹýỵ" };
+            // Bỏ dấu tiếng Việt
+            string[] accents =
+            {
+        "aàảãáạăằẳẵắặâầẩẫấậ",
+        "dđ",
+        "eèẻẽéẹêềểễếệ",
+        "iìỉĩíị",
+        "oòỏõóọôồổỗốộơờởỡớợ",
+        "uùủũúụưừửữứự",
+        "yỳỷỹýỵ"
+    };
+
             foreach (var group in accents)
             {
                 char replacement = group[0];
+
                 for (int i = 1; i < group.Length; i++)
                 {
                     text = text.Replace(group[i], replacement);
                 }
             }
 
-            // Thay thế ký tự đặc biệt và dấu cách thành '-'
-            text = Regex.Replace(text, @"[^a-z0-9\s]", ""); // Xóa ký tự đặc biệt
-            text = Regex.Replace(text, @"\s+", "-");        // Thay dấu cách bằng -
+            // Tất cả ký tự không phải a-z hoặc 0-9 => đổi thành -
+            text = Regex.Replace(text, @"[^a-z0-9]", "-");
+
+            // Gom nhiều dấu - liên tiếp thành 1 dấu -
+            text = Regex.Replace(text, @"-+", "-");
+
+            // Xóa - đầu/cuối
+            text = text.Trim('-');
 
             return text;
         }

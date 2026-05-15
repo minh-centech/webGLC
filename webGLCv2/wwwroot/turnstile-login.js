@@ -1,53 +1,116 @@
-window.glcTurnstile = {
-    renderLogin: function (elementId, siteKey) {
-        window.glcTurnstile.render(elementId, siteKey, "login-turnstile-token");
-    },
-    renderRegister: function (elementId, siteKey) {
-        window.glcTurnstile.render(elementId, siteKey, "register-turnstile-token");
-    },
-    render: function (elementId, siteKey, tokenInputId) {
-        const host = document.getElementById(elementId);
-        if (!host || !siteKey) {
+window.glcTurnstile = (() => {
+    const widgetIds = new Map();
+
+    const syncToken = (tokenInput, value) => {
+        if (!tokenInput) {
             return;
         }
 
-        const tokenInput = document.getElementById(tokenInputId);
-        const syncToken = (value) => {
-            if (!tokenInput) {
-                return;
-            }
+        tokenInput.value = value || "";
+        tokenInput.dispatchEvent(new Event("input", { bubbles: true }));
+    };
 
-            tokenInput.value = value || "";
-            tokenInput.dispatchEvent(new Event("input", { bubbles: true }));
-        };
-
-        if (tokenInput) {
-            syncToken("");
+    const getFreshHost = (elementId) => {
+        const currentHost = document.getElementById(elementId);
+        if (!currentHost) {
+            return null;
         }
 
-        const render = () => {
+        const freshHost = currentHost.cloneNode(false);
+        freshHost.innerHTML = "";
+        currentHost.replaceWith(freshHost);
+        return freshHost;
+    };
+
+    const destroyExistingWidget = (elementId) => {
+        if (!window.turnstile || !widgetIds.has(elementId)) {
+            return;
+        }
+
+        const widgetId = widgetIds.get(elementId);
+        widgetIds.delete(elementId);
+
+        try {
+            if (typeof window.turnstile.remove === "function") {
+                window.turnstile.remove(widgetId);
+                return;
+            }
+        }
+        catch {
+            // Ignore and continue with best-effort cleanup.
+        }
+
+        try {
+            if (typeof window.turnstile.reset === "function") {
+                window.turnstile.reset(widgetId);
+            }
+        }
+        catch {
+            // Ignore and continue with hard re-render.
+        }
+    };
+
+    const renderInternal = (elementId, siteKey, tokenInputId) => {
+        const tokenInput = document.getElementById(tokenInputId);
+        syncToken(tokenInput, "");
+
+        const freshHost = getFreshHost(elementId);
+        if (!freshHost || !siteKey) {
+            return;
+        }
+
+        const attemptRender = () => {
             if (!window.turnstile) {
-                window.setTimeout(render, 150);
+                window.setTimeout(attemptRender, 100);
                 return;
             }
 
-            host.innerHTML = "";
-            window.turnstile.render(host, {
-                sitekey: siteKey,
-                theme: "light",
-                language: "auto",
-                callback: function (token) {
-                    syncToken(token);
-                },
-                "expired-callback": function () {
-                    syncToken("");
-                },
-                "error-callback": function () {
-                    syncToken("");
+            destroyExistingWidget(elementId);
+            freshHost.innerHTML = "";
+
+            try {
+                const widgetId = window.turnstile.render(freshHost, {
+                    sitekey: siteKey,
+                    theme: "light",
+                    language: "auto",
+                    callback: function (token) {
+                        syncToken(tokenInput, token);
+                    },
+                    "expired-callback": function () {
+                        syncToken(tokenInput, "");
+                    },
+                    "error-callback": function () {
+                        syncToken(tokenInput, "");
+                    }
+                });
+
+                if (widgetId !== undefined && widgetId !== null) {
+                    widgetIds.set(elementId, widgetId);
                 }
-            });
+            }
+            catch {
+                window.setTimeout(attemptRender, 200);
+            }
         };
 
-        render();
-    }
-};
+        window.requestAnimationFrame(() => attemptRender());
+    };
+
+    return {
+        renderLogin: function (elementId, siteKey) {
+            renderInternal(elementId, siteKey, "login-turnstile-token");
+        },
+        forceRenderLogin: function (elementId, siteKey) {
+            renderInternal(elementId, siteKey, "login-turnstile-token");
+        },
+        renderRegister: function (elementId, siteKey) {
+            renderInternal(elementId, siteKey, "register-turnstile-token");
+        },
+        forceRenderRegister: function (elementId, siteKey) {
+            renderInternal(elementId, siteKey, "register-turnstile-token");
+        },
+        render: function (elementId, siteKey, tokenInputId) {
+            renderInternal(elementId, siteKey, tokenInputId);
+        }
+    };
+})();

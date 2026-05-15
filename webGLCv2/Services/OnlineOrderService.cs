@@ -14,7 +14,7 @@ public sealed class OnlineOrderService
         PropertyNameCaseInsensitive = true
     };
 
-    private const string ThongQuanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/TrangThaiThongQuan";
+    private const string TraCuuToKhaiApiPath = "/api/TraCuuToKhai/TraCuuToKhai";
     private const string PhiLuuKhoApiPath = "/api/TinhCuoc/TinhCuoc";
     private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
     private const string ChiTietHouseBillApiPath = "/api/ctLenhNhapKhoHangNhapKhau/ListValidSoVanDonXuatKho";
@@ -208,25 +208,108 @@ public sealed class OnlineOrderService
         return MapOnlineOrder(itemsElement[0]);
     }
 
-    public async Task<ThongQuanCheckResponse> CheckThongQuanAsync(string houseBill, string soCont)
+    public Task<ThongQuanCheckResponse> CheckThongQuanAsync(string houseBill, string soCont)
+        => CheckThongQuanAsync(houseBill, soCont, null);
+
+    public async Task<ThongQuanCheckResponse> CheckThongQuanAsync(
+        string houseBill,
+        string soCont,
+        ChiTietHouseBillData? chiTiet)
     {
+        var ngayTauDenEim = BuildNgayTauDenEimText(chiTiet);
+        var soDinhDanhHangHoa = !string.IsNullOrWhiteSpace(chiTiet?.SoDinhDanhHangHoa)
+            ? chiTiet!.SoDinhDanhHangHoa
+            : houseBill;
+        var soHieuPhuongTienVanTai = !string.IsNullOrWhiteSpace(chiTiet?.SoHieuPhuongTienVanTai)
+            ? chiTiet!.SoHieuPhuongTienVanTai
+            : string.IsNullOrWhiteSpace(chiTiet?.TenTau) ? soCont : chiTiet!.TenTau;
+
+        var requestPayload = new
+        {
+            SoVanDon = houseBill,
+            NgayTauDen = ngayTauDenEim,
+            SoDinhDanhHangHoa = soDinhDanhHangHoa,
+            SoHieuPhuongTienVanTai = soHieuPhuongTienVanTai
+        };
+
+        Console.WriteLine($"[TraCuuToKhai] POST {BuildWorkflowUrl(TraCuuToKhaiApiPath)}");
+        Console.WriteLine($"[TraCuuToKhai] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
+
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(ThongQuanApiPath),
-            new
-            {
-                HouseBill = houseBill,
-                SoCont = soCont
-            },
+            BuildWorkflowUrl(TraCuuToKhaiApiPath),
+            requestPayload,
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<ThongQuanCheckResponse>(JsonOptions)
-            ?? new ThongQuanCheckResponse
+        var responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[TraCuuToKhai] Response={(int)response.StatusCode} {response.ReasonPhrase}");
+        Console.WriteLine($"[TraCuuToKhai] ResponseBody={responseBody}");
+
+        var envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
+        if (envelope is null)
+        {
+            return new ThongQuanCheckResponse
             {
                 Success = false,
                 Message = "Khong the doc ket qua kiem tra thong quan."
             };
+        }
+
+        if (envelope.Status != 0)
+        {
+            return new ThongQuanCheckResponse
+            {
+                Success = false,
+                Message = string.IsNullOrWhiteSpace(envelope.ErrorMsg)
+                    ? "Khong the doc ket qua kiem tra thong quan."
+                    : envelope.ErrorMsg
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(envelope.Data))
+        {
+            return new ThongQuanCheckResponse
+            {
+                Success = false,
+                Message = "Khong the doc ket qua kiem tra thong quan."
+            };
+        }
+
+        TraCuuToKhaiData? declarationData;
+        try
+        {
+            declarationData = JsonSerializer.Deserialize<TraCuuToKhaiData>(envelope.Data, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            declarationData = null;
+        }
+
+        return new ThongQuanCheckResponse
+        {
+            Success = true,
+            IsThongQuan = string.Equals(declarationData?.TrangThaiToKhai, "TQ", StringComparison.OrdinalIgnoreCase),
+            Message = string.Empty,
+            RawData = envelope.Data,
+            Data = declarationData
+        };
+    }
+
+    private static string BuildNgayTauDenEimText(ChiTietHouseBillData? chiTiet)
+    {
+        if (chiTiet is null)
+        {
+            return DateTime.Today.ToString("MM/dd/yyyy 12:00:00 AM", CultureInfo.InvariantCulture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(chiTiet.NgayTauDenEIM))
+        {
+            return chiTiet.NgayTauDenEIM;
+        }
+
+        var sourceDate = chiTiet.NgayTauDen ?? chiTiet.NgayNhapKho ?? DateTime.Today;
+        return sourceDate.ToString("MM/dd/yyyy 12:00:00 AM", CultureInfo.InvariantCulture);
     }
 
     public async Task<CompanyTaxLookupResult?> LookupCompanyByMaSoThueAsync(string maSoThue)
@@ -934,6 +1017,16 @@ public sealed class OnlineOrderService
         data.TrongLuong = data.KhoiLuongNhap;
         data.SoKhoi = data.CBMNhap;
         data.NgayTauCap = (data.NgayTauDen ?? data.NgayNhapKho)?.ToString("O") ?? string.Empty;
+        data.NgayTauDenEIM = string.IsNullOrWhiteSpace(data.NgayTauDenEIM)
+            ? (data.NgayTauDen?.ToString("M/d/yyyy 12:00:00 AM", CultureInfo.InvariantCulture)
+               ?? data.NgayNhapKho?.ToString("M/d/yyyy 12:00:00 AM", CultureInfo.InvariantCulture)
+               ?? string.Empty)
+            : data.NgayTauDenEIM;
+        data.SoDinhDanhHangHoa = string.IsNullOrWhiteSpace(data.SoDinhDanhHangHoa) ? data.SoVanDon : data.SoDinhDanhHangHoa;
+        data.SoHieuPhuongTienVanTai = string.IsNullOrWhiteSpace(data.SoHieuPhuongTienVanTai)
+            ? data.TenTau
+            : data.SoHieuPhuongTienVanTai;
+        data.SoToKhai = string.IsNullOrWhiteSpace(data.SoToKhai) ? data.MasterBill : data.SoToKhai;
         data.IsHoanThanh = !data.TrangThaiKhoa;
         return data;
     }

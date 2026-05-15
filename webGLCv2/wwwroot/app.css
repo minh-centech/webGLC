@@ -851,6 +851,16 @@ select {
     margin: 0;
 }
 
+.login-brandname {
+    color: #209244; /* Màu xanh theo yêu cầu */
+    font-weight: bold; /* Chữ in đậm (hoặc dùng giá trị 700) */
+    text-transform: uppercase; /* Tự động chuyển tất cả các ký tự thành viết hoa */
+    /* Bạn có thể thêm các thuộc tính bổ trợ dưới đây nếu cần */
+    font-size: 20px; /* Kích thước chữ (tùy chỉnh theo giao diện) */
+    letter-spacing: 0.5px; /* Khoảng cách giữa các chữ cái nhìn sẽ thoáng và sang hơn */
+    display: inline-block;
+}
+
 .login-shell {
     min-height: 100vh;
     display: grid;
@@ -972,6 +982,49 @@ select {
 .portal-modal-actions.tax-lookup-actions .portal-secondary-action {
     min-height: 40px;
     height: 40px;
+}
+
+.import-check-action-button {
+    min-width: 260px;
+    min-height: 52px;
+    padding: 0 26px;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    border-radius: 16px;
+    box-shadow: 0 14px 28px rgba(47, 125, 86, 0.18);
+}
+
+.import-check-action-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 34px rgba(47, 125, 86, 0.24);
+}
+
+.loading-overlay {
+    backdrop-filter: blur(2px);
+}
+
+.loading-modal {
+    width: min(520px, 100%);
+    text-align: center;
+    gap: 14px;
+    padding: 28px 26px;
+}
+
+.loading-spinner {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 5px solid rgba(20, 57, 38, 0.12);
+    border-top-color: #2f7d56;
+    margin: 0 auto;
+    animation: loading-spin 0.9s linear infinite;
+}
+
+@keyframes loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .register-shell {

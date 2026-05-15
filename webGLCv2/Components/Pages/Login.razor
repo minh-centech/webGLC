@@ -4,10 +4,12 @@
 @attribute [AllowAnonymous]
 @inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavManager
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject EmailHelper EmailHelper
+@inject TurnstileValidationService TurnstileValidationService
 
-<PageTitle>Dang nhap khach hang</PageTitle>
+<PageTitle>GLC - Đăng nhập khách hàng</PageTitle>
 <HeadContent>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </HeadContent>
@@ -72,6 +74,12 @@
                 <div class="login-turnstile-wrap">
                     <div id="login-turnstile"></div>
                 </div>
+                <button type="button"
+                        class="portal-secondary-action portal-secondary-button"
+                        @onclick="RefreshTurnstileAsync"
+                        disabled="@(!HasTurnstileConfiguration)">
+                    Nếu xác thực không hiển thị, bấm để tải lại
+                </button>
                 <p class="portal-help"></p>
 
                 <button type="submit" class="portal-primary-action login-submit" disabled="@(!HasTurnstileConfiguration)">Đăng nhập</button>
@@ -94,6 +102,17 @@
             <p>Vui lòng nhập email đăng ký để hệ thống kiểm tra và cấp lại mật khẩu mới.</p>
             <label class="portal-label" for="forgot-email">Email</label>
             <input id="forgot-email" class="portal-input" type="email" @bind="ForgotPasswordEmail" placeholder="name@company.com" />
+            <label class="portal-label">Xác thực bảo mật</label>
+            <div class="login-turnstile-wrap">
+                <div id="forgot-password-turnstile"></div>
+            </div>
+            <input type="hidden" id="forgot-password-turnstile-token" @bind="ForgotPasswordTurnstileToken" @bind:event="oninput" />
+            <button type="button"
+                    class="portal-secondary-action portal-secondary-button"
+                    @onclick="RefreshForgotPasswordTurnstileAsync"
+                    disabled="@(!HasTurnstileConfiguration)">
+                Nếu xác thực không hiển thị, bấm để tải lại
+            </button>
             @if (!string.IsNullOrWhiteSpace(ForgotPasswordMessage))
             {
                 <div class="portal-alert @(ForgotPasswordIsError ? "portal-alert-error" : "portal-alert-success")">@ForgotPasswordMessage</div>
@@ -119,17 +138,33 @@
     [SupplyParameterFromQuery(Name = "reload")]
     public string? ReloadToken { get; set; }
 
+    [SupplyParameterFromQuery(Name = "t")]
+    public string? CacheBustToken { get; set; }
+
     private bool IsForgotPasswordPopupOpen { get; set; }
     private bool IsForgotPasswordBusy { get; set; }
     private bool ForgotPasswordIsError { get; set; }
     private string? ForgotPasswordEmail { get; set; }
     private string? ForgotPasswordMessage { get; set; }
+    private string? ForgotPasswordTurnstileToken { get; set; }
     private string? _lastTurnstileReloadToken;
+    private bool _hasForcedCacheBust;
     private bool _shouldRenderTurnstile = true;
+    private bool _shouldRenderForgotPasswordTurnstile;
     private string SiteKey => TurnstileConfiguration.Value.SiteKey;
     private bool HasTurnstileConfiguration =>
         !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
         && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
+
+    protected override void OnInitialized()
+    {
+        if (HasTurnstileConfiguration && string.IsNullOrWhiteSpace(CacheBustToken) && !_hasForcedCacheBust)
+        {
+            _hasForcedCacheBust = true;
+            var bustedUrl = NavManager.GetUriWithQueryParameter("t", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            NavManager.NavigateTo(bustedUrl, forceLoad: true, replace: true);
+        }
+    }
 
     protected override void OnParametersSet()
     {
@@ -140,24 +175,21 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (_shouldRenderTurnstile && HasTurnstileConfiguration)
-        {
-            _shouldRenderTurnstile = false;
-            await JSRuntime.InvokeVoidAsync("glcTurnstile.renderLogin", "login-turnstile", SiteKey);
-        }
-    }
-
     private void ShowForgotPasswordPopup()
     {
         ForgotPasswordMessage = null;
         ForgotPasswordIsError = false;
+        ForgotPasswordTurnstileToken = null;
+        _shouldRenderForgotPasswordTurnstile = true;
         IsForgotPasswordPopupOpen = true;
     }
 
     private void HideForgotPasswordPopup()
-        => IsForgotPasswordPopupOpen = false;
+    {
+        IsForgotPasswordPopupOpen = false;
+        ForgotPasswordTurnstileToken = null;
+        _shouldRenderForgotPasswordTurnstile = false;
+    }
 
     private async Task SubmitForgotPasswordAsync()
     {
@@ -174,21 +206,93 @@
 
         try
         {
+            if (string.IsNullOrWhiteSpace(ForgotPasswordTurnstileToken))
+            {
+                ForgotPasswordMessage = "Vui lòng xác thực bảo mật trước khi gửi yêu cầu.";
+                ForgotPasswordIsError = true;
+                return;
+            }
+
+            var turnstileResult = await TurnstileValidationService.ValidateDetailedAsync(
+                ForgotPasswordTurnstileToken,
+                null,
+                CancellationToken.None);
+
+            if (!turnstileResult.Success)
+            {
+                var errorDetail = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
+                    ? "unknown-turnstile-error"
+                    : turnstileResult.ErrorDetail;
+
+                ForgotPasswordMessage = $"Xác thực Turnstile không thành công. Vui lòng thử lại. ({errorDetail})";
+                ForgotPasswordIsError = true;
+                ForgotPasswordTurnstileToken = null;
+                _shouldRenderForgotPasswordTurnstile = true;
+                return;
+            }
+
             var newPassword = await LegacyCustomerPortalService.RecoverPasswordAsync(ForgotPasswordEmail);
             await EmailHelper.SendPasswordResetEmailAsync(ForgotPasswordEmail, newPassword);
             Console.WriteLine($"Mật khẩu mới: { newPassword}.");
             ForgotPasswordMessage = $"Mật khẩu mới đã được gửi đến email: {ForgotPasswordEmail}.";
             ForgotPasswordIsError = false;
+            ForgotPasswordTurnstileToken = null;
+            _shouldRenderForgotPasswordTurnstile = true;
         }
         catch (Exception ex)
         {
             ForgotPasswordMessage = ex.Message;
             ForgotPasswordIsError = true;
+            ForgotPasswordTurnstileToken = null;
+            _shouldRenderForgotPasswordTurnstile = true;
         }
         finally
         {
             IsForgotPasswordBusy = false;
+            await InvokeAsync(StateHasChanged);
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldRenderTurnstile && HasTurnstileConfiguration)
+        {
+            _shouldRenderTurnstile = false;
+            await JSRuntime.InvokeVoidAsync("glcTurnstile.forceRenderLogin", "login-turnstile", SiteKey);
+        }
+
+        if (_shouldRenderForgotPasswordTurnstile && HasTurnstileConfiguration)
+        {
+            _shouldRenderForgotPasswordTurnstile = false;
+            await JSRuntime.InvokeVoidAsync("glcTurnstile.render", "forgot-password-turnstile", SiteKey, "forgot-password-turnstile-token");
+        }
+    }
+
+    private async Task RefreshForgotPasswordTurnstileAsync()
+    {
+        if (!HasTurnstileConfiguration)
+        {
+            return;
+        }
+
+        _shouldRenderForgotPasswordTurnstile = true;
+        ForgotPasswordTurnstileToken = null;
+        await JSRuntime.InvokeVoidAsync("glcTurnstile.render", "forgot-password-turnstile", SiteKey, "forgot-password-turnstile-token");
+        _shouldRenderForgotPasswordTurnstile = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshTurnstileAsync()
+    {
+        if (!HasTurnstileConfiguration)
+        {
+            return;
+        }
+
+        _shouldRenderTurnstile = true;
+        await JSRuntime.InvokeVoidAsync("glcTurnstile.forceRenderLogin", "login-turnstile", SiteKey);
+        _shouldRenderTurnstile = false;
+        await InvokeAsync(StateHasChanged);
     }
 }
 

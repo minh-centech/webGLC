@@ -8,6 +8,7 @@
 @inject EmailHelper EmailHelper
 @inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
 @inject TurnstileValidationService TurnstileValidationService
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @using System.Text.Json
 
@@ -246,11 +247,11 @@
                         <div class="field-card wide">
                             <label class="portal-label">Bản scan CMND/CCCD (PDF)</label>
                             <div class="custom-file-input">
-                                <label for="citizen-upload" class="btn-select-file">
+                                <label for="CitizenCard-upload" class="btn-select-file">
                                     Chọn tệp CMND/CCCD
                                 </label>
 
-                                <InputFile id="citizen-upload"
+                                <InputFile id="CitizenCard-upload"
                                            OnChange="@OnCitizenCardChanged"
                                            accept=".pdf,application/pdf"
                                            style="display:none;" />
@@ -271,11 +272,11 @@
                             <div class="field-card wide">
                                 <label class="portal-label">Bản scan giấy phép kinh doanh (PDF)</label>
                                 <div class="custom-file-input">
-                                    <label for="citizen-upload" class="btn-select-file">
+                                    <label for="BusinessLicense-upload" class="btn-select-file">
                                         Chọn tệp GPKD
                                     </label>
 
-                                    <InputFile id="citizen-upload"
+                                    <InputFile id="BusinessLicense-upload"
                                                OnChange="@OnBusinessLicenseChanged"
                                                accept=".pdf,application/pdf"
                                                style="display:none;" />
@@ -293,11 +294,11 @@
                             <div class="field-card wide">
                                 <label class="portal-label">Bản đăng ký everWareHouse có đóng dấu hoặc ký số (PDF)</label>
                                 <div class="custom-file-input">
-                                    <label for="citizen-upload" class="btn-select-file">
+                                    <label for="Eport-upload" class="btn-select-file">
                                         Chọn tệp đăng ký everWareHouse
                                     </label>
 
-                                    <InputFile id="citizen-upload"
+                                    <InputFile id="Eport-upload"
                                                OnChange="@OnEportFormChanged"
                                                accept=".pdf,application/pdf"
                                                style="display:none;" />
@@ -317,11 +318,11 @@
                             <div class="field-card wide">
                                 <label class="portal-label">Bản đăng ký cá nhân có chữ ký (PDF)</label>
                                 <div class="custom-file-input">
-                                    <label for="citizen-upload" class="btn-select-file">
+                                    <label for="Personal-upload" class="btn-select-file">
                                         Chọn tệp đăng ký cá nhân
                                     </label>
 
-                                    <InputFile id="citizen-upload"
+                                    <InputFile id="Personal-upload"
                                                OnChange="@OnPersonalFormChanged"
                                                accept=".pdf,application/pdf"
                                                style="display:none;" />
@@ -397,7 +398,7 @@
         if (_shouldRenderTurnstile && HasTurnstileUiConfiguration)
         {
             _shouldRenderTurnstile = false;
-            await JSRuntime.InvokeVoidAsync("glcTurnstile.renderRegister", "register-turnstile", SiteKey);
+            await JSRuntime.InvokeVoidAsync("glcTurnstile.forceRenderRegister", "register-turnstile", SiteKey);
         }
     }
 
@@ -446,11 +447,12 @@
             Model.TenDangNhap = Model.Email;
             await LegacyCustomerPortalService.RegisterAccountAsync(Model);
             await EmailHelper.SendEmailAsync(Model.Email, EmailHelper.RegistrationPendingApprovalTemplateId);
-            SuccessMessage = "Hệ thống đã tiếp nhận yêu cầu đăng ký. Quản trị viên sẽ kiểm tra hồ sơ và phản hồi qua email.";
+            SuccessMessage = "Hệ thống đã tiếp nhận yêu cầu đăng ký.";
             Model = new RegisterAccountModel();
             ResetUploadStatuses();
             RegisterTurnstileToken = null;
             _shouldRenderTurnstile = true;
+            NavigationManager.NavigateTo("/register-success", forceLoad: false);
         }
         catch (Exception ex)
         {

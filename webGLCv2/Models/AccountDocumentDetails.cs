@@ -9,7 +9,7 @@ public sealed class AccountDocumentDetails
     public int AccountType { get; set; }
     public string AccountTypeText { get; set; } = string.Empty;
     public bool IsActive { get; set; }
-    public bool ActivatedFlag { get; set; }
+    public bool IsLockAccount { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string TaxCode { get; set; } = string.Empty;
     public string CompanyEmail { get; set; } = string.Empty;

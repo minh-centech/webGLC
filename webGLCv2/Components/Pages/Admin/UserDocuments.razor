@@ -308,6 +308,7 @@
         {
             await LegacyCustomerPortalService.ApproveAccountAndNotifyAsync(Details.Id, Details.Email);
             Details.IsActive = true;
+            Details.IsLockAccount = false;
             FeedbackMessage = "Đã phê duyệt và kích hoạt tài khoản thành công.";
             FeedbackIsError = false;
         }
@@ -332,8 +333,9 @@
         IsSubmitting = true;
         try
         {
-            await LegacyCustomerPortalService.SetAccountActiveAsync(Details.Id, false);
-            Details.IsActive = false;
+            await LegacyCustomerPortalService.SetAccountStateAsync(Details.Id, true, true);
+            Details.IsActive = true;
+            Details.IsLockAccount = true;
             FeedbackMessage = "Đã khóa tài khoản.";
             FeedbackIsError = false;
         }

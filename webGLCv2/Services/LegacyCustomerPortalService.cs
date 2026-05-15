@@ -65,7 +65,7 @@ public sealed class LegacyCustomerPortalService
         {
             var accountType = GetInt(item, "LoaiTaiKhoan");
             var isActive = GetBool(item, "IsActive");
-            var activatedFlag = GetBool(item, "KichHoat");
+            var isLockAccount = GetBool(item, "IsLockAccount");
             result.Add(new AccountListItem
             {
                 Id = GetString(item, "ID"),
@@ -75,19 +75,19 @@ public sealed class LegacyCustomerPortalService
                 AccountType = accountType,
                 AccountTypeText = GetAccountTypeName(accountType),
                 IsActive = isActive,
-                ActivatedFlag = activatedFlag,
-                StatusText = ResolveStatusText(isActive, activatedFlag)
+                IsLockAccount = isLockAccount,
+                StatusText = ResolveStatusText(isActive, isLockAccount)
             });
         }
 
         return result;
     }
 
-    public async Task SetAccountActiveAsync(string id, bool isActive)
+    public async Task SetAccountStateAsync(string id, bool isActive, bool isLockAccount)
     {
         var response = await _httpClient.PostAsJsonAsync(
             "api/DanhMucKhachHangDoiLenh/SetActive",
-            new { ID = id, IsActive = isActive },
+            new { ID = id, IsActive = isActive, IsLockAccount = isLockAccount },
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
@@ -97,7 +97,7 @@ public sealed class LegacyCustomerPortalService
 
     public async Task ApproveAccountAndNotifyAsync(string id, string email)
     {
-        await SetAccountActiveAsync(id, true);
+        await SetAccountStateAsync(id, true, false);
         await _emailHelper.SendEmailAsync(email, EmailHelper.AccountApprovedSuccessTemplateId);
     }
 
@@ -175,7 +175,7 @@ public sealed class LegacyCustomerPortalService
             AccountType = accountType,
             AccountTypeText = GetAccountTypeName(accountType),
             IsActive = GetBool(root, "IsActive"),
-            ActivatedFlag = GetBool(root, "KichHoat"),
+            IsLockAccount = GetBool(root, "IsLockAccount"),
             CompanyName = GetString(root, "TenDoanhNghiep"),
             TaxCode = GetString(root, "MaSoThue"),
             CompanyEmail = GetString(root, "EmailDoanhNghiep"),
@@ -680,14 +680,14 @@ public sealed class LegacyCustomerPortalService
     private static string? NullIfEmpty(string value)
         => string.IsNullOrWhiteSpace(value) ? null : value;
 
-    private static string ResolveStatusText(bool isActive, bool activatedFlag)
+    private static string ResolveStatusText(bool isActive, bool isLockAccount)
     {
-        if (!activatedFlag)
+        if (isLockAccount)
         {
-            return isActive ? "Chờ kích hoạt" : "Chưa kích hoạt";
+            return "Đã khóa";
         }
 
-        return isActive ? "Đang hoạt động" : "Đã khóa";
+        return isActive ? "Đang hoạt động" : "Chờ kích hoạt";
     }
 
     private sealed class LenhOnlinesUpdateRequest

@@ -27,11 +27,11 @@
         </article>
         <article class="stat-card">
             <span class="stat-label">Đang hoạt động</span>
-            <strong>@Accounts.Count(x => x.IsActive)</strong>
+            <strong>@Accounts.Count(x => x.IsActive && !x.IsLockAccount)</strong>
         </article>
         <article class="stat-card">
-            <span class="stat-label">Chờ xử lý</span>
-            <strong>@Accounts.Count(x => !x.ActivatedFlag)</strong>
+            <span class="stat-label">Bị khóa</span>
+            <strong>@Accounts.Count(x => x.IsLockAccount)</strong>
         </article>
     </div>
 
@@ -103,7 +103,7 @@
                                     <div class="cell-subtitle">ID: @account.Id</div>
                                 </td>
                                 <td>
-                                    <span class="status-chip @(account.IsActive ? "success" : "warning")">@account.StatusText</span>
+                                    <span class="status-chip @(account.IsLockAccount ? "danger" : account.IsActive ? "success" : "warning")">@account.StatusText</span>
                                 </td>
                                 <td class="text-end">
                                     <a class="portal-secondary-action table-link-btn me-1" href="/admin/users/@account.Id/documents">Hồ sơ</a>
@@ -111,9 +111,9 @@
                                     {
                                         <a class="portal-primary-action table-link-btn" style="margin:0 4px;" href="/admin/users/@account.Id/documents">Duyệt doanh nghiệp</a>
                                     }
-                                    <button class="table-action @(account.IsActive ? "danger" : "success")"
+                                    <button class="table-action @(account.IsLockAccount || !account.IsActive ? "success" : "danger")"
                                             @onclick="() => ToggleAccountAsync(account)">
-                                        @(account.IsActive ? "Khóa" : "Kích hoạt")
+                                        @(account.IsLockAccount || !account.IsActive ? "Kích hoạt" : "Khóa")
                                     </button>
                                 </td>
                             </tr>
@@ -157,13 +157,14 @@
     private List<AccountListItem> FilteredAccounts =>
         Accounts
             .Where(account =>
-                (!ShowPendingActivationOnly || !account.ActivatedFlag) &&
+                (!ShowPendingActivationOnly || (!account.IsActive && !account.IsLockAccount)) &&
                 (string.IsNullOrWhiteSpace(SearchTerm) ||
                  account.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Phone.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
                  account.Id.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
-            .OrderBy(account => account.IsActive)
+            .OrderBy(account => account.IsLockAccount)
+            .ThenByDescending(account => account.IsActive)
             .ThenBy(account => account.Name)
             .ToList();
 
@@ -285,12 +286,23 @@
     {
         try
         {
-            await LegacyCustomerPortalService.SetAccountActiveAsync(account.Id, !account.IsActive);
-            account.IsActive = !account.IsActive;
-            account.StatusText = account.IsActive ? "Đang hoạt động" : "Chờ kích hoạt";
-            FeedbackMessage = account.IsActive
-                ? $"Đã kích hoạt tài khoản {account.Email}."
-                : $"Đã khóa tài khoản {account.Email}.";
+            var nextIsLock = account.IsActive && !account.IsLockAccount;
+            if (account.IsLockAccount || !account.IsActive)
+            {
+                nextIsLock = false;
+            }
+
+            await LegacyCustomerPortalService.SetAccountStateAsync(account.Id, true, nextIsLock);
+            account.IsActive = true;
+            account.IsLockAccount = nextIsLock;
+            account.StatusText = account.IsLockAccount
+                ? "Đã khóa"
+                : account.IsActive
+                    ? "Đang hoạt động"
+                    : "Chờ kích hoạt";
+            FeedbackMessage = account.IsLockAccount
+                ? $"Đã khóa tài khoản {account.Email}."
+                : $"Đã kích hoạt tài khoản {account.Email}.";
             FeedbackIsError = false;
         }
         catch (Exception ex)

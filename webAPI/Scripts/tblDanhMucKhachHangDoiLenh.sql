@@ -6,6 +6,7 @@ create table DanhMucKhachHangDoiLenh
 	IDDanhMucLoaiDoiTuong		bigint			not null,
 	LoaiTaiKhoan				tinyint			not null constraint DF_DanhMucKhachHangDoiLenh_LoaiTaiKhoan default(1),
 	IsActive					bit				not null constraint DF_DanhMucKhachHangDoiLenh_IsActive default(1),
+	IsLockAccount				bit				not null constraint DF_DanhMucKhachHangDoiLenh_IsLockAccount default(0),
 	Email						nvarchar(128)	not null,
 	Ten							nvarchar(255)	not null,
 	SoDienThoai					nvarchar(128)	not null,

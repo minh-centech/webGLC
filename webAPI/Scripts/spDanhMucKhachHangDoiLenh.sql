@@ -11,6 +11,7 @@ begin
 			a.IDDanhMucLoaiDoiTuong, 
 			a.LoaiTaiKhoan,
 			a.IsActive,
+			a.IsLockAccount,
 			a.Email, 
 			a.Ten, 
 			a.SoDienThoai,
@@ -72,10 +73,10 @@ begin
 	--	return;
 	--end;
 
-	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and IsActive = 1;
+	select @countID = count(ID) from DanhMucKhachHangDoiLenh where Email = ltrim(rtrim(@Email)) and IsActive = 1 and IsLockAccount = 0;
 	if @countID = 0
 	begin
-		set @ErrMsg = N'Tài khoản đã bị khóa hoặc ngừng hoạt động!';
+		set @ErrMsg = N'Tài khoản chưa được kích hoạt hoặc đã bị khóa bởi quản trị viên!';
 		raiserror(@ErrMsg, 16, 1);
 		return;
 	end;
@@ -87,7 +88,7 @@ begin
 	if convert(varbinary, @Password) = convert(varbinary, @OriginalPassword)
 	begin
 		--select	@ID = a.ID from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email));
-		select	* from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email)) and a.IsActive = 1;
+		select	* from DanhMucKhachHangDoiLenh a where a.IDDanhMucDonVi = @IDDanhMucDonVi and a.IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong and Email = ltrim(rtrim(@Email)) and a.IsActive = 1 and a.IsLockAccount = 0;
 	end
 	else
 	begin
@@ -105,6 +106,7 @@ alter procedure Insert_DanhMucKhachHangDoiLenh
 	@IDDanhMucLoaiDoiTuong		bigint,
 	@LoaiTaiKhoan				tinyint = 1,
 	@IsActive					bit = 0,
+	@IsLockAccount				bit = 0,
 	@Email						nvarchar(128) = null,
 	@Ten						nvarchar(255) = null,
 	@SoDienThoai				nvarchar(128) = null,
@@ -199,6 +201,7 @@ begin
 			IDDanhMucLoaiDoiTuong, 
 			LoaiTaiKhoan,
 			IsActive,
+			IsLockAccount,
 			Email, 
 			Ten, 
 			SoDienThoai, 
@@ -217,6 +220,7 @@ begin
 			@IDDanhMucLoaiDoiTuong, 
 			@LoaiTaiKhoan,
 			@IsActive,
+			@IsLockAccount,
 			ltrim(rtrim(@Email)), 
 			ltrim(rtrim(@Ten)), 
 			ltrim(rtrim(@SoDienThoai)), 
@@ -244,6 +248,7 @@ alter procedure Update_DanhMucKhachHangDoiLenh
 	@IDDanhMucLoaiDoiTuong		bigint,
 	@LoaiTaiKhoan				tinyint,
 	@IsActive					bit,
+	@IsLockAccount				bit,
 	@Email						nvarchar(128) = null,
 	@Ten						nvarchar(255) = null,
 	@SoDienThoai				nvarchar(128) = null,
@@ -305,6 +310,7 @@ begin
 		update DanhMucKhachHangDoiLenh set
 			LoaiTaiKhoan = @LoaiTaiKhoan,
 			IsActive = @IsActive,
+			IsLockAccount = @IsLockAccount,
 			Email = @Email,
 			Ten = @Ten,
 			SoDienThoai = @SoDienThoai,
@@ -457,6 +463,9 @@ begin
 end
 go
 ------------
+IF OBJECT_ID('Update_DanhMucKhachHangDoiLenh_ResetPassword', 'P') IS NULL
+    EXEC('CREATE PROCEDURE Update_DanhMucKhachHangDoiLenh_ResetPassword AS BEGIN SET NOCOUNT ON; END')
+GO
 alter procedure Update_DanhMucKhachHangDoiLenh_ResetPassword
 	@Email						nvarchar(128),
 	@NewPassword				nvarchar(256),

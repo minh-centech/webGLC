@@ -63,6 +63,42 @@ begin
 end
 go
 
+if col_length('dbo.DanhMucKhachHangDoiLenh', 'IsLockAccount') is null
+begin
+    alter table dbo.DanhMucKhachHangDoiLenh
+    add IsLockAccount bit null;
+end
+go
+
+if exists (
+    select 1
+    from sys.columns
+    where object_id = object_id(N'dbo.DanhMucKhachHangDoiLenh')
+      and name = 'IsLockAccount'
+      and is_nullable = 1
+)
+begin
+    update dbo.DanhMucKhachHangDoiLenh
+    set IsLockAccount = 0
+    where IsLockAccount is null;
+
+    alter table dbo.DanhMucKhachHangDoiLenh
+    alter column IsLockAccount bit not null;
+end
+go
+
+if not exists (
+    select 1
+    from sys.default_constraints
+    where parent_object_id = object_id(N'dbo.DanhMucKhachHangDoiLenh')
+      and name = N'DF_DanhMucKhachHangDoiLenh_IsLockAccount'
+)
+begin
+    alter table dbo.DanhMucKhachHangDoiLenh
+    add constraint DF_DanhMucKhachHangDoiLenh_IsLockAccount default(0) for IsLockAccount;
+end
+go
+
 if col_length('dbo.DanhMucKhachHangDoiLenh', 'BanScanSoCMNDCanCuocPath') is null
 begin
     alter table dbo.DanhMucKhachHangDoiLenh

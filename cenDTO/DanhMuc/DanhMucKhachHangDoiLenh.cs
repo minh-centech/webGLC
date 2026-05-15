@@ -13,6 +13,7 @@ namespace cenDTO
         public object IDDanhMucLoaiDoiTuong { get; set; }
         public object LoaiTaiKhoan { get; set; }
         public object IsActive { get; set; }
+        public object IsLockAccount { get; set; }
         public object Email { get; set; }
         public object Ten { get; set; }
         public object SoDienThoai { get; set; }
@@ -51,6 +52,7 @@ namespace cenDTO
             IDDanhMucLoaiDoiTuong = null;
             LoaiTaiKhoan = 1;
             IsActive = false;
+            IsLockAccount = false;
             Email = null;
             Ten = null;
             SoDienThoai = null;
@@ -68,6 +70,7 @@ namespace cenDTO
     {
         public int LoaiTaiKhoan { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLockAccount { get; set; }
         public string Email { get; set; }
         public string Ten { get; set; }
         public string SoDienThoai { get; set; }
@@ -78,6 +81,7 @@ namespace cenDTO
         {
             LoaiTaiKhoan = 1;
             IsActive = false;
+            IsLockAccount = false;
             Email = null;
             Ten = null;
             SoDienThoai = null;
@@ -89,6 +93,7 @@ namespace cenDTO
     {
         public int LoaiTaiKhoan { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLockAccount { get; set; }
         public string TenDangNhap { get; set; }
         public string Email { get; set; }
         public string Ten { get; set; }
@@ -118,6 +123,7 @@ namespace cenDTO
         {
             LoaiTaiKhoan = 1;
             IsActive = false;
+            IsLockAccount = false;
             TenDangNhap = null;
             Email = null;
             Ten = null;
@@ -257,11 +263,13 @@ namespace cenDTO
     {
         public object ID { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLockAccount { get; set; }
 
         public DanhMucKhachHangDoiLenhSetActiveRequest()
         {
             ID = null;
             IsActive = true;
+            IsLockAccount = false;
         }
     }
 
@@ -288,6 +296,7 @@ namespace cenDTO
         public object BanScanSoCMNDCanCuocPath { get; set; }
         public object BanDangKyEPortChuKySoPath { get; set; }
         public object IsActive { get; set; }
+        public object IsLockAccount { get; set; }
         public object CreateDate { get; set; }
         public object EditDate { get; set; }
     }
@@ -315,6 +324,7 @@ namespace cenDTO
         public string BanScanSoCMNDCanCuocPath { get; set; }
         public string BanDangKyEPortChuKySoPath { get; set; }
         public bool IsActive { get; set; }
+        public bool IsLockAccount { get; set; }
 
         public NguoiDungDoanhNghiepSaveRequest()
         {
@@ -338,6 +348,7 @@ namespace cenDTO
             BanScanSoCMNDCanCuocPath = null;
             BanDangKyEPortChuKySoPath = null;
             IsActive = true;
+            IsLockAccount = false;
         }
     }
 }

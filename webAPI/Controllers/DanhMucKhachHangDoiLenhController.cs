@@ -76,6 +76,7 @@ namespace webAPI.Controllers
                         IDDanhMucLoaiDoiTuong = coreCommon.coreCommon.longParse(dataRow["IDDanhMucLoaiDoiTuong"]),
                         LoaiTaiKhoan = dataRow["LoaiTaiKhoan"],
                         IsActive = dataRow["IsActive"],
+                        IsLockAccount = dataRow.Table.Columns.Contains("IsLockAccount") ? dataRow["IsLockAccount"] : false,
                         Email = coreCommon.coreCommon.stringParse(dataRow["Email"]),
                         Ten = coreCommon.coreCommon.stringParse(dataRow["Ten"]),
                         SoDienThoai = coreCommon.coreCommon.stringParse(dataRow["SoDienThoai"]),
@@ -500,6 +501,7 @@ namespace webAPI.Controllers
 
                 DataRow drDanhMucKhachHangDoiLenh = dtDanhMucKhachHangDoiLenh.Rows[0];
                 drDanhMucKhachHangDoiLenh["IsActive"] = request.IsActive;
+                drDanhMucKhachHangDoiLenh["IsLockAccount"] = request.IsLockAccount;
                 drDanhMucKhachHangDoiLenh["IDDanhMucNguoiSuDungEdit"] = GlobalVariables.IDDanhMucNguoiSuDungGuest;
 
                 if (DanhMucKhachHangDoiLenhBUS.Update(GlobalVariables.ConnectionString, drDanhMucKhachHangDoiLenh, out object updatedId))
@@ -508,7 +510,8 @@ namespace webAPI.Controllers
                     response.Data = JsonConvert.SerializeObject(new
                     {
                         ID = updatedId ?? request.ID,
-                        IsActive = request.IsActive
+                        IsActive = request.IsActive,
+                        IsLockAccount = request.IsLockAccount
                     });
                     response.ErrorMsg = string.Empty;
                 }
@@ -736,6 +739,7 @@ namespace webAPI.Controllers
                         kh.SoDienThoai,
                         kh.LoaiTaiKhoan,
                         kh.IsActive,
+                        kh.IsLockAccount,
                         kh.KichHoat,
                         kh.BanScanSoCMNDCanCuocPath as BanScanSoCMNDCanCuocPathCaNhan,
                         kh.BanDangKyCaNhanCoChuKyPath,
@@ -777,6 +781,7 @@ namespace webAPI.Controllers
                                 SoDienThoai = reader["SoDienThoai"].ToString(),
                                 LoaiTaiKhoan = reader["LoaiTaiKhoan"].ToString(),
                                 IsActive = reader["IsActive"].ToString(),
+                                IsLockAccount = reader["IsLockAccount"].ToString(),
                                 KichHoat = reader["KichHoat"].ToString(),
                                 TenDoanhNghiep = reader["TenDoanhNghiep"] == DBNull.Value ? null : reader["TenDoanhNghiep"].ToString(),
                                 MaSoThue = reader["MaSoThue"] == DBNull.Value ? null : reader["MaSoThue"].ToString(),

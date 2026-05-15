@@ -9,7 +9,7 @@ public sealed class AccountListItem
     public int AccountType { get; set; }
     public string AccountTypeText { get; set; } = string.Empty;
     public bool IsActive { get; set; }
-    public bool ActivatedFlag { get; set; }
+    public bool IsLockAccount { get; set; }
     public bool HasPendingEnterpriseApproval { get; set; }
     public string StatusText { get; set; } = string.Empty;
 }

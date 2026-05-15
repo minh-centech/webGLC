@@ -186,9 +186,15 @@
                     </div>
 
                     <div class="field-grid">
-                        <div class="field-card">
+                       @*  <div class="field-card">
                             <label class="portal-label" for="TenDangNhap">Tên đăng nhập</label>
                             <InputText id="TenDangNhap" class="portal-input" @bind-Value="Model.TenDangNhap" />
+                        </div> *@
+
+                         <div class="field-card">
+                            <label class="portal-label" for="Email">Email đăng nhập hệ thống</label>
+                            <InputText id="Email" class="portal-input" @bind-Value="Model.Email" />
+                            <ValidationMessage For="@(() => Model.Email)" class="validation-message" />
                         </div>
 
                         <div class="field-card">
@@ -197,11 +203,7 @@
                             <ValidationMessage For="@(() => Model.Ten)" class="validation-message" />
                         </div>
 
-                        <div class="field-card">
-                            <label class="portal-label" for="Email">Email</label>
-                            <InputText id="Email" class="portal-input" @bind-Value="Model.Email" />
-                            <ValidationMessage For="@(() => Model.Email)" class="validation-message" />
-                        </div>
+                       
 
                         <div class="field-card">
                             <label class="portal-label" for="SoDienThoai">Số điện thoại</label>
@@ -384,6 +386,7 @@
                 return;
             }
 
+            Model.TenDangNhap = Model.Email;
             await LegacyCustomerPortalService.RegisterAccountAsync(Model);
             await EmailHelper.SendEmailAsync(Model.Email, EmailHelper.RegistrationPendingApprovalTemplateId);
             SuccessMessage = "Hệ thống đã tiếp nhận yêu cầu đăng ký. Quản trị viên sẽ kiểm tra hồ sơ và phản hồi qua email.";
@@ -424,7 +427,7 @@
             var payload = await MaSoThueHelper.ProcessTaxInfo(taxCode);
             if (string.IsNullOrWhiteSpace(payload))
             {
-                LookupStatus = "Vui lòng nhập dữ liệu về doanh nghiệp thủ công, do hệ thống không lấy được dữ liệu về mã số thuế.";
+                LookupStatus = "Vui lòng thử lại sau 10 giây, hoặc nhập dữ liệu về doanh nghiệp thủ công, nếu hệ thống không lấy được dữ liệu về mã số thuế.";
                 LookupIsError = true;
                 ResetEnterpriseLookupFields();
                 return;
@@ -448,7 +451,7 @@
             Model.DaiDienCoThamQuyen = GetString(root, "nguoi_dai_dien");
             Model.EmailDoanhNghiep = GetString(root, "email");
 
-            LookupStatus = "Đã lấy thành công thông tin doanh nghiệp. Quý khách vui lòng kiểm tra lại các trường dữ liệu đã tự động điền bởi hệ thống!";
+            LookupStatus = "Đã lấy thành công thông tin doanh nghiệp. Quý khách vui lòng kiểm tra, chỉnh sửa nếu dữ liệu chưa chính xác tại các trường dữ liệu đã được tự động điền bởi hệ thống!";
             LookupIsError = false;
             await InvokeAsync(StateHasChanged);
         }

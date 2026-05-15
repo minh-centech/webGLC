@@ -1039,7 +1039,7 @@ select {
 }
 
 .field-card.wide {
-    grid-column: span 2;
+    grid-column: span 3;
 }
 
 .upload-status {
@@ -1661,4 +1661,54 @@ select {
     .workspace-card {
         box-shadow: none;
     }
+}
+
+.custom-file-input {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 5px;
+}
+.btn-select-file {
+    /* Quan trọng: inline-block giúp nút chỉ rộng bằng nội dung bên trong */
+    display: inline-block;
+    /* Độ rộng tự động theo chữ */
+    width: auto;
+    /* Khoảng cách giữa chữ và viền nút */
+    padding: 6px 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    /* Đảm bảo không bị xuống dòng giữa chừng */
+    white-space: nowrap;
+    /* Canh giữa chữ nếu bạn có đặt chiều cao cố định */
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+    .btn-select-file:hover {
+        background-color: #e2e6ea;
+        border-color: #adb5bd;
+    }
+
+/* Container chứa nút cũng nên là inline-flex để không chiếm 100% chiều rộng dòng */
+.custom-file-input {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selected-file-name {
+    font-size: 14px;
+    color: #007bff;
+    font-style: italic;
+}
+
+.upload-status {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #007bff; /* Hoặc màu bạn đang dùng */
 }

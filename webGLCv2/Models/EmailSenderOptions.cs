@@ -9,6 +9,6 @@ public sealed class EmailSenderOptions
     public bool SSL { get; set; } = true;
     public int Port { get; set; } = 587;
     public string Host { get; set; } = string.Empty;
-    public string EmailSender { get; set; } = string.Empty;
+    public string SenderName { get; set; } = string.Empty;
     
 }

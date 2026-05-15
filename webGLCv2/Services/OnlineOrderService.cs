@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Json;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using webGLCv2.Models;
 
@@ -268,6 +269,56 @@ public sealed class OnlineOrderService
             SoDienThoai = GetString(item, "SoDienThoai"),
             NguoiDaiDien = GetString(item, "NguoiDaiDien"),
             ChucVuNguoiDaiDien = GetString(item, "ChucVuNguoiDaiDien")
+        };
+    }
+
+    public async Task<UpsertDanhMucKhachHangResult> UpsertDanhMucKhachHangAsync(
+        string ma,
+        string ten,
+        string diaChi,
+        string maSoThue,
+        string nguoiDaiDien,
+        string chucVuNguoiDaiDien,
+        string email,
+        string soDienThoai,
+        string ghiChu,
+        bool isUpdate)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl("/api/DanhMucKhachHang/UpsertDanhMucKhachHang"),
+            new UpsertDanhMucKhachHangRequest
+            {
+                Ma = NullIfEmpty(ma) ?? string.Empty,
+                Ten = NullIfEmpty(ten) ?? string.Empty,
+                DiaChi = NullIfEmpty(diaChi) ?? string.Empty,
+                MaSoThue = NullIfEmpty(maSoThue) ?? string.Empty,
+                NguoiDaiDien = NullIfEmpty(nguoiDaiDien) ?? string.Empty,
+                ChucVuNguoiDaiDien = NullIfEmpty(chucVuNguoiDaiDien) ?? string.Empty,
+                Email = NullIfEmpty(email) ?? string.Empty,
+                SoDienThoai = NullIfEmpty(soDienThoai) ?? string.Empty,
+                GhiChu = NullIfEmpty(ghiChu) ?? string.Empty,
+                IsUpdate = isUpdate
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        if (envelope is null)
+        {
+            return new UpsertDanhMucKhachHangResult
+            {
+                Success = false,
+                Message = "Khong the doc ket qua cap nhat danh muc khach hang."
+            };
+        }
+
+        return new UpsertDanhMucKhachHangResult
+        {
+            Success = envelope.Status == 0,
+            Message = envelope.Status == 0
+                ? (string.IsNullOrWhiteSpace(envelope.Data) ? "Cap nhat danh muc khach hang thanh cong." : envelope.Data)
+                : (string.IsNullOrWhiteSpace(envelope.ErrorMsg) ? "Khong the cap nhat danh muc khach hang." : envelope.ErrorMsg)
         };
     }
 
@@ -1046,6 +1097,45 @@ public sealed class OnlineOrderService
         public string SoDienThoai { get; set; } = string.Empty;
         public string NguoiDaiDien { get; set; } = string.Empty;
         public string ChucVuNguoiDaiDien { get; set; } = string.Empty;
+    }
+
+    public sealed class UpsertDanhMucKhachHangResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    private sealed class UpsertDanhMucKhachHangRequest
+    {
+        [JsonPropertyName("Ma")]
+        public string Ma { get; set; } = string.Empty;
+
+        [JsonPropertyName("Ten")]
+        public string Ten { get; set; } = string.Empty;
+
+        [JsonPropertyName("DiaChi")]
+        public string DiaChi { get; set; } = string.Empty;
+
+        [JsonPropertyName("MaSoThue")]
+        public string MaSoThue { get; set; } = string.Empty;
+
+        [JsonPropertyName("NguoiDaiDien")]
+        public string NguoiDaiDien { get; set; } = string.Empty;
+
+        [JsonPropertyName("ChucVuNguoiDaiDien")]
+        public string ChucVuNguoiDaiDien { get; set; } = string.Empty;
+
+        [JsonPropertyName("Email")]
+        public string Email { get; set; } = string.Empty;
+
+        [JsonPropertyName("SoDienThoai")]
+        public string SoDienThoai { get; set; } = string.Empty;
+
+        [JsonPropertyName("GhiChu")]
+        public string GhiChu { get; set; } = string.Empty;
+
+        [JsonPropertyName("isUpdate")]
+        public bool IsUpdate { get; set; }
     }
 
     private string BuildWorkflowUrl(string relativePath)

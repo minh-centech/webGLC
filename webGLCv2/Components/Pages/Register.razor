@@ -183,7 +183,7 @@
                 <section class="register-section-card">
                     <div class="section-heading">
                         <h3>@(IsEnterprise ? "Người đại diện đăng ký" : "Thông tin cá nhân")</h3>
-                        <p>Thông tin dùng để đăng nhập và nhận thông báo từ hệ thống.</p>
+                        <p>Chú ý: Thông tin này dùng để đăng nhập và nhận thông báo từ hệ thống!</p>
                     </div>
 
                     <div class="field-grid">
@@ -233,36 +233,101 @@
                 <section class="register-section-card">
                     <div class="section-heading">
                         <h3>Tài liệu PDF</h3>
-                        <p>Tải đúng file PDF để admin có thể duyệt hồ sơ ngay trong hệ thống.</p>
+                        <p>Tải đúng file PDF để Quản trị có thể duyệt hồ sơ ngay trong hệ thống.</p>
                     </div>
 
                     <div class="field-grid">
-                        <div class="field-card wide">
+                       @*  <div class="field-card wide">
                             <label class="portal-label">Bản scan CMND/CCCD (PDF)</label>
                             <InputFile OnChange="@OnCitizenCardChanged" accept=".pdf,application/pdf" />
                             <div class="upload-status">@CitizenCardStatus</div>
+                        </div> *@
+
+                        <div class="field-card wide">
+                            <label class="portal-label">Bản scan CMND/CCCD (PDF)</label>
+                            <div class="custom-file-input">
+                                <label for="citizen-upload" class="btn-select-file">
+                                    Chọn tệp CMND/CCCD
+                                </label>
+
+                                <InputFile id="citizen-upload"
+                                           OnChange="@OnCitizenCardChanged"
+                                           accept=".pdf,application/pdf"
+                                           style="display:none;" />
+
+                                <span class="selected-file-name">@CitizenCardStatus</span>
+                            </div>
                         </div>
 
                         @if (IsEnterprise)
                         {
-                            <div class="field-card wide">
+                            @* <div class="field-card wide">
                                 <label class="portal-label">Bản scan giấy phép kinh doanh (PDF)</label>
                                 <InputFile OnChange="@OnBusinessLicenseChanged" accept=".pdf,application/pdf" />
                                 <div class="upload-status">@BusinessLicenseStatus</div>
-                            </div>
+                            </div> *@
+                            <br />
 
                             <div class="field-card wide">
+                                <label class="portal-label">Bản scan giấy phép kinh doanh (PDF)</label>
+                                <div class="custom-file-input">
+                                    <label for="citizen-upload" class="btn-select-file">
+                                        Chọn tệp GPKD
+                                    </label>
+
+                                    <InputFile id="citizen-upload"
+                                               OnChange="@OnBusinessLicenseChanged"
+                                               accept=".pdf,application/pdf"
+                                               style="display:none;" />
+
+                                    <span class="selected-file-name">@BusinessLicenseStatus</span>
+                                </div>
+                            </div>
+
+                            @* <div class="field-card wide">
                                 <label class="portal-label">Bản đăng ký ePort có chữ ký số (PDF)</label>
                                 <InputFile OnChange="@OnEportFormChanged" accept=".pdf,application/pdf" />
                                 <div class="upload-status">@EportFormStatus</div>
+                            </div> *@
+                            <br />
+                            <div class="field-card wide">
+                                <label class="portal-label">Bản đăng ký everWareHouse có đóng dấu hoặc ký số (PDF)</label>
+                                <div class="custom-file-input">
+                                    <label for="citizen-upload" class="btn-select-file">
+                                        Chọn tệp đăng ký everWareHouse
+                                    </label>
+
+                                    <InputFile id="citizen-upload"
+                                               OnChange="@OnEportFormChanged"
+                                               accept=".pdf,application/pdf"
+                                               style="display:none;" />
+
+                                    <span class="selected-file-name">@EportFormStatus</span>
+                                </div>
                             </div>
                         }
                         else
                         {
-                            <div class="field-card wide">
+                            @* <div class="field-card wide">
                                 <label class="portal-label">Bản đăng ký cá nhân có chữ ký (PDF)</label>
                                 <InputFile OnChange="@OnPersonalFormChanged" accept=".pdf,application/pdf" />
                                 <div class="upload-status">@PersonalFormStatus</div>
+                            </div> *@
+                            <br />
+                            <div class="field-card wide">
+                                <label class="portal-label">Bản đăng ký cá nhân có chữ ký (PDF)</label>
+                                <div class="custom-file-input">
+                                    <label for="citizen-upload" class="btn-select-file">
+                                        Chọn tệp đăng ký cá nhân
+                                    </label>
+
+                                    <InputFile id="citizen-upload"
+                                               OnChange="@OnPersonalFormChanged"
+                                               accept=".pdf,application/pdf"
+                                               style="display:none;" />
+
+                                    <span class="selected-file-name">@PersonalFormStatus</span>
+                                </div>
                             </div>
                         }
                     </div>

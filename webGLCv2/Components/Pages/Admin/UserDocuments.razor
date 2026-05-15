@@ -3,6 +3,7 @@
 @attribute [Authorize(Roles = "Admin")]
 @using Microsoft.AspNetCore.Components.Forms
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject OnlineOrderService OnlineOrderService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Hồ sơ tài liệu</PageTitle>
@@ -306,6 +307,42 @@
         IsSubmitting = true;
         try
         {
+            if (Details.AccountType == 2)
+            {
+                var taxCode = Details.TaxCode?.Trim();
+                if (string.IsNullOrWhiteSpace(taxCode))
+                {
+                    throw new InvalidOperationException("Vui lòng bổ sung mã số thuế trước khi phê duyệt.");
+                }
+
+                OnlineOrderService.CompanyTaxLookupResult? glcLookup = null;
+                try
+                {
+                    glcLookup = await OnlineOrderService.LookupCompanyByMaSoThueAsync(taxCode);
+                }
+                catch (InvalidOperationException)
+                {
+                    glcLookup = null;
+                }
+
+                var upsertResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
+                    taxCode,
+                    glcLookup?.Ten ?? Details.CompanyName,
+                    glcLookup?.DiaChi ?? Details.CompanyAddress,
+                    taxCode,
+                    glcLookup?.NguoiDaiDien ?? Details.AuthorizedRepresentative,
+                    glcLookup?.ChucVuNguoiDaiDien ?? Details.RepresentativeTitle,
+                    Details.BillingEmail ?? Details.Email ?? Details.CompanyEmail,
+                    glcLookup?.SoDienThoai ?? Details.CompanyPhone,
+                    string.Empty,
+                    glcLookup is not null);
+
+                if (!upsertResult.Success)
+                {
+                    throw new InvalidOperationException(upsertResult.Message);
+                }
+            }
+
             await LegacyCustomerPortalService.ApproveAccountAndNotifyAsync(Details.Id, Details.Email);
             Details.IsActive = true;
             Details.IsLockAccount = false;

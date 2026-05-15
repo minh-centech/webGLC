@@ -47,7 +47,7 @@ public sealed class EmailHelper
 
         using var message = new MailMessage
         {
-            From = new MailAddress(_options.Username, _options.EmailSender),
+            From = new MailAddress(_options.Username, _options.SenderName),
             Subject = template.Subject,
             Body = template.Body,
             IsBodyHtml = true
@@ -104,7 +104,7 @@ public sealed class EmailHelper
 
         using var message = new MailMessage
         {
-            From = new MailAddress(_options.Username, _options.EmailSender),
+            From = new MailAddress(_options.Username, _options.SenderName),
             Subject = "Mật khẩu mới của bạn",
             Body = $"<p>Hệ thống đã tạo mật khẩu mới cho tài khoản của bạn.</p><p><strong>Mật khẩu mới:</strong> {normalizedPassword}</p><p>Vui lòng đăng nhập và thay đổi mật khẩu ngay sau khi truy cập.</p>",
             IsBodyHtml = true

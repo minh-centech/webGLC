@@ -70,6 +70,14 @@
                         <span class="stat-label">Email doanh nghiệp</span>
                         <strong>@Details.CompanyEmail</strong>
                     </div>
+                    <div class="docs-info-card">
+                        <span class="stat-label">Email nhận hoá đơn</span>
+                        <strong>@DisplayValue(Details.BillingEmail)</strong>
+                    </div>
+                    <div class="docs-info-card">
+                        <span class="stat-label">Số điện thoại doanh nghiệp</span>
+                        <strong>@DisplayValue(Details.CompanyPhone)</strong>
+                    </div>
                 </div>
             }
 
@@ -228,6 +236,9 @@
             ErrorMessage = ex.Message;
         }
     }
+
+    private static string DisplayValue(string value)
+        => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
 
     private async Task UploadMissingDocumentAsync(DocumentFileItem document, InputFileChangeEventArgs args)
     {

@@ -48,14 +48,14 @@ namespace webGLCv2.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         }
 
-        public async Task<string> ProcessTaxInfo(string masothue)
+        public async Task<string?> ProcessTaxInfo(string masothue)
         {
             try
             {
                 // BƯỚC 1: Gọi API VietQR để lấy tên công ty
                 string companyName = await GetCompanyNameFromApi(masothue);
 
-                if (string.IsNullOrEmpty(companyName)) return "Không tìm thấy tên công ty từ API.";
+                if (string.IsNullOrEmpty(companyName)) return null;
 
                 // Chuyển tên thành không dấu và thay dấu cách bằng '-'
                 string slugName = ConvertToUnaccentedSlug(companyName);
@@ -72,9 +72,9 @@ namespace webGLCv2.Services
 
                 return JsonConvert.SerializeObject(taxData, Newtonsoft.Json.Formatting.Indented);
             }
-            catch (Exception ex)
+            catch
             {
-                return $"Lỗi: {ex.Message}";
+                return null;
             }
         }
 
@@ -236,7 +236,7 @@ namespace webGLCv2.Services
                 Console.WriteLine($"Scrape lỗi: {ex.Message}");
             }
 
-            return result;
+            return result.Count > 0 ? result : null;
         }
 
         private string ConvertToUnaccentedSlug(string text)

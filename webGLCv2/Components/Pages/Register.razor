@@ -3,6 +3,7 @@
 @layout EmptyLayout
 @attribute [AllowAnonymous]
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject OnlineOrderService OnlineOrderService
 @inject MaSoThueHelper MaSoThueHelper
 @inject EmailHelper EmailHelper
 @inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
@@ -186,55 +187,46 @@
                     </div>
 
                     <div class="field-grid">
-                       @*  <div class="field-card">
-                            <label class="portal-label" for="TenDangNhap">Tên đăng nhập</label>
-                            <InputText id="TenDangNhap" class="portal-input" @bind-Value="Model.TenDangNhap" />
-                        </div> *@
+                        <div class="two-col-grid field-span-3">
+                            <div class="field-card">
+                                <label class="portal-label" for="Email">Email đăng nhập hệ thống</label>
+                                <InputText id="Email" class="portal-input" @bind-Value="Model.Email" />
+                                <ValidationMessage For="@(() => Model.Email)" class="validation-message" />
+                            </div>
 
-                         <div class="field-card">
-                            <label class="portal-label" for="Email">Email đăng nhập hệ thống</label>
-                            <InputText id="Email" class="portal-input" @bind-Value="Model.Email" />
-                            <ValidationMessage For="@(() => Model.Email)" class="validation-message" />
+                            <div class="field-card">
+                                <label class="portal-label" for="Ten">Họ và tên</label>
+                                <InputText id="Ten" class="portal-input" @bind-Value="Model.Ten" />
+                                <ValidationMessage For="@(() => Model.Ten)" class="validation-message" />
+                            </div>
                         </div>
 
-                        <div class="field-card">
-                            <label class="portal-label" for="Ten">Họ và tên</label>
-                            <InputText id="Ten" class="portal-input" @bind-Value="Model.Ten" />
-                            <ValidationMessage For="@(() => Model.Ten)" class="validation-message" />
+                        <div class="two-col-grid field-span-3">
+                            <div class="field-card">
+                                <label class="portal-label" for="SoDienThoai">Số điện thoại</label>
+                                <InputText id="SoDienThoai" class="portal-input" @bind-Value="Model.SoDienThoai" />
+                                <ValidationMessage For="@(() => Model.SoDienThoai)" class="validation-message" />
+                            </div>
+
+                            <div class="field-card">
+                                <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
+                                <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" />
+                            </div>
                         </div>
 
-                       
+                        <div class="two-col-grid field-span-3">
+                            <div class="field-card">
+                                <label class="portal-label" for="Password">Mật khẩu</label>
+                                <InputText id="Password" type="password" class="portal-input" @bind-Value="Model.Password" />
+                                <ValidationMessage For="@(() => Model.Password)" class="validation-message" />
+                            </div>
 
-                        <div class="field-card">
-                            <label class="portal-label" for="SoDienThoai">Số điện thoại</label>
-                            <InputText id="SoDienThoai" class="portal-input" @bind-Value="Model.SoDienThoai" />
-                            <ValidationMessage For="@(() => Model.SoDienThoai)" class="validation-message" />
+                            <div class="field-card">
+                                <label class="portal-label" for="PasswordConfirm">Xác nhận mật khẩu</label>
+                                <InputText id="PasswordConfirm" type="password" class="portal-input" @bind-Value="Model.PasswordConfirm" />
+                                <ValidationMessage For="@(() => Model.PasswordConfirm)" class="validation-message" />
+                            </div>
                         </div>
-
-                        <div class="field-card">
-                            <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
-                            <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" />
-                        </div>
-                        <div style="grid-column: 1 / -1;"></div>
-
-                        <div class="field-card">
-                            <label class="portal-label" for="Password">Mật khẩu</label>
-                            <InputText id="Password" type="password" class="portal-input" @bind-Value="Model.Password" />
-                            <ValidationMessage For="@(() => Model.Password)" class="validation-message" />
-                        </div>
-
-                        <div class="field-card">
-                            <label class="portal-label" for="PasswordConfirm">Xác nhận mật khẩu</label>
-                            <InputText id="PasswordConfirm" type="password" class="portal-input" @bind-Value="Model.PasswordConfirm" />
-                            <ValidationMessage For="@(() => Model.PasswordConfirm)" class="validation-message" />
-                        </div>
-
-                        @* <div class="field-card">
-                            <label class="portal-label" for="EmailXuatHoaDon">Email xuất hóa đơn</label>
-                            <InputText id="EmailXuatHoaDon" class="portal-input" @bind-Value="Model.EmailXuatHoaDon" />
-                        </div> *@
-
-                        
                     </div>
                 </section>
 
@@ -424,10 +416,37 @@
         IsLookupBusy = true;
         try
         {
+            OnlineOrderService.CompanyTaxLookupResult? glcLookup = null;
+            try
+            {
+                glcLookup = await OnlineOrderService.LookupCompanyByMaSoThueAsync(taxCode);
+            }
+            catch (InvalidOperationException)
+            {
+                glcLookup = null;
+            }
+
+            if (glcLookup is not null)
+            {
+                ApplyEnterpriseLookup(
+                    taxCode,
+                    glcLookup.Ten,
+                    glcLookup.DiaChi,
+                    glcLookup.SoDienThoai,
+                    glcLookup.NguoiDaiDien,
+                    glcLookup.ChucVuNguoiDaiDien,
+                    glcLookup.Email);
+
+                LookupStatus = "Mã số thuế của Quý khách được trích xuất tự động từ cơ sở dữ liệu hệ thống GLC. Quý khách vui lòng kiểm tra lại các thông tin đã điền; nếu có sai sót, vui lòng đính chính để đảm bảo dữ liệu chính xác.";
+                LookupIsError = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
             var payload = await MaSoThueHelper.ProcessTaxInfo(taxCode);
             if (string.IsNullOrWhiteSpace(payload))
             {
-                LookupStatus = "Vui lòng thử lại sau 10 giây, hoặc nhập dữ liệu về doanh nghiệp thủ công, nếu hệ thống không lấy được dữ liệu về mã số thuế.";
+                LookupStatus = "Thông báo: Vui lòng thử lại sau 10 giây, nếu vẫn gặp sự cố lấy thông tin mã số thuế tự động, Quý khách hàng vui lòng bổ sung thông tin thủ công để tiếp tục.";
                 LookupIsError = true;
                 ResetEnterpriseLookupFields();
                 return;
@@ -437,27 +456,28 @@
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || root.EnumerateObject().Count() == 0)
             {
-                LookupStatus = "Vui lòng nhập dữ liệu về doanh nghiệp thủ công, do hệ thống không lấy được dữ liệu về mã số thuế.";
+                LookupStatus = "Thông báo: Vui lòng thử lại sau 10 giây, nếu vẫn gặp sự cố lấy thông tin mã số thuế tự động, Quý khách hàng vui lòng bổ sung thông tin thủ công để tiếp tục.";
                 LookupIsError = true;
                 ResetEnterpriseLookupFields();
                 return;
             }
 
-            Model.MaSoThue = GetString(root, "ma_so_thue", taxCode);
-            Model.TenDoanhNghiep = GetString(root, "ten_cong_ty");
-            Model.DiaChi = FirstNonEmpty(
-                GetString(root, "dia_chi_thue"));
-            Model.SoDienThoaiDoanhNghiep = GetString(root, "dien_thoai");
-            Model.DaiDienCoThamQuyen = GetString(root, "nguoi_dai_dien");
-            Model.EmailDoanhNghiep = GetString(root, "email");
+            ApplyEnterpriseLookup(
+                GetString(root, "ma_so_thue", taxCode),
+                GetString(root, "ten_cong_ty"),
+                FirstNonEmpty(GetString(root, "dia_chi_thue"), GetString(root, "dia_chi")),
+                GetString(root, "dien_thoai"),
+                GetString(root, "nguoi_dai_dien"),
+                GetString(root, "chuc_vu_nguoi_dai_dien"),
+                GetString(root, "email"));
 
-            LookupStatus = "Đã lấy thành công thông tin doanh nghiệp. Quý khách vui lòng kiểm tra, chỉnh sửa nếu dữ liệu chưa chính xác tại các trường dữ liệu đã được tự động điền bởi hệ thống!";
+            LookupStatus = "Mã số thuế được đồng bộ tự động từ nguồn masothue.com. Quý khách vui lòng kiểm tra kỹ các thông tin hệ thống đã điền; nếu có sai sót, vui lòng chỉnh sửa lại cho chính xác.";
             LookupIsError = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception)
         {
-            LookupStatus = "Vui lòng nhập dữ liệu về doanh nghiệp thủ công, do hệ thống không lấy được dữ liệu về mã số thuế.";
+            LookupStatus = "Thông báo: Mã số thuế không tồn tại trên hệ thống GLC và masothue.com. Vui lòng bổ sung thông tin thủ công để tiếp tục.";
             LookupIsError = true;
             ResetEnterpriseLookupFields();
         }
@@ -475,6 +495,29 @@
         Model.EmailDoanhNghiep = string.Empty;
         Model.EmailXuatHoaDon = string.Empty;
         Model.DaiDienCoThamQuyen = string.Empty;
+        Model.ChucVu = string.Empty;
+    }
+
+    private void ApplyEnterpriseLookup(
+        string maSoThue,
+        string tenDoanhNghiep,
+        string diaChi,
+        string soDienThoaiDoanhNghiep,
+        string daiDienCoThamQuyen,
+        string chucVu,
+        string emailDoanhNghiep)
+    {
+        Model.MaSoThue = maSoThue;
+        Model.TenDoanhNghiep = tenDoanhNghiep;
+        Model.DiaChi = diaChi;
+        Model.SoDienThoaiDoanhNghiep = soDienThoaiDoanhNghiep;
+        Model.DaiDienCoThamQuyen = daiDienCoThamQuyen;
+        Model.ChucVu = chucVu;
+        Model.EmailDoanhNghiep = emailDoanhNghiep;
+        if (string.IsNullOrWhiteSpace(Model.EmailXuatHoaDon))
+        {
+            Model.EmailXuatHoaDon = emailDoanhNghiep;
+        }
     }
 
     private bool ValidateBeforeSubmit()

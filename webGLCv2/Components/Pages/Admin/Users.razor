@@ -120,10 +120,13 @@
                                             Xóa
                                         </button>
                                     }
-                                    <button class="table-action @(account.IsLockAccount || !account.IsActive ? "success" : "danger")"
-                                            @onclick="() => ToggleAccountAsync(account)">
-                                        @(account.IsLockAccount || !account.IsActive ? "Kích hoạt" : "Khóa")
-                                    </button>
+                                    @if (account.AccountType != 0 || account.IsLockAccount || !account.IsActive)
+                                    {
+                                        <button class="table-action @(account.IsLockAccount || !account.IsActive ? "success" : "danger")"
+                                                @onclick="() => ToggleAccountAsync(account)">
+                                            @(account.IsLockAccount || !account.IsActive ? "Kích hoạt" : "Khóa")
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }

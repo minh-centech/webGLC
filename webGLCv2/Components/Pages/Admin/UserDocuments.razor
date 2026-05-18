@@ -177,7 +177,7 @@
                         Phê duyệt và kích hoạt
                     </button>
                 }
-                else
+                else if (Details.AccountType != 0)
                 {
                     <button class="portal-secondary-action" disabled="@IsSubmitting" @onclick="LockAsync">Khóa tài khoản</button>
                 }
@@ -415,5 +415,4 @@
             ? status
             : "Sẵn sàng bổ sung.";
 }
-
 

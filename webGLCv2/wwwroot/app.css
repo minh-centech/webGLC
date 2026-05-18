@@ -492,6 +492,14 @@ select {
     color: white;
 }
 
+.query-info-button {
+    min-height: 46px;
+    padding: 0 20px;
+    font-size: 0.98rem;
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(0, 146, 63, 0.18);
+}
+
 @media (max-width: 1200px) {
     .order-filter-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1931,4 +1939,142 @@ select {
 
 .portal-alert-refresh-btn i {
     font-size: 11px;
+}
+/*Tra cuu thong tin*/
+.enhanced-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 220px;
+    height: 48px;
+    padding: 0 22px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #127F42, #18a957);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 8px 20px rgba(18, 127, 66, 0.22);
+    position: relative;
+    overflow: hidden;
+}
+
+    .enhanced-action-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 26px rgba(18, 127, 66, 0.32);
+    }
+
+    .enhanced-action-btn:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+
+    .enhanced-action-btn:disabled {
+        opacity: 0.85;
+        cursor: not-allowed;
+    }
+
+    .enhanced-action-btn i {
+        font-size: 15px;
+    }
+
+.btn-spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255,255,255,0.35);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/*Tao bien nhan thanh toan*/
+.enhanced-storage-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 0 24px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #127F42, #19b15d);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 24px rgba(18, 127, 66, 0.24);
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-storage-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(18, 127, 66, 0.34);
+}
+
+.enhanced-storage-btn:active {
+    transform: scale(0.98);
+}
+
+.enhanced-storage-btn i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.enhanced-storage-btn span {
+    text-align: center;
+}
+
+/*Gia han*/
+.enhanced-extend-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 0 24px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #c2410c, #ea580c);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 24px rgba(194, 65, 12, 0.24);
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-extend-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(194, 65, 12, 0.34);
+}
+
+.enhanced-extend-btn:active {
+    transform: scale(0.98);
+}
+
+.enhanced-extend-btn i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.enhanced-extend-btn span {
+    text-align: center;
 }

@@ -91,12 +91,32 @@
                     <input class="portal-input" value="@Order.DeclarationNumber" readonly />
                 </div>
             </div>
-
+            @* 
             <div class="form-actions no-print">
-                <button class="portal-primary-action" @onclick='() => RunWorkflowAsync("button")' disabled="@IsLoadingWorkflow">
+                <button class="portal-primary-action query-info-button" @onclick='() => RunWorkflowAsync("button")' disabled="@IsLoadingWorkflow">
                     @(IsLoadingWorkflow ? "Đang truy vấn..." : "Truy vấn thông tin")
                 </button>
-                @*  <button class="portal-secondary-action" @onclick="Query">Tra c?u import check</button> *@
+            </div> *@
+
+            <div class="form-actions no-print">
+
+                <button class="portal-primary-action enhanced-action-btn"
+                        @onclick='() => RunWorkflowAsync("button")'
+                        disabled="@IsLoadingWorkflow">
+
+                    @if (IsLoadingWorkflow)
+                    {
+                        <span class="btn-spinner"></span>
+                        <span>Đang truy vấn...</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-search"></i>
+                        <span>Truy vấn thông tin</span>
+                    }
+
+                </button>
+
             </div>
 
             @if (!string.IsNullOrWhiteSpace(WorkflowMessage))
@@ -318,10 +338,20 @@
                     <article class="workflow-card workflow-card-wide" style="order:-1;">
                         <div class="section-heading">
                             <h2>Thông tin chi tiết hàng hoá</h2>
-                            <span class="status-chip @(HasChiTietHouseBill ? "success" : "neutral")">@(HasChiTietHouseBill ? "Đã lấy dữ liệu thành công" : "Không có dữ liệu chi tiết cho housebill")</span>
+                            <span class="status-chip @(HasChiTietHouseBill ? "success" : HasChiTietHouseBillEmptyData ? "danger" : "neutral")">
+                                @(HasChiTietHouseBill ? "Đã lấy dữ liệu thành công" : HasChiTietHouseBillEmptyData ? "Không có dữ liệu" : "Không có dữ liệu chi tiết cho housebill")
+                            </span>
                         </div>
 
-                        @if (HasChiTietHouseBill)
+                        @if (HasChiTietHouseBillEmptyData)
+                        {
+                            <div class="portal-empty-state compact" style="margin-top:12px;">
+                                <div class="portal-empty-icon">0</div>
+                                <h2>Không có dữ liệu chi tiết cho housebill</h2>
+                                <p>API Thông tin chi tiết hàng hoá trả về rỗng. Không có dữ liệu để hiển thị.</p>
+                            </div>
+                        }
+                        else if (HasChiTietHouseBill)
                         {
                             <div class="workflow-payment-row" style="margin-bottom:12px;">
                             </div>
@@ -377,18 +407,31 @@
                             <div class="workflow-payment-row no-print" style="margin-top:12px; gap:12px; flex-wrap:wrap;">
                                 @if (CanShowCreateAction)
                                 {
-                                    <button type="button" class="portal-primary-action" @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
-                                        Tạo biên nhận thanh toán & lệnh xuất kho
+                                    <button type="button"
+                                            class="portal-primary-action enhanced-storage-btn"
+                                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
+
+                                        <i class="fas fa-file-invoice-dollar"></i>
+
+                                        <span>
+                                            Tạo biên nhận thanh toán &amp; lệnh xuất kho
+                                        </span>
+
                                     </button>
                                 }
 
                                 @if (CanShowExtendAction)
                                 {
                                     <button type="button"
-                                            class="portal-secondary-action"
-                                            style="background:#c2410c; border-color:#c2410c; color:#fff;"
+                                            class="portal-secondary-action enhanced-extend-btn"
                                             @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
-                                        Gia hạn biên nhận thanh toán
+
+                                        <i class="fas fa-calendar-plus"></i>
+
+                                        <span>
+                                            Gia hạn biên nhận thanh toán
+                                        </span>
+
                                     </button>
                                 }
                             </div>
@@ -1095,7 +1138,7 @@
 
         try
         {
-            Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync start. OrderId={OrderId}");
+            Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync start. OrderId={OrderId}, HouseBill={Order.HouseBill}, Container={Order.ContainerNumber}");
             Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
                 OrderId,
                 CurrentUserId,
@@ -1464,9 +1507,13 @@
            && Workflow.PhiLuuKho.Data.ChiTietHoaDon.Count > 0;
 
     private bool HasChiTietHouseBill
-        => Workflow?.ThongQuan?.IsThongQuan == true
-           && Workflow?.ChiTietHouseBill?.Success == true
+        => Workflow?.ChiTietHouseBill?.Success == true
            && Workflow.ChiTietHouseBill.ParsedData is not null;
+
+    private bool HasChiTietHouseBillEmptyData
+        => Workflow?.ChiTietHouseBill is not null
+           && Workflow.ChiTietHouseBill.Success
+           && string.Equals(Workflow.ChiTietHouseBill.Data?.Trim(), "[]", StringComparison.Ordinal);
 
     private bool IsOverdueOrder
         => Workflow?.ChiTietHouseBill?.ParsedData is not null

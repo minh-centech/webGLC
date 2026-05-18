@@ -715,6 +715,8 @@ public sealed class OnlineOrderService
 
     public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillAsync(string houseBill, string soCont = "")
     {
+        Console.WriteLine($"[ChiTietHouseBill] Request houseBill={houseBill}, soCont={soCont}");
+
         var response = await _httpClient.PostAsJsonAsync(
             BuildWorkflowUrl(ChiTietHouseBillApiPath),
             new { SoVanDon = houseBill, SoCont = soCont },
@@ -722,7 +724,11 @@ public sealed class OnlineOrderService
 
         response.EnsureSuccessStatusCode();
 
-        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[ChiTietHouseBill] Response={(int)response.StatusCode} {response.ReasonPhrase}");
+        Console.WriteLine($"[ChiTietHouseBill] ResponseBody={responseBody}");
+
+        var envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
         if (envelope is null)
         {
             return new ChiTietHouseBillResponse
@@ -741,7 +747,9 @@ public sealed class OnlineOrderService
                 : envelope.ErrorMsg
         };
 
+        Console.WriteLine($"[ChiTietHouseBill] ParsedEnvelope={JsonSerializer.Serialize(result, JsonOptions)}");
         result.ParsedData = ParseChiTietHouseBillData(result.Data, houseBill, soCont);
+        Console.WriteLine($"[ChiTietHouseBill] ParsedData={(result.ParsedData is null ? "null" : JsonSerializer.Serialize(result.ParsedData, JsonOptions))}");
         if (result.Success && result.ParsedData is null)
         {
             result.Success = false;

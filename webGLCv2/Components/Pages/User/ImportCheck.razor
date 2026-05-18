@@ -1,4 +1,4 @@
-@page "/user/import-check"
+﻿@page "/user/import-check"
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
@@ -73,6 +73,12 @@
                         <span class="status-chip @GetThongQuanClass(ThongQuanResult)">
                             @GetThongQuanLabel(ThongQuanResult)
                         </span>
+                        @if (ThongQuanResult is not null && !string.IsNullOrWhiteSpace(ThongQuanResult.Message))
+                        {
+                            <div class="portal-alert portal-alert-warning" style="margin-top: 12px;">
+                                @GetThongQuanMessage()
+                            </div>
+                        }
                     </article>
 
                     <article class="workflow-card" style="display:none;">
@@ -179,11 +185,24 @@
 
 @if (IsSearching)
 {
-    <div class="portal-modal-backdrop loading-overlay" aria-live="polite" aria-busy="true">
+    <div class="portal-modal-backdrop loading-overlay"
+         aria-live="polite"
+         aria-busy="true">
+
         <div class="portal-modal loading-modal">
+
             <div class="loading-spinner" aria-hidden="true"></div>
-            <h3>Đang kiểm tra tình trạng thông quan</h3>
-            <p>Thông tin thông quan đang được đối chiếu với hệ thống Hải quan điện tử. Quá trình này có thể mất vài phút tùy theo thời gian phản hồi từ hệ thống.</p>
+
+            <h3 class="loading-title">
+                Đang kiểm tra tình trạng thông quan
+            </h3>
+
+            <div class="loading-alert">
+                <span class="loading-alert-label">Chú ý:</span>
+                Thông tin thông quan đang được đối chiếu với hệ thống Hải quan điện tử.
+                Quá trình này có thể mất một vài phút tùy theo thời gian phản hồi từ hệ thống.
+            </div>
+
         </div>
     </div>
 }
@@ -418,7 +437,7 @@
             null => "Chưa tra cứu",
             { Success: true, IsThongQuan: true } => "Đã thông quan",
             { Success: true, IsThongQuan: false } => "Chưa thông quan",
-            _ => "Lỗi khi tra cứu tình trạng thông quan! Vui lòng ấn nút Tra cứu dữ liệu để thử lại"
+            _ => "Lỗi! Vui lòng kiểm tra thông tin lỗi trả về từ Hệ thống của Hải Quan"
         };
 
     private string GetThongQuanMessage()
@@ -429,7 +448,7 @@
         }
 
         return string.IsNullOrWhiteSpace(ThongQuanResult.Message)
-            ? "API đã trả về kết quả tình trạng thông quan."
+            ? "Đã lấy thành công thông tin tình trạng thông quan."
             : ThongQuanResult.Message;
     }
 
@@ -437,13 +456,13 @@
         => detail is null ? "neutral" : (detail.IsHoanThanh ? "success" : "warning");
 
     private static string GetChiTietLabel(ChiTietHouseBillData? detail)
-        => detail is null ? "Chưa tra cứu" : (detail.IsHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành");
+        => detail is null ? "Kết nối tới hệ thống Hải Quan bị lỗi, Vui lòng thử lại sau 10 giây" : (detail.IsHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành");
 
     private string GetChiTietMessage()
     {
         if (ChiTietResult is null)
         {
-            return "Chưa có dữ liệu chi tiết House Bill.";
+            return "Hiện tại hệ thống chưa có dữ liệu chi tiết của House Bill này. Quý khách vui lòng kiểm tra lại sau!";
         }
 
         if (!string.IsNullOrWhiteSpace(ChiTietResult.Message))
@@ -452,8 +471,8 @@
         }
 
         return ChiTietResult.ParsedData is null
-            ? "API đã trả về dữ liệu nhưng chưa đọc được chi tiết House Bill."
-            : "API đã trả về chi tiết House Bill.";
+            ? "Không lấy được thông tin Housebuild! Vui lòng thử lại."
+            : "Tải dữ liệu House Bill thành công.";
     }
 
     private static List<ImportCheckRecord> BuildSummaryRows(
@@ -480,7 +499,7 @@
                 ContainerNumber = detail.SoCont,
                 Forwarder = detail.Forwarder,
                 Status = thongQuan is not null
-                    ? (thongQuan.IsThongQuan ? "Đã thông quan" : "Chưa thông quan")
+                    ? (thongQuan.Success ? (thongQuan.IsThongQuan ? "Đã thông quan" : "Chưa thông quan") : "Lỗi tra cứu")
                     : (detail.IsHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành"),
                 CustomsDeclaration = string.IsNullOrWhiteSpace(detail.EDO)
                     ? (string.IsNullOrWhiteSpace(containerNumber) ? houseBill : containerNumber)

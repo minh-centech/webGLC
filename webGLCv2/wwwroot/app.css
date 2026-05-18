@@ -888,6 +888,9 @@ select {
         linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.1) 100%),
         linear-gradient(180deg, #005726 0%, #007333 42%, #00863a 74%, #00913f 100%);
     color: #f2f8f2;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
 }
 
 .login-badge {
@@ -927,6 +930,43 @@ select {
 .login-highlight strong {
     display: block;
     margin: 6px 0;
+}
+
+.login-aside-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(3, 131, 58, 0.22), rgba(255, 255, 255, 0.08));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.login-aside-footer-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.18));
+}
+
+.login-aside-footer-copy {
+    min-width: 0;
+}
+
+.login-aside-footer-copy strong {
+    display: block;
+    margin: 4px 0 6px;
+    font-size: 1rem;
+}
+
+.login-aside-footer-copy p {
+    margin: 0;
+    color: rgba(242, 248, 242, 0.82);
+    line-height: 1.5;
+    font-size: 0.9rem;
 }
 
 .login-points {
@@ -1054,9 +1094,10 @@ select {
         linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.1) 100%),
         linear-gradient(180deg, #005726 0%, #007333 42%, #00863a 74%, #00913f 100%);
     color: #f3faf3;
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
     gap: 14px;
+    min-height: 100%;
 }
 
 .register-aside h1,
@@ -1764,4 +1805,130 @@ select {
     margin-top: 4px;
     font-size: 13px;
     color: #007bff; /* Hoặc màu bạn đang dùng */
+}
+
+/*Loading ktra hai quan*/
+.loading-alert {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #fff5f5, #ffeaea);
+    border: 1px solid #ffcccc;
+    border-left: 5px solid #e53935;
+    border-radius: 14px;
+    color: #b42318;
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: left;
+    box-shadow: 0 6px 18px rgba(229, 57, 53, 0.12);
+}
+
+.loading-alert-label {
+    font-weight: 700;
+    color: #d92d20;
+    margin-right: 4px;
+}
+
+.portal-modal-backdrop.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
+
+.portal-modal.loading-modal {
+    width: 520px;
+    max-width: 90%;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    text-align: center;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.loading-spinner {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 18px auto;
+    border: 5px solid #e5e7eb;
+    border-top: 5px solid #127F42;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-title {
+    margin: 0 0 14px 0;
+    color: #127F42;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.loading-description {
+    margin: 0;
+    color: #555;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+/*End loading Hai quan*/
+.mst-updated-date {
+    font-weight: bold;
+    font-style: italic;
+}
+
+.portal-alert-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    margin-left:4px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #127F42, #18a957);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 10px rgba(18, 127, 66, 0.18);
+}
+
+.portal-alert-refresh-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(18, 127, 66, 0.28);
+    opacity: 0.96;
+}
+
+.portal-alert-refresh-btn:active {
+    transform: scale(0.98);
+}
+
+.portal-alert-refresh-btn i {
+    font-size: 11px;
 }

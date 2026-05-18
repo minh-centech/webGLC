@@ -318,7 +318,7 @@
                     <article class="workflow-card workflow-card-wide" style="order:-1;">
                         <div class="section-heading">
                             <h2>Thông tin chi tiết hàng hoá</h2>
-                            <span class="status-chip @(HasChiTietHouseBill ? "success" : "neutral")">@(HasChiTietHouseBill ? "Đã lấy dữ liệu thành công" : "Chưa có dữ liệu")</span>
+                            <span class="status-chip @(HasChiTietHouseBill ? "success" : "neutral")">@(HasChiTietHouseBill ? "Đã lấy dữ liệu thành công" : "Không có dữ liệu chi tiết cho housebill")</span>
                         </div>
 
                         @if (HasChiTietHouseBill)
@@ -1112,21 +1112,22 @@
                 Workflow.PhiLuuKhoQuaHan = null;
             }
 
-            var thongQuan = Workflow?.ThongQuan;
-            if (thongQuan is null)
-            {
-                WorkflowMessage = "Chưa có trạng thái thông quan.";
-            }
-            else if (thongQuan.Success && thongQuan.IsThongQuan)
-            {
-                WorkflowMessage = "Lấy thông tin thành công.";
-            }
-            else
-            {
-                WorkflowMessage = string.IsNullOrWhiteSpace(thongQuan.Message)
-                    ? "L?nh chua th?ng quan."
-                    : thongQuan.Message;
-            }
+            //Bo check thong quan trong chi tiết
+            // var thongQuan = Workflow?.ThongQuan;
+            // if (thongQuan is null)
+            // {
+            //     WorkflowMessage = "Chưa có trạng thái thông quan.";
+            // }
+            // else if (thongQuan.Success && thongQuan.IsThongQuan)
+            // {
+            //     WorkflowMessage = "Lấy thông tin thành công.";
+            // }
+            // else
+            // {
+            //     WorkflowMessage = string.IsNullOrWhiteSpace(thongQuan.Message)
+            //         ? "L?nh chua th?ng quan."
+            //         : thongQuan.Message;
+            // }
         }
         catch (Exception ex)
         {

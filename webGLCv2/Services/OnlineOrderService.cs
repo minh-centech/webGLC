@@ -1,7 +1,9 @@
 ﻿using System.Net.Http.Json;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Microsoft.Extensions.Options;
 using webGLCv2.Models;
 
@@ -232,48 +234,60 @@ public sealed class OnlineOrderService
             SoHieuPhuongTienVanTai = soHieuPhuongTienVanTai
         };
 
-        Console.WriteLine($"[TraCuuToKhai] POST {BuildWorkflowUrl(TraCuuToKhaiApiPath)}");
+        var requestUrl = BuildWorkflowUrl(TraCuuToKhaiApiPath);
+        Console.WriteLine($"[TraCuuToKhai] POST {requestUrl}");
         Console.WriteLine($"[TraCuuToKhai] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
 
-        var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(TraCuuToKhaiApiPath),
-            requestPayload,
-            JsonOptions);
+        HttpResponseMessage response;
+        string responseBody;
 
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            response = await _httpClient.PostAsJsonAsync(
+                requestUrl,
+                requestPayload,
+                JsonOptions);
+            responseBody = await response.Content.ReadAsStringAsync();
+        }
+        catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
+        {
+            return BuildThongQuanFailureResponse("Không kết nối được đến Hải quan. Hệ thống phản hồi quá lâu.");
+        }
+        catch (HttpRequestException)
+        {
+            return BuildThongQuanFailureResponse("Không kết nối được đến Hải quan.");
+        }
 
-        var responseBody = await response.Content.ReadAsStringAsync();
         Console.WriteLine($"[TraCuuToKhai] Response={(int)response.StatusCode} {response.ReasonPhrase}");
         Console.WriteLine($"[TraCuuToKhai] ResponseBody={responseBody}");
 
-        var envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
+        ApiEnvelope? envelope;
+        try
+        {
+            envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return response.IsSuccessStatusCode
+                ? BuildThongQuanFailureResponse("Không thể đọc kết quả kiểm tra thông quan.")
+                : BuildThongQuanFailureResponse("Không kết nối được đến Hải quan.");
+        }
+
         if (envelope is null)
         {
-            return new ThongQuanCheckResponse
-            {
-                Success = false,
-                Message = "Khong the doc ket qua kiem tra thong quan."
-            };
+            return response.IsSuccessStatusCode
+                ? BuildThongQuanFailureResponse("Không thể đọc kết quả kiểm tra thông quan.")
+                : BuildThongQuanFailureResponse("Không kết nối được đến Hải quan.");
         }
 
         if (envelope.Status != 0)
         {
-            return new ThongQuanCheckResponse
-            {
-                Success = false,
-                Message = string.IsNullOrWhiteSpace(envelope.ErrorMsg)
-                    ? "Khong the doc ket qua kiem tra thong quan."
-                    : envelope.ErrorMsg
-            };
+            return BuildThongQuanFailureResponse(FormatThongQuanErrorMessage(envelope.ErrorMsg));
         }
 
         if (string.IsNullOrWhiteSpace(envelope.Data))
         {
-            return new ThongQuanCheckResponse
-            {
-                Success = false,
-                Message = "Khong the doc ket qua kiem tra thong quan."
-            };
+            return BuildThongQuanFailureResponse("Không thể đọc kết quả kiểm tra thông quan.");
         }
 
         TraCuuToKhaiData? declarationData;
@@ -296,6 +310,114 @@ public sealed class OnlineOrderService
         };
     }
 
+    private static ThongQuanCheckResponse BuildThongQuanFailureResponse(string message)
+        => new()
+        {
+            Success = false,
+            IsThongQuan = false,
+            Message = message,
+            RawData = string.Empty,
+            Data = null
+        };
+
+    private static string FormatThongQuanErrorMessage(string? errorMsg)
+    {
+        if (string.IsNullOrWhiteSpace(errorMsg))
+        {
+            return "Không thể tra cứu tình trạng thông quan.";
+        }
+
+        var trimmed = errorMsg.Trim();
+        if (LooksLikeConnectionFailure(trimmed))
+        {
+            return "Không kết nối được đến Hải quan.";
+        }
+
+        var customsRejectionMessage = TryFormatCustomsRejectionMessage(trimmed);
+        if (!string.IsNullOrWhiteSpace(customsRejectionMessage))
+        {
+            return customsRejectionMessage;
+        }
+
+        return trimmed;
+    }
+
+    private static bool LooksLikeConnectionFailure(string message)
+        => message.Contains("Không kết nối", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("khong ket noi", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("connect", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("connection", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("timeout", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("timed out", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("refused", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("unreachable", StringComparison.OrdinalIgnoreCase)
+           || message.Contains("could not be resolved", StringComparison.OrdinalIgnoreCase);
+
+    private static string? TryFormatCustomsRejectionMessage(string errorMsg)
+    {
+        var xmlStart = errorMsg.IndexOf("<Declaration>", StringComparison.OrdinalIgnoreCase);
+        if (xmlStart < 0)
+        {
+            return null;
+        }
+
+        var xml = errorMsg[xmlStart..].Trim();
+        var xmlEnd = xml.LastIndexOf("</Declaration>", StringComparison.OrdinalIgnoreCase);
+        if (xmlEnd >= 0)
+        {
+            xml = xml[..(xmlEnd + "</Declaration>".Length)];
+        }
+
+        try
+        {
+            var document = XDocument.Parse(xml, LoadOptions.None);
+            var root = document.Root;
+            if (root is null)
+            {
+                return null;
+            }
+
+            var reference = GetXmlDescendantValue(root, "reference");
+            var function = GetXmlDescendantValue(root, "function");
+            var additionalInformation = GetXmlDescendantValue(root, "AdditionalInformation");
+            var additionalContent = GetXmlDescendantValue(root, "content");
+
+            var parts = new List<string> { "Hải Quan từ chối tra cứu." };
+
+            if (!string.IsNullOrWhiteSpace(reference))
+            {
+                parts.Add($"Mã tham chiếu: {reference}");
+            }
+
+            //if (!string.IsNullOrWhiteSpace(function))
+            //{
+            //    parts.Add($"function: {function}");
+            //}
+
+            var additionalMessage = !string.IsNullOrWhiteSpace(additionalContent)
+                ? additionalContent
+                : additionalInformation;
+
+            if (!string.IsNullOrWhiteSpace(additionalMessage))
+            {
+                parts.Add($"Nội dung: {NormalizeWhitespace(additionalMessage)}");
+            }
+
+            return string.Join(" | ", parts);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string GetXmlDescendantValue(XElement root, string localName)
+        => root.Descendants()
+            .FirstOrDefault(element => string.Equals(element.Name.LocalName, localName, StringComparison.OrdinalIgnoreCase))
+            ?.Value.Trim() ?? string.Empty;
+
+    private static string NormalizeWhitespace(string value)
+        => string.Join(" ", value.Split(new[] { '\r', '\n', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries));
     private static string BuildNgayTauDenEimText(ChiTietHouseBillData? chiTiet)
     {
         if (chiTiet is null)
@@ -328,7 +450,7 @@ public sealed class OnlineOrderService
         response.EnsureSuccessStatusCode();
 
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
-        EnsureSuccess(envelope, "Khong the tra cuu ma so thue.");
+        EnsureSuccess(envelope, "Lỗi khi tra cứu mã số thuế.");
 
         if (string.IsNullOrWhiteSpace(envelope!.Data))
         {
@@ -351,8 +473,51 @@ public sealed class OnlineOrderService
             Email = GetString(item, "Email"),
             SoDienThoai = GetString(item, "SoDienThoai"),
             NguoiDaiDien = GetString(item, "NguoiDaiDien"),
-            ChucVuNguoiDaiDien = GetString(item, "ChucVuNguoiDaiDien")
+            ChucVuNguoiDaiDien = GetString(item, "ChucVuNguoiDaiDien"),
+            CreateDate=GetString(item, "CreateDate"),
+            NgungSuDung=GetBool(item, "NgungSuDung")
         };
+    }
+
+    public async Task<bool> HasValidMaSoThueAsync(string maSoThue)
+    {
+        var normalizedMaSoThue = NullIfEmpty(maSoThue);
+        if (string.IsNullOrWhiteSpace(normalizedMaSoThue))
+        {
+            return false;
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(MaSoThueLookupApiPath),
+            new { MaSoThue = normalizedMaSoThue },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Lỗi khi tra cứu mã số thuế.");
+
+        if (string.IsNullOrWhiteSpace(envelope?.Data))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(envelope.Data);
+            var root = document.RootElement;
+            return root.ValueKind switch
+            {
+                JsonValueKind.Array => root.GetArrayLength() > 0,
+                JsonValueKind.Object => root.EnumerateObject().Any(),
+                JsonValueKind.String => !string.IsNullOrWhiteSpace(root.GetString()),
+                _ => true
+            };
+        }
+        catch (JsonException)
+        {
+            return !string.IsNullOrWhiteSpace(envelope.Data);
+        }
     }
 
     public async Task<UpsertDanhMucKhachHangResult> UpsertDanhMucKhachHangAsync(
@@ -367,26 +532,36 @@ public sealed class OnlineOrderService
         string ghiChu,
         bool isUpdate)
     {
+        var requestPayload = new UpsertDanhMucKhachHangRequest
+        {
+            Ma = NullIfEmpty(ma) ?? string.Empty,
+            Ten = NullIfEmpty(ten) ?? string.Empty,
+            DiaChi = NullIfEmpty(diaChi) ?? string.Empty,
+            MaSoThue = NullIfEmpty(maSoThue) ?? string.Empty,
+            NguoiDaiDien = NullIfEmpty(nguoiDaiDien) ?? string.Empty,
+            ChucVuNguoiDaiDien = NullIfEmpty(chucVuNguoiDaiDien) ?? string.Empty,
+            Email = NullIfEmpty(email) ?? string.Empty,
+            SoDienThoai = NullIfEmpty(soDienThoai) ?? string.Empty,
+            GhiChu = NullIfEmpty(ghiChu) ?? string.Empty,
+            IsUpdate = isUpdate
+        };
+
+        var requestUrl = BuildWorkflowUrl("/api/DanhMucKhachHang/UpsertDanhMucKhachHang");
+        Console.WriteLine($"[UpsertDanhMucKhachHang] POST {requestUrl}");
+        Console.WriteLine($"[UpsertDanhMucKhachHang] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
+
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl("/api/DanhMucKhachHang/UpsertDanhMucKhachHang"),
-            new UpsertDanhMucKhachHangRequest
-            {
-                Ma = NullIfEmpty(ma) ?? string.Empty,
-                Ten = NullIfEmpty(ten) ?? string.Empty,
-                DiaChi = NullIfEmpty(diaChi) ?? string.Empty,
-                MaSoThue = NullIfEmpty(maSoThue) ?? string.Empty,
-                NguoiDaiDien = NullIfEmpty(nguoiDaiDien) ?? string.Empty,
-                ChucVuNguoiDaiDien = NullIfEmpty(chucVuNguoiDaiDien) ?? string.Empty,
-                Email = NullIfEmpty(email) ?? string.Empty,
-                SoDienThoai = NullIfEmpty(soDienThoai) ?? string.Empty,
-                GhiChu = NullIfEmpty(ghiChu) ?? string.Empty,
-                IsUpdate = isUpdate
-            },
+            requestUrl,
+            requestPayload,
             JsonOptions);
 
         response.EnsureSuccessStatusCode();
 
-        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[UpsertDanhMucKhachHang] Response={(int)response.StatusCode} {response.ReasonPhrase}");
+        Console.WriteLine($"[UpsertDanhMucKhachHang] ResponseBody={responseBody}");
+
+        var envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
         if (envelope is null)
         {
             return new UpsertDanhMucKhachHangResult
@@ -396,13 +571,16 @@ public sealed class OnlineOrderService
             };
         }
 
-        return new UpsertDanhMucKhachHangResult
+        var result = new UpsertDanhMucKhachHangResult
         {
             Success = envelope.Status == 0,
             Message = envelope.Status == 0
                 ? (string.IsNullOrWhiteSpace(envelope.Data) ? "Cap nhat danh muc khach hang thanh cong." : envelope.Data)
                 : (string.IsNullOrWhiteSpace(envelope.ErrorMsg) ? "Khong the cap nhat danh muc khach hang." : envelope.ErrorMsg)
         };
+
+        Console.WriteLine($"[UpsertDanhMucKhachHang] Result={JsonSerializer.Serialize(result, JsonOptions)}");
+        return result;
     }
 
     public async Task<PhiLuuKhoResponse> GetPhiLuuKhoAsync(string houseBill, string? ngayGiaHan)
@@ -750,33 +928,36 @@ public sealed class OnlineOrderService
         var tracePrefix = string.IsNullOrWhiteSpace(traceTag) ? string.Empty : $"[{traceTag}] ";
         Console.WriteLine($"{tracePrefix}RunOrderWorkflowAsync start. HouseBill={houseBill}, SoCont={soCont}, PickupDate={pickupDate:yyyy-MM-dd}");
 
-        var thongQuan = await CheckThongQuanAsync(houseBill, soCont);
-        Console.WriteLine($"{tracePrefix}ThongQuan completed. Success={thongQuan.Success}, IsThongQuan={thongQuan.IsThongQuan}");
+        //Bo khong check thong quan trong chi tiet
+        //var thongQuan = await CheckThongQuanAsync(houseBill, soCont);
+        //Console.WriteLine($"{tracePrefix}ThongQuan completed. Success={thongQuan.Success}, IsThongQuan={thongQuan.IsThongQuan}");
 
         var result = new OnlineOrderWorkflowResult
         {
-            ThongQuan = thongQuan
+            
         };
 
-        if (!thongQuan.Success || !thongQuan.IsThongQuan)
-        {
-            return result;
-        }
+        //if (!thongQuan.Success || !thongQuan.IsThongQuan)
+        //{
+        //    return result;
+        //}
 
-        Console.WriteLine($"{tracePrefix}Calling PhiLuuKho...");
-        Console.WriteLine($"{tracePrefix}Calling PhiLuuKho houseBill ..." + houseBill);
-        result.PhiLuuKho = await GetPhiLuuKhoAsync(houseBill, soCont, pickupDateStr);
-        Console.WriteLine($"{tracePrefix}PhiLuuKho.Response={JsonSerializer.Serialize(result.PhiLuuKho, JsonOptions)}");
+        //Bo ko lay phi luu kho tu ben  ngoai
+        //Console.WriteLine($"{tracePrefix}Calling PhiLuuKho...");
+        //Console.WriteLine($"{tracePrefix}Calling PhiLuuKho houseBill ..." + houseBill);
+        //result.PhiLuuKho = await GetPhiLuuKhoAsync(houseBill, soCont, pickupDateStr);
+        //Console.WriteLine($"{tracePrefix}PhiLuuKho.Response={JsonSerializer.Serialize(result.PhiLuuKho, JsonOptions)}");
 
         Console.WriteLine($"{tracePrefix}Calling ChiTietHouseBill...");
         result.ChiTietHouseBill = await GetChiTietHouseBillAsync(houseBill, soCont);
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.Response={JsonSerializer.Serialize(result.ChiTietHouseBill, JsonOptions)}");
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.IsHoanThanh={result.ChiTietHouseBill?.ParsedData?.IsHoanThanh}");
-        if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
-        {
-            Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
-            result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
-        }
+       
+        //if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
+        //{
+        //    Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
+        //    result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
+        //}
 
         var chiTietResult = result.ChiTietHouseBill;
         var chiTiet = chiTietResult?.ParsedData;
@@ -1190,6 +1371,9 @@ public sealed class OnlineOrderService
         public string SoDienThoai { get; set; } = string.Empty;
         public string NguoiDaiDien { get; set; } = string.Empty;
         public string ChucVuNguoiDaiDien { get; set; } = string.Empty;
+        public string CreateDate { get; set; } = string.Empty;
+        public bool NgungSuDung { get; set; } = false;
+
     }
 
     public sealed class UpsertDanhMucKhachHangResult

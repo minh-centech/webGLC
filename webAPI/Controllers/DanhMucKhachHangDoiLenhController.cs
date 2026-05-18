@@ -530,6 +530,118 @@ namespace webAPI.Controllers
             return response;
         }
 
+        [HttpPost]
+        public webAPIresponse Delete(DanhMucKhachHangDoiLenhDeleteRequest request)
+        {
+            webAPIresponse response = new webAPIresponse();
+
+            try
+            {
+                coreCommon.GlobalVariables.IDDonVi = Code.GlobalVariables.IDDanhMucDonVi;
+
+                long customerId;
+                if (request == null || request.ID == null || !long.TryParse(request.ID.ToString(), out customerId) || customerId <= 0)
+                {
+                    throw new Exception("ID khong hop le.");
+                }
+
+                using (SqlConnection sqlConnection = new SqlConnection(GlobalVariables.ConnectionString))
+                {
+                    sqlConnection.Open();
+
+                    using (SqlTransaction transaction = sqlConnection.BeginTransaction())
+                    {
+                        try
+                        {
+                            bool isActive;
+                            bool isLockAccount;
+
+                            const string selectSql = @"
+                                select top 1 IsActive, IsLockAccount
+                                from DanhMucKhachHangDoiLenh
+                                where IDDanhMucDonVi = @IDDanhMucDonVi
+                                    and IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong
+                                    and ID = @ID";
+
+                            using (SqlCommand selectCommand = new SqlCommand(selectSql, sqlConnection, transaction))
+                            {
+                                selectCommand.Parameters.AddWithValue("@IDDanhMucDonVi", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucDonVi));
+                                selectCommand.Parameters.AddWithValue("@IDDanhMucLoaiDoiTuong", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucKhachHangDoiLenh));
+                                selectCommand.Parameters.AddWithValue("@ID", customerId);
+
+                                using (SqlDataReader reader = selectCommand.ExecuteReader())
+                                {
+                                    if (!reader.Read())
+                                    {
+                                        throw new Exception("Không tìm thấy tài khoản cần xoá.");
+                                    }
+
+                                    isActive = reader["IsActive"] != DBNull.Value && Convert.ToBoolean(reader["IsActive"]);
+                                    isLockAccount = reader["IsLockAccount"] != DBNull.Value && Convert.ToBoolean(reader["IsLockAccount"]);
+                                }
+                            }
+
+                            if (isActive || isLockAccount)
+                            {
+                                throw new Exception("Chỉ được xoá tài khoản chờ kích hoạt.");
+                            }
+
+                            const string deleteCompanySql = @"
+                                delete from NguoiDungDoanhNghiep
+                                where IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh";
+
+                            using (SqlCommand deleteCompanyCommand = new SqlCommand(deleteCompanySql, sqlConnection, transaction))
+                            {
+                                deleteCompanyCommand.Parameters.AddWithValue("@IDDanhMucKhachHangDoiLenh", customerId);
+                                deleteCompanyCommand.ExecuteNonQuery();
+                            }
+
+                            const string deleteAccountSql = @"
+                                delete from DanhMucKhachHangDoiLenh
+                                where IDDanhMucDonVi = @IDDanhMucDonVi
+                                    and IDDanhMucLoaiDoiTuong = @IDDanhMucLoaiDoiTuong
+                                    and ID = @ID";
+
+                            int affectedRows;
+                            using (SqlCommand deleteAccountCommand = new SqlCommand(deleteAccountSql, sqlConnection, transaction))
+                            {
+                                deleteAccountCommand.Parameters.AddWithValue("@IDDanhMucDonVi", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucDonVi));
+                                deleteAccountCommand.Parameters.AddWithValue("@IDDanhMucLoaiDoiTuong", coreCommon.coreCommon.longParse(GlobalVariables.IDDanhMucKhachHangDoiLenh));
+                                deleteAccountCommand.Parameters.AddWithValue("@ID", customerId);
+                                affectedRows = deleteAccountCommand.ExecuteNonQuery();
+                            }
+
+                            if (affectedRows <= 0)
+                            {
+                                throw new Exception("Không thể xoá tài khoản.");
+                            }
+
+                            transaction.Commit();
+                            response.Status = 0;
+                            response.Data = JsonConvert.SerializeObject(new
+                            {
+                                ID = customerId
+                            });
+                            response.ErrorMsg = string.Empty;
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Status = 1;
+                response.Data = string.Empty;
+                response.ErrorMsg = ex.Message;
+            }
+
+            return response;
+        }
+
                 [HttpPost]
         public webAPIresponse SaveThongTinCaNhan(DanhMucKhachHangDoiLenhSavePersonalProfileRequest request)
         {

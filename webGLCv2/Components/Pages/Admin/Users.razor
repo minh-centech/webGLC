@@ -98,7 +98,7 @@
                                     <div class="cell-subtitle">@account.Email</div>
                                 </td>
                                 <td>
-                                    <span class="status-chip neutral">@account.AccountTypeText</span>
+                                    <span class="status-chip @(account.AccountType == 0 ? "danger" : account.AccountType == 2 ? "success" : "neutral")">@account.AccountTypeText</span>
                                 </td>
                                 <td>
                                     <div class="cell-title">@account.Phone</div>
@@ -112,6 +112,13 @@
                                     @if (account.AccountType == 1 && account.HasPendingEnterpriseApproval)
                                     {
                                         <a class="portal-primary-action table-link-btn" style="margin:0 4px;" href="/admin/users/@account.Id/documents">Duyệt doanh nghiệp</a>
+                                    }
+                                    @if (!account.IsActive && !account.IsLockAccount)
+                                    {
+                                        <button class="table-action danger me-1"
+                                                @onclick="() => DeleteAccountAsync(account)">
+                                            Xóa
+                                        </button>
                                     }
                                     <button class="table-action @(account.IsLockAccount || !account.IsActive ? "success" : "danger")"
                                             @onclick="() => ToggleAccountAsync(account)">
@@ -310,6 +317,7 @@
                 if (companyProfile is not null)
                 {
                     var glcLookup = await OnlineOrderService.LookupCompanyByMaSoThueAsync(companyProfile.MaSoThue);
+                    var isUpdate = await OnlineOrderService.HasValidMaSoThueAsync(companyProfile.MaSoThue);
                     var upsertResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
                         companyProfile.MaSoThue,
                         glcLookup?.Ten ?? companyProfile.TenDoanhNghiep,
@@ -320,7 +328,7 @@
                         glcLookup?.Email ?? companyProfile.EmailDoanhNghiep,
                         glcLookup?.SoDienThoai ?? companyProfile.SoDienThoaiDoanhNghiep,
                         string.Empty,
-                        glcLookup is null);
+                        isUpdate);
 
                     if (!upsertResult.Success)
                     {
@@ -340,6 +348,30 @@
             FeedbackMessage = account.IsLockAccount
                 ? $"Đã khóa tài khoản {account.Email}."
                 : $"Đã kích hoạt tài khoản {account.Email}.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+    }
+
+    private async Task DeleteAccountAsync(AccountListItem account)
+    {
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>(
+                "confirm",
+                $"Bạn có chắc chắn muốn xoá tài khoản {account.Email} không? Thao tác này không thể hoàn tác.");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            await LegacyCustomerPortalService.DeleteAccountAsync(account.Id);
+            await LoadAccountsAsync();
+            FeedbackMessage = $"Đã xoá tài khoản {account.Email}.";
             FeedbackIsError = false;
         }
         catch (Exception ex)

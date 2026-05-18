@@ -78,6 +78,125 @@ namespace webGLCv2.Services
             }
         }
 
+
+        public async Task<string?> ProcessTaxInfoV2(string masothue)
+        {
+            try
+            {
+                // BƯỚC 1: Gọi API Minvoice
+                var minvoiceData = await GetTaxInfoFromMinvoiceApi(masothue);
+
+                if (minvoiceData == null || minvoiceData.Count == 0)
+                    return null;
+
+                string companyName = minvoiceData.ContainsKey("ten_cty")
+                    ? minvoiceData["ten_cty"]
+                    : "";
+
+                if (string.IsNullOrWhiteSpace(companyName))
+                    return JsonConvert.SerializeObject(minvoiceData, Newtonsoft.Json.Formatting.Indented);
+
+                string slugName = ConvertToUnaccentedSlug(companyName);
+                string scrapeUrl = $"https://masothue.com/{masothue}-{slugName}";
+
+                Console.WriteLine($"Du lieu lay ten cong ty scrapeUrl V2: {scrapeUrl}");
+
+                // BƯỚC 2: Cào dữ liệu từ masothue.com
+                var taxData = await ScrapeTaxTable(scrapeUrl);
+
+                // Nếu bước 2 không lấy được thì trả về dữ liệu bước 1
+                if (taxData == null || taxData.Count == 0)
+                {
+                    Console.WriteLine("Khong cao duoc masothue.com, tra ve du lieu Minvoice");
+                    return JsonConvert.SerializeObject(minvoiceData, Newtonsoft.Json.Formatting.Indented);
+                }
+
+                string logString = string.Join("; ", taxData.Select(x => $"{x.Key}: {x.Value}"));
+                Console.WriteLine($"Du lieu lay tu masothue V2: {logString} ");
+
+                return JsonConvert.SerializeObject(taxData, Newtonsoft.Json.Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi ProcessTaxInfoV2: {ex}");
+                return null;
+            }
+        }
+
+        private async Task<Dictionary<string, string>?> GetTaxInfoFromMinvoiceApi(string mst, int retryCount = 0)
+        {
+            string apiUrl = $"https://mst.minvoice.com.vn/api/System/SearchTaxCode?tax={mst}";
+
+            try
+            {
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (retryCount < 4)
+                    {
+                        await Task.Delay(700);
+                        return await GetTaxInfoFromMinvoiceApi(mst, retryCount + 1);
+                    }
+
+                    throw new Exception($"API Minvoice lỗi: {(int)response.StatusCode} - {response.ReasonPhrase}");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Response API Minvoice: {content}");
+
+                var json = JObject.Parse(content);
+
+                var result = new Dictionary<string, string>();
+
+                AddJsonValue(result, json, "ma_so_thue");
+                AddJsonValue(result, json, "masothue_id");
+                AddJsonValue(result, json, "ten_cty");
+                AddJsonValue(result, json, "dia_chi");
+                AddJsonValue(result, json, "cqthuecap_tinh");
+                AddJsonValue(result, json, "cqthue_ql");
+                AddJsonValue(result, json, "nguoi_dai_dien");
+                AddJsonValue(result, json, "ngay_thanh_lap");
+                AddJsonValue(result, json, "tthai");
+                AddJsonValue(result, json, "ten_tthai");
+
+                // Map thêm key cho thống nhất với dữ liệu masothue.com nếu cần
+                if (result.ContainsKey("ten_cty") && !result.ContainsKey("ten_cong_ty"))
+                    result["ten_cong_ty"] = result["ten_cty"];
+
+                if (result.ContainsKey("dia_chi") && !result.ContainsKey("dia_chi_cong_ty"))
+                    result["dia_chi_cong_ty"] = result["dia_chi"];
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (retryCount < 4)
+                {
+                    await Task.Delay(700);
+                    return await GetTaxInfoFromMinvoiceApi(mst, retryCount + 1);
+                }
+
+                Console.WriteLine($"Lỗi gọi API Minvoice: {ex}");
+                return null;
+            }
+        }
+
+        private void AddJsonValue(Dictionary<string, string> dict, JObject json, string key)
+        {
+            var token = json[key];
+
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                dict[key] = "";
+                return;
+            }
+
+            dict[key] = token.ToString().Trim();
+        }
+
+
         private async Task<string> GetCompanyNameFromApi(string mst, int retryCount = 0)
         {
             string apiUrl = $"https://api.vietqr.io/v2/business/{mst}";
@@ -175,6 +294,22 @@ namespace webGLCv2.Services
 
                     // 2. Duyệt tbody
                     var rows = table.SelectNodes(".//tbody/tr");
+
+                    // Lấy ngày cập nhật mã số thuế
+                    var updateNode = table.SelectSingleNode(
+                        ".//tr/td[contains(text(),'Cập nhật mã số thuế')]//em"
+                    );
+
+                    if (updateNode != null)
+                    {
+                        string updateTime = HtmlEntity.DeEntitize(updateNode.InnerText)
+                            .Trim();
+
+                        if (!string.IsNullOrWhiteSpace(updateTime))
+                        {
+                            result["ngay_cap_nhat"] = updateTime;
+                        }
+                    }
 
                     if (rows != null)
                     {

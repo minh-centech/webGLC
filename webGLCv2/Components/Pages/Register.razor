@@ -46,6 +46,15 @@
             <div class="register-side-actions">
                 <a class="portal-secondary-action" href="/login">Quay lại đăng nhập</a>
             </div>
+
+            <footer class="login-aside-footer">
+                <img class="login-aside-footer-logo" src="/images/EVERLINK.png" alt="Everlink logo" />
+                <div class="login-aside-footer-copy">
+                    <span class="login-highlight-label">Đơn vị phát triển</span>
+                    <strong>Công ty cổ phần Everlink</strong>
+                    <p>Liên hệ tư vấn, phát triển phần mềm: admin@everlink.com.vn.</p>
+                </div>
+            </footer>
         </aside>
 
         <section class="register-form-panel">
@@ -97,7 +106,21 @@
                                 @if (!string.IsNullOrWhiteSpace(LookupStatus))
                                 {
                                     <div class="portal-alert @(LookupIsError ? "portal-alert-error" : "portal-alert-success")" style="margin-top:10px;">
-                                        @LookupStatus
+                                        @((MarkupString)LookupStatus)
+                                        @if (LookupStatus.Contains("GLC"))
+                                        {
+                                            <button type="button"
+                                                    class="portal-alert-refresh-btn"
+                                                    disabled="@IsLookupBusy"
+                                                    @onclick="LookupEnterpriseInfoNewAsync">
+
+                                                <i class="fas fa-sync-alt"></i>
+
+                                                @(IsLookupBusy
+                                                    ? "Đang lấy dữ liệu..."
+                                                    : "Lấy thông tin mới")
+                                            </button>
+                                        }
                                     </div>
                                 }
                             </div>
@@ -504,13 +527,13 @@
                     glcLookup.ChucVuNguoiDaiDien,
                     glcLookup.Email);
 
-                LookupStatus = "Mã số thuế của Quý khách được trích xuất tự động từ cơ sở dữ liệu hệ thống GLC. Quý khách vui lòng kiểm tra lại các thông tin đã điền; nếu có sai sót, vui lòng đính chính để đảm bảo dữ liệu chính xác.";
+                LookupStatus = $"Mã số thuế của Quý khách đã tồn tại trong hệ thống GLC, ngày cập nhật: <span class='mst-updated-date'>{FormatVietnamDateTime(glcLookup.CreateDate)}</span>. Quý khách vui lòng kiểm tra lại các thông tin đã điền; nếu có sai sót, vui lòng đính chính để đảm bảo dữ liệu chính xác hoặc vui lòng thử";
                 LookupIsError = false;
                 await InvokeAsync(StateHasChanged);
                 return;
             }
 
-            var payload = await MaSoThueHelper.ProcessTaxInfo(taxCode);
+            var payload = await MaSoThueHelper.ProcessTaxInfoV2(taxCode);
             if (string.IsNullOrWhiteSpace(payload))
             {
                 LookupStatus = "Thông báo: Vui lòng thử lại sau 10 giây, nếu vẫn gặp sự cố lấy thông tin mã số thuế tự động, Quý khách hàng vui lòng bổ sung thông tin thủ công để tiếp tục.";
@@ -538,7 +561,8 @@
                 GetString(root, "chuc_vu_nguoi_dai_dien"),
                 GetString(root, "email"));
 
-            LookupStatus = "Mã số thuế được đồng bộ tự động từ nguồn masothue.com. Quý khách vui lòng kiểm tra kỹ các thông tin hệ thống đã điền; nếu có sai sót, vui lòng chỉnh sửa lại cho chính xác.";
+            var ngay_cap_nhat = GetString(root, "ngay_cap_nhat");
+            LookupStatus = $"Mã số thuế được đồng bộ tự động từ nguồn masothue.com ngày cập nhật <span class='mst-updated-date'>{FormatVietnamDateTime(ngay_cap_nhat)}</span>. Quý khách vui lòng kiểm tra kỹ các thông tin hệ thống đã điền; nếu có sai sót, vui lòng chỉnh sửa lại cho chính xác.";
             LookupIsError = false;
             await InvokeAsync(StateHasChanged);
         }
@@ -552,6 +576,102 @@
         {
             IsLookupBusy = false;
         }
+    }
+
+    private async Task LookupEnterpriseInfoNewAsync()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        LookupStatus = string.Empty;
+        LookupIsError = false;
+
+        var taxCode = Model.MaSoThue?.Trim();
+        if (string.IsNullOrWhiteSpace(taxCode))
+        {
+            LookupStatus = "Vui lòng nhập mã số thuế trước khi lấy thông tin.";
+            LookupIsError = true;
+            ResetEnterpriseLookupFields();
+            return;
+        }
+
+        IsLookupBusy = true;
+        try
+        {
+            var payload = await MaSoThueHelper.ProcessTaxInfoV2(taxCode);
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                LookupStatus = "Thông báo: Vui lòng thử lại sau 10 giây, nếu vẫn gặp sự cố lấy thông tin mã số thuế tự động, Quý khách hàng vui lòng bổ sung thông tin thủ công để tiếp tục.";
+                LookupIsError = true;
+                ResetEnterpriseLookupFields();
+                return;
+            }
+
+            using var document = JsonDocument.Parse(payload);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || root.EnumerateObject().Count() == 0)
+            {
+                LookupStatus = "Thông báo: Vui lòng thử lại sau 10 giây, nếu vẫn gặp sự cố lấy thông tin mã số thuế tự động, Quý khách hàng vui lòng bổ sung thông tin thủ công để tiếp tục.";
+                LookupIsError = true;
+                ResetEnterpriseLookupFields();
+                return;
+            }
+
+            ApplyEnterpriseLookup(
+                GetString(root, "ma_so_thue", taxCode),
+                GetString(root, "ten_cong_ty"),
+                FirstNonEmpty(GetString(root, "dia_chi_thue"), GetString(root, "dia_chi")),
+                GetString(root, "dien_thoai"),
+                GetString(root, "nguoi_dai_dien"),
+                GetString(root, "chuc_vu_nguoi_dai_dien"),
+                GetString(root, "email"));
+
+            var ngay_cap_nhat = GetString(root, "ngay_cap_nhat");
+            LookupStatus = $"Mã số thuế được đồng bộ tự động từ nguồn masothue.com ngày cập nhật <span class='mst-updated-date'>{FormatVietnamDateTime(ngay_cap_nhat)}</span>. Quý khách vui lòng kiểm tra kỹ các thông tin hệ thống đã điền; nếu có sai sót, vui lòng chỉnh sửa lại cho chính xác.";
+            LookupIsError = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            LookupStatus = "Thông báo: Mã số thuế không tồn tại trên hệ thống GLC và masothue.com. Vui lòng bổ sung thông tin thủ công để tiếp tục.";
+            LookupIsError = true;
+            ResetEnterpriseLookupFields();
+        }
+        finally
+        {
+            IsLookupBusy = false;
+        }
+    }
+ 
+    private string FormatVietnamDateTime(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return "(chưa có thông tin)";
+
+        string[] formats =
+        {
+        "yyyy-MM-ddTHH:mm:ss.FF",
+        "yyyy-MM-ddTHH:mm:ss",
+        "yyyy-MM-dd HH:mm:ss",
+        "yyyy-MM-dd HH:mm:ss.FF"
+    };
+
+        if (DateTime.TryParseExact(
+                input,
+                formats,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None,
+                out DateTime dt))
+        {
+            return dt.ToString("dd/MM/yyyy HH:mm:ss");
+        }
+
+        // fallback parse thường
+        if (DateTime.TryParse(input, out dt))
+        {
+            return dt.ToString("dd/MM/yyyy HH:mm:ss");
+        }
+
+        return input;
     }
 
     private void ResetEnterpriseLookupFields()

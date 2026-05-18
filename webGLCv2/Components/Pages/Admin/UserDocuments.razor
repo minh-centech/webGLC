@@ -315,27 +315,25 @@
                     throw new InvalidOperationException("Vui lòng bổ sung mã số thuế trước khi phê duyệt.");
                 }
 
-                OnlineOrderService.CompanyTaxLookupResult? glcLookup = null;
-                try
+                var companyProfile = await LegacyCustomerPortalService.GetLatestEnterpriseProfileAsync(Details.Id);
+                if (companyProfile is null)
                 {
-                    glcLookup = await OnlineOrderService.LookupCompanyByMaSoThueAsync(taxCode);
+                    throw new InvalidOperationException("Không tìm thấy hồ sơ doanh nghiệp trong bảng NguoiDungDoanhNghiep.");
                 }
-                catch (InvalidOperationException)
-                {
-                    glcLookup = null;
-                }
+
+                var isUpdate = await OnlineOrderService.HasValidMaSoThueAsync(taxCode);
 
                 var upsertResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
                     taxCode,
-                    glcLookup?.Ten ?? Details.CompanyName,
-                    glcLookup?.DiaChi ?? Details.CompanyAddress,
+                    companyProfile.TenDoanhNghiep ?? Details.CompanyName,
+                    companyProfile.DiaChi ?? Details.CompanyAddress,
                     taxCode,
-                    glcLookup?.NguoiDaiDien ?? Details.AuthorizedRepresentative,
-                    glcLookup?.ChucVuNguoiDaiDien ?? Details.RepresentativeTitle,
+                    companyProfile.DaiDienCoThamQuyen ?? Details.AuthorizedRepresentative,
+                    companyProfile.ChucVu ?? Details.RepresentativeTitle,
                     Details.BillingEmail ?? Details.Email ?? Details.CompanyEmail,
-                    glcLookup?.SoDienThoai ?? Details.CompanyPhone,
+                    companyProfile.SoDienThoaiDoanhNghiep ?? Details.CompanyPhone,
                     string.Empty,
-                    glcLookup is not null);
+                    isUpdate);
 
                 if (!upsertResult.Success)
                 {
@@ -417,7 +415,5 @@
             ? status
             : "Sẵn sàng bổ sung.";
 }
-
-
 
 

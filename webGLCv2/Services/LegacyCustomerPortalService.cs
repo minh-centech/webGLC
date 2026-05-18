@@ -95,6 +95,18 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể cập nhật trạng thái tài khoản.");
     }
 
+    public async Task DeleteAccountAsync(string id)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/DanhMucKhachHangDoiLenh/Delete",
+            new { ID = id },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể xoá tài khoản.");
+    }
+
     public async Task ApproveAccountAndNotifyAsync(string id, string email)
     {
         await SetAccountStateAsync(id, true, false);

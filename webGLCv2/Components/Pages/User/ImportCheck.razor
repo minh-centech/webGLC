@@ -219,6 +219,14 @@
                 </div>
 
                 <div class="portal-modal-actions">
+                    @if (CanShowExistingOnlineOrderButton)
+                    {
+                        <button type="button"
+                                class="portal-primary-action"
+                                @onclick="OpenExistingOnlineOrderAsync">
+                            Xem chi tiết
+                        </button>
+                    }
                     <button type="button" class="portal-primary-action" @onclick="CloseNoDataModal">Đóng lại</button>
                 </div>
         </div>
@@ -239,13 +247,15 @@
     private string SearchMessage { get; set; } = string.Empty;
     private string ErrorMessage { get; set; } = string.Empty;
     private string NoDataModalMessage { get; set; } = string.Empty;
-    private OnlineOrderRecord? ExistingOnlineOrder { get; set; }
     private long? ExistingOnlineOrderId { get; set; }
     private long CurrentUserId { get; set; }
     private bool AutoLoaded;
     private bool IsSearching;
     private bool IsNoDataModalOpen;
-    private bool HasExistingOnlineOrder => ExistingOnlineOrder is not null;
+    private bool HasExistingOnlineOrder => ExistingOnlineOrderId.HasValue;
+    private bool CanShowExistingOnlineOrderButton
+        => ExistingOnlineOrderId.HasValue
+           && (ChiTietResult is null || ChiTietResult.Success == false || ChiTietResult.ParsedData is null || ChiTietResult.ParsedData.IsHoanThanh);
     private bool CanShowCreateOnlineOrderButton
         => ChiTietResult?.Success == true
            && ChiTietResult.ParsedData is not null
@@ -300,7 +310,6 @@
         ChiTietResult = null;
         DetailRows = [];
         Results = [];
-        ExistingOnlineOrder = null;
         ExistingOnlineOrderId = null;
 
         if (string.IsNullOrWhiteSpace(normalizedHouseBill))
@@ -329,12 +338,14 @@
             }
             catch
             {
+                await ResolveExistingOnlineOrderAsync(normalizedHouseBill);
                 OpenNoDataModal("House Bill không có dữ liệu hoặc bị lỗi.");
                 return;
             }
 
             if (ChiTietResult is null || !ChiTietResult.Success || ChiTietResult.ParsedData is null)
             {
+                await ResolveExistingOnlineOrderAsync(normalizedHouseBill);
                 OpenNoDataModal(string.IsNullOrWhiteSpace(ChiTietResult?.Message)
                     ? "House Bill không tồn tại hoặc đã được xác nhận hoàn thành."
                     : ChiTietResult.Message);
@@ -355,8 +366,7 @@
 
             try
             {
-                ExistingOnlineOrder = await LegacyCustomerPortalService.FindOnlineOrderByHouseBillAsync(normalizedHouseBill);
-                ExistingOnlineOrderId = long.TryParse(ExistingOnlineOrder?.Id, out var existingId) ? existingId : null;
+                ExistingOnlineOrderId = await LegacyCustomerPortalService.FindOnlineOrderIdByHouseBillAsync(CurrentUserId, normalizedHouseBill);
             }
             catch (Exception ex)
             {
@@ -401,6 +411,28 @@
         }
 
         await OpenNewOnlineOrderAsync();
+    }
+
+    private Task OpenExistingOnlineOrderAsync()
+    {
+        if (ExistingOnlineOrderId.HasValue)
+        {
+            NavigationManager.NavigateTo($"/user/orders/{ExistingOnlineOrderId.Value}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task ResolveExistingOnlineOrderAsync(string normalizedHouseBill)
+    {
+        try
+        {
+            ExistingOnlineOrderId = await LegacyCustomerPortalService.FindOnlineOrderIdByHouseBillAsync(CurrentUserId, normalizedHouseBill);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = AppendError(ErrorMessage, $"Không thể kiểm tra lệnh online hiện có: {ex.Message}");
+        }
     }
 
     private async Task OpenNewOnlineOrderAsync()

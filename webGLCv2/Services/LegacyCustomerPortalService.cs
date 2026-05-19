@@ -113,22 +113,37 @@ public sealed class LegacyCustomerPortalService
         await _emailHelper.SendEmailAsync(email, EmailHelper.AccountApprovedSuccessTemplateId);
     }
 
-    public async Task<OnlineOrderRecord?> FindOnlineOrderByHouseBillAsync(string houseBill)
+    public Task<long?> FindOnlineOrderIdByHouseBillAsync(long idDanhMucKhachHangDoiLenh, string houseBill)
+        => FindOnlineOrderIdByHouseBillAsync(idDanhMucKhachHangDoiLenh, houseBill, includeCustomerFilter: true);
+
+    private async Task<long?> FindOnlineOrderIdByHouseBillAsync(long? idDanhMucKhachHangDoiLenh, string houseBill, bool includeCustomerFilter)
     {
         if (string.IsNullOrWhiteSpace(houseBill))
         {
             return null;
         }
 
-        var response = await _httpClient.PostAsJsonAsync(
-            "api/LenhOnlines/List",
-            new
+        if (includeCustomerFilter && (!idDanhMucKhachHangDoiLenh.HasValue || idDanhMucKhachHangDoiLenh.Value <= 0))
+        {
+            return null;
+        }
+
+        object request = includeCustomerFilter
+            ? new
+            {
+                IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh,
+                HouseBill = houseBill.Trim(),
+                Page = 1,
+                PageSize = 1
+            }
+            : new
             {
                 HouseBill = houseBill.Trim(),
                 Page = 1,
                 PageSize = 1
-            },
-            JsonOptions);
+            };
+
+        var response = await _httpClient.PostAsJsonAsync("api/LenhOnlines/List", request, JsonOptions);
 
         response.EnsureSuccessStatusCode();
 
@@ -145,25 +160,36 @@ public sealed class LegacyCustomerPortalService
         }
 
         var item = itemsElement[0];
+        return GetLong(item, "ID");
+    }
+
+    public async Task<OnlineOrderRecord?> FindOnlineOrderByHouseBillAsync(string houseBill)
+    {
+        var orderId = await FindOnlineOrderIdByHouseBillAsync(null, houseBill, includeCustomerFilter: false);
+        if (!orderId.HasValue)
+        {
+            return null;
+        }
+
         return new OnlineOrderRecord
         {
-            Id = GetString(item, "ID"),
-            OrderCode = GetString(item, "OrderCode"),
-            UserId = GetLong(item, "IDDanhMucKhachHangDoiLenh"),
-            UserEmail = GetString(item, "UserEmail"),
-            CustomerName = GetString(item, "HoVaTen"),
-            PhoneNumber = GetString(item, "SoDienThoai"),
-            IdentityNumber = GetString(item, "SoCMND"),
-            VehicleNumber = GetString(item, "SoXe"),
-            TaxCode = GetString(item, "MaSoThue"),
-            CompanyName = GetString(item, "TenCongTy"),
-            CompanyAddress = GetString(item, "DiaChi"),
-            CompanyEmail = GetString(item, "Email"),
-            HouseBill = GetString(item, "HouseBill"),
-            ContainerNumber = GetString(item, "SoCont"),
-            DeclarationNumber = GetString(item, "SoToKhai"),
-            StatusCode = GetInt(item, "TrangThai"),
-            Status = GetString(item, "TrangThaiText")
+            Id = orderId.Value.ToString(),
+            OrderCode = string.Empty,
+            UserId = 0,
+            UserEmail = string.Empty,
+            CustomerName = string.Empty,
+            PhoneNumber = string.Empty,
+            IdentityNumber = string.Empty,
+            VehicleNumber = string.Empty,
+            TaxCode = string.Empty,
+            CompanyName = string.Empty,
+            CompanyAddress = string.Empty,
+            CompanyEmail = string.Empty,
+            HouseBill = houseBill.Trim(),
+            ContainerNumber = string.Empty,
+            DeclarationNumber = string.Empty,
+            StatusCode = 0,
+            Status = string.Empty
         };
     }
 

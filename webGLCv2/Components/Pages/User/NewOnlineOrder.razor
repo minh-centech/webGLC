@@ -201,6 +201,8 @@
     private string? SoVanDonFromQuery { get; set; }
     [SupplyParameterFromQuery(Name = "soToKhai")]
     private string? SoToKhaiFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "idCtLenhNhapKhoHangNhapKhauChiTiet")]
+    private string? IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery { get; set; }
     private bool AppliedQueryDefaults { get; set; }
     private bool IsTaxLookupPopupOpen { get; set; }
     private bool TaxLookupIsBusy { get; set; }
@@ -235,6 +237,7 @@
         var soCont = SoContFromQuery?.Trim();
         var soVanDon = SoVanDonFromQuery?.Trim();
         var soToKhai = SoToKhaiFromQuery?.Trim();
+        var idCtLenhNhapKhoHangNhapKhauChiTiet = IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery?.Trim();
 
         if (!string.IsNullOrWhiteSpace(houseBill))
         {
@@ -256,10 +259,16 @@
             Draft.DeclarationNumber = soToKhai;
         }
 
+        if (long.TryParse(idCtLenhNhapKhoHangNhapKhauChiTiet, out var parsedIdCt) && parsedIdCt > 0)
+        {
+            Draft.IDctLenhNhapKhoHangNhapKhauChiTiet = parsedIdCt;
+        }
+
         if (!string.IsNullOrWhiteSpace(houseBill)
             || !string.IsNullOrWhiteSpace(soCont)
             || !string.IsNullOrWhiteSpace(soVanDon)
-            || !string.IsNullOrWhiteSpace(soToKhai))
+            || !string.IsNullOrWhiteSpace(soToKhai)
+            || !string.IsNullOrWhiteSpace(idCtLenhNhapKhoHangNhapKhauChiTiet))
         {
             AppliedQueryDefaults = true;
         }
@@ -295,6 +304,18 @@
         }
 
         var normalizedHouseBill = Draft.HouseBill?.Trim();
+        var normalizedSoVanDon = SoVanDonFromQuery?.Trim();
+        if (!Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.HasValue || Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.Value <= 0)
+        {
+            Draft.IDctLenhNhapKhoHangNhapKhauChiTiet = await ResolveIdCtLenhNhapKhoHangNhapKhauChiTietAsync(normalizedSoVanDon ?? normalizedHouseBill);
+        }
+
+        if (!Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.HasValue || Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.Value <= 0)
+        {
+            InfoMessage = "Khong tim thay IDctLenhNhapKhoHangNhapKhauChiTiet de luu lenh.";
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(normalizedHouseBill))
         {
             var existingOrders = await OnlineOrderService.GetOrdersAsync(
@@ -314,8 +335,8 @@
         try
         {
             ClearHouseBillValidationError();
-            await OnlineOrderService.AddOrderAsync(CurrentUserId, Draft);
-            NavigationManager.NavigateTo("/user/orders", forceLoad: false);
+            var newOrderId = await OnlineOrderService.AddOrderAsync(CurrentUserId, Draft);
+            NavigationManager.NavigateTo($"/user/orders/{newOrderId}", forceLoad: false);
         }
         catch (Exception ex)
         {
@@ -629,6 +650,24 @@
         EditContext = new EditContext(Draft);
         ValidationMessages = new ValidationMessageStore(EditContext);
         EditContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    private async Task<long?> ResolveIdCtLenhNhapKhoHangNhapKhauChiTietAsync(string? soVanDon)
+    {
+        if (CurrentUserId <= 0 || string.IsNullOrWhiteSpace(soVanDon))
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = await OnlineOrderService.GetLenhXuatKhoHangNhapKhauTempListAsync(CurrentUserId, soVanDon.Trim());
+            return result.Data.FirstOrDefault()?.ID;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void HandleFieldChanged(object? sender, FieldChangedEventArgs e)

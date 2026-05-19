@@ -267,7 +267,7 @@
                                         var chiTiet = Workflow!.ChiTietHouseBill!.ParsedData!;
                                     }
                                     <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
-                                    <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr>
+                                    <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa == true)</td></tr>
                                     <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
                                     <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
                                     <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
@@ -343,13 +343,14 @@
         }
 
         Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
-            OrderId,
-            Order.UserId,
-            Order.HouseBill,
-            Order.ContainerNumber,
-            Order.PickupDate,
-            Order.InvoiceDownloadUrl,
-            "admin-detail");
+            idLenhOnline: OrderId,
+            idDanhMucKhachHangDoiLenh: Order.UserId,
+            houseBill: Order.HouseBill,
+            soCont: Order.ContainerNumber,
+            idCtLenhNhapKhoHangNhapKhauChiTiet: Order.IDctLenhNhapKhoHangNhapKhauChiTiet,
+            pickupDate: Order.PickupDate,
+            invoiceDownloadUrl: Order.InvoiceDownloadUrl,
+            traceTag: "admin-detail");
     }
 
     private static string GetStatusClass(int statusCode)

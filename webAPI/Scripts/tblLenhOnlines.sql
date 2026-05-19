@@ -19,7 +19,9 @@ begin
         SoToKhai nvarchar(100) null,
         TrangThai int not null constraint DF_tblLenhOnlines_TrangThai default(0),
         TrangThaiHaiQuan TINYINT NOT NULL CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0,
+        HoanThanh bit not null constraint DF_tblLenhOnlines_HoanThanh default(0),
         IDDanhMucKhachHangDoiLenh bigint not null,
+        IDctLenhNhapKhoHangNhapKhauChiTiet bigint null,
         CreateDate datetime not null constraint DF_tblLenhOnlines_CreateDate default(getdate()),
         EditDate datetime null,
         constraint PK_tblLenhOnlines primary key (ID),
@@ -67,3 +69,7 @@ go
 ALTER TABLE tblLenhOnlines
 ADD TrangThaiHaiQuan TINYINT NOT NULL 
     CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;
+
+ALTER TABLE tblLenhOnlines
+ADD HoanThanh BIT NOT NULL
+    CONSTRAINT DF_tblLenhOnlines_HoanThanh DEFAULT(0);

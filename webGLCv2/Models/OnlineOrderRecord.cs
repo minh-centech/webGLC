@@ -28,5 +28,7 @@ public sealed class OnlineOrderRecord
     public int PaymentStatusCode { get; set; }
     public string PaymentStatus { get; set; } = string.Empty;
     public string InvoiceDownloadUrl { get; set; } = string.Empty;
+
+    public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
 }
 

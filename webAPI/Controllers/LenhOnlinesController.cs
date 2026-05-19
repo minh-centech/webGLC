@@ -64,7 +64,8 @@ namespace webAPI.Controllers
                         LinkTaiHoaDon = dataRow["LinkTaiHoaDon"] == DBNull.Value ? null : dataRow["LinkTaiHoaDon"],
                         DuongDanFileHoaDon = dataRow["DuongDanFileHoaDon"] == DBNull.Value ? null : dataRow["DuongDanFileHoaDon"],
                         CreateDate = dataRow["CreateDate"] == DBNull.Value ? null : dataRow["CreateDate"],
-                        EditDate = dataRow["EditDate"] == DBNull.Value ? null : dataRow["EditDate"]
+                        EditDate = dataRow["EditDate"] == DBNull.Value ? null : dataRow["EditDate"],
+                        IDctLenhNhapKhoHangNhapKhauChiTiet =dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"] == DBNull.Value ? null : dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"]
                     });
                 }
 

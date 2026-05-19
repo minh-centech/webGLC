@@ -24,6 +24,7 @@ public sealed class OnlineOrderDraft
     public string CompanyName { get; set; } = string.Empty;
     public string CompanyAddress { get; set; } = string.Empty;
     public string CompanyEmail { get; set; } = string.Empty;
+    public long? IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập House Bill.")]
     public string HouseBill { get; set; } = string.Empty;

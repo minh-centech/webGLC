@@ -162,3 +162,27 @@ BEGIN
         CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;
 END
 GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'HoanThanh'
+)
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    ADD HoanThanh BIT NOT NULL CONSTRAINT DF_tblLenhOnlines_HoanThanh DEFAULT(0);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tblLenhOnlines')
+      AND name = N'IDctLenhNhapKhoHangNhapKhauChiTiet'
+)
+BEGIN
+    ALTER TABLE dbo.tblLenhOnlines
+    ADD IDctLenhNhapKhoHangNhapKhauChiTiet BIGINT NULL;
+END
+GO

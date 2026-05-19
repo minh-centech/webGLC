@@ -77,6 +77,10 @@ namespace cenBUS
 
                         id = sqlParameters[0].Value;
                         ngayLamLenh = sqlParameters[sqlParameters.Count - 2].Value;
+                        ApplyIdctLenhNhapKhoHangNhapKhauChiTiet(
+                            sqlConnection,
+                            id,
+                            model.IDctLenhNhapKhoHangNhapKhauChiTiet);
                     }
                 }
 
@@ -109,6 +113,10 @@ namespace cenBUS
 
                         cmd.Parameters.AddRange(sqlParameters.ToArray());
                         cmd.ExecuteNonQuery();
+                        ApplyIdctLenhNhapKhoHangNhapKhauChiTiet(
+                            sqlConnection,
+                            model.ID,
+                            model.IDctLenhNhapKhoHangNhapKhauChiTiet);
                     }
                 }
 
@@ -166,9 +174,33 @@ namespace cenBUS
             sqlParameters.Add(new SqlParameter("@NgayLayHang", (object)model.NgayLayHang ?? DBNull.Value));
             sqlParameters.Add(new SqlParameter("@SoToKhai", (object)model.SoToKhai ?? DBNull.Value));
             sqlParameters.Add(new SqlParameter("@TrangThai", model.TrangThai));
+            sqlParameters.Add(new SqlParameter("@HoanThanh", (object)model.HoanThanh ?? DBNull.Value));
             sqlParameters.Add(new SqlParameter("@IDDanhMucKhachHangDoiLenh", model.IDDanhMucKhachHangDoiLenh));
 
             return sqlParameters;
+        }
+
+        private static void ApplyIdctLenhNhapKhoHangNhapKhauChiTiet(
+            SqlConnection sqlConnection,
+            object id,
+            long? idctLenhNhapKhoHangNhapKhauChiTiet)
+        {
+            if (!idctLenhNhapKhoHangNhapKhauChiTiet.HasValue || idctLenhNhapKhoHangNhapKhauChiTiet.Value <= 0)
+            {
+                return;
+            }
+
+            using (SqlCommand updateCmd = sqlConnection.CreateCommand())
+            {
+                updateCmd.CommandType = CommandType.Text;
+                updateCmd.CommandText = @"
+update tblLenhOnlines
+set IDctLenhNhapKhoHangNhapKhauChiTiet = @IDctLenhNhapKhoHangNhapKhauChiTiet
+where ID = @ID";
+                updateCmd.Parameters.AddWithValue("@ID", id ?? DBNull.Value);
+                updateCmd.Parameters.AddWithValue("@IDctLenhNhapKhoHangNhapKhauChiTiet", idctLenhNhapKhoHangNhapKhauChiTiet.Value);
+                updateCmd.ExecuteNonQuery();
+            }
         }
     }
 }

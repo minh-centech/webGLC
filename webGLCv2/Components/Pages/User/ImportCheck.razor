@@ -3,9 +3,11 @@
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Components
 @using System.Globalization
+@using System.Security.Claims
 
 <PageTitle>Kiểm tra hàng nhập</PageTitle>
 
@@ -31,7 +33,7 @@
 
         <div class="field-grid">
             <div>
-                <label class="portal-label" for="houseBill">House Bill</label>
+                <label class="portal-label" for="houseBill">House Bill <span style="color:red">(*)</span></label>
                 <input id="houseBill" class="portal-input" @bind="HouseBill" @bind:event="oninput" placeholder="Nhập House Bill" />
             </div>
             <div>
@@ -52,7 +54,7 @@
         {
             <section class="workspace-card">
                 <div class="section-heading">
-                    <h2>Kết quả tra cứu</h2>
+                    <h2>Kết quả tra cứu tình trạng thông quan</h2>
                     <p>@GetResultSummary()</p>
                 </div>
 
@@ -212,7 +214,7 @@
         <div class="portal-modal-backdrop" @onclick="CloseNoDataModal">
             <div class="portal-modal" @onclick:stopPropagation="true">
                 <div>
-                    <h3>Không có dữ liệu trên hệ thống</h3>
+                    <h3>Thông báo</h3>
                     <div class="portal-alert portal-alert-error" style="margin-top: 12px;">@NoDataModalMessage</div>
                 </div>
 
@@ -239,6 +241,7 @@
     private string NoDataModalMessage { get; set; } = string.Empty;
     private OnlineOrderRecord? ExistingOnlineOrder { get; set; }
     private long? ExistingOnlineOrderId { get; set; }
+    private long CurrentUserId { get; set; }
     private bool AutoLoaded;
     private bool IsSearching;
     private bool IsNoDataModalOpen;
@@ -268,7 +271,7 @@
             ContainerNumber = queryContainer;
         }
 
-                if (string.IsNullOrWhiteSpace(queryHouseBill))
+        if (string.IsNullOrWhiteSpace(queryHouseBill))
         {
             ErrorMessage = "Vui lòng nhập số House Bill trước khi tìm kiếm.";
             return;
@@ -276,6 +279,12 @@
 
         AutoLoaded = true;
         await SearchAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
     }
 
     private async Task SearchAsync()
@@ -316,18 +325,18 @@
 
             try
             {
-                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillAsync(normalizedHouseBill, normalizedContainer);
+                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillValidAsync(normalizedHouseBill, normalizedContainer);
             }
             catch
             {
-                OpenNoDataModal("API kiểm tra chi tiết House Bill không trả về dữ liệu hoặc bị lỗi.");
+                OpenNoDataModal("House Bill không có dữ liệu hoặc bị lỗi.");
                 return;
             }
 
             if (ChiTietResult is null || !ChiTietResult.Success || ChiTietResult.ParsedData is null)
             {
                 OpenNoDataModal(string.IsNullOrWhiteSpace(ChiTietResult?.Message)
-                    ? "API kiểm tra chi tiết House Bill không trả về dữ liệu hợp lệ."
+                    ? "House Bill không tồn tại hoặc đã được xác nhận hoàn thành."
                     : ChiTietResult.Message);
                 return;
             }
@@ -337,7 +346,7 @@
                 ThongQuanResult = await OnlineOrderService.CheckThongQuanAsync(
                     normalizedHouseBill,
                     normalizedContainer,
-                    ChiTietResult.ParsedData);
+                    ChiTietResult.ParsedData, true);
             }
             catch (Exception ex)
             {
@@ -383,7 +392,7 @@
         NoDataModalMessage = string.Empty;
     }
 
-    private void OpenOnlineOrderAction()
+    private async Task OpenOnlineOrderAction()
     {
         if (ExistingOnlineOrderId.HasValue)
         {
@@ -391,10 +400,10 @@
             return;
         }
 
-        OpenNewOnlineOrder();
+        await OpenNewOnlineOrderAsync();
     }
 
-    private void OpenNewOnlineOrder()
+    private async Task OpenNewOnlineOrderAsync()
     {
         if (string.IsNullOrWhiteSpace(HouseBill.Trim()))
         {
@@ -406,13 +415,47 @@
         var soContValue = parsedData?.SoContainer ?? ContainerNumber.Trim();
         var soVanDonValue = parsedData?.SoVanDon ?? ContainerNumber.Trim();
         var soToKhaiValue = ThongQuanResult?.Data?.SoToKhai ?? parsedData?.SoToKhai ?? string.Empty;
+        long? idCtLenhNhapKhoHangNhapKhauChiTiet = parsedData?.ID > 0
+            ? (long)parsedData.ID
+            : null;
+
+        if (!idCtLenhNhapKhoHangNhapKhauChiTiet.HasValue || idCtLenhNhapKhoHangNhapKhauChiTiet.Value <= 0)
+        {
+            ErrorMessage = "Không tìm thấy IDctLenhNhapKhoHangNhapKhauChiTiet từ danh sách số vận đơn hợp lệ.";
+            return;
+        }
 
         var houseBill = Uri.EscapeDataString(HouseBill.Trim());
         var soCont = Uri.EscapeDataString(soContValue);
         var soVanDon = Uri.EscapeDataString(soVanDonValue);
         var soToKhai = Uri.EscapeDataString(soToKhaiValue);
+        var idCt = Uri.EscapeDataString(idCtLenhNhapKhoHangNhapKhauChiTiet.Value.ToString(CultureInfo.InvariantCulture));
 
-        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}&soToKhai={soToKhai}");
+        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}&soToKhai={soToKhai}&idCtLenhNhapKhoHangNhapKhauChiTiet={idCt}");
+    }
+
+    private async Task<long?> ResolveIdCtLenhNhapKhoHangNhapKhauChiTietAsync(string? soVanDon)
+    {
+        if (CurrentUserId <= 0)
+        {
+            return null;
+        }
+
+        var normalizedSoVanDon = soVanDon?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedSoVanDon))
+        {
+            return null;
+        }
+
+        try
+        {
+            var result = await OnlineOrderService.GetLenhXuatKhoHangNhapKhauTempListAsync(CurrentUserId, normalizedSoVanDon);
+            return result.Data.FirstOrDefault()?.ID;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private string GetResultSummary()

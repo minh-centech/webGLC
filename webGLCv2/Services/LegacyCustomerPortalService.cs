@@ -579,6 +579,61 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể cập nhật ngày lấy hàng cho lệnh online.");
     }
 
+    public async Task MarkOrderAsCompletedAsync(OnlineOrderRecord order, string? traceTag = null)
+    {
+        if (!long.TryParse(order.Id, out var id))
+        {
+            throw new InvalidOperationException("Không xác định được ID lệnh để cập nhật trạng thái hoàn thành.");
+        }
+
+        var request = new LenhOnlinesUpdateRequest
+        {
+            ID = id,
+            HoVaTen = order.CustomerName,
+            SoDienThoai = order.PhoneNumber,
+            SoCMND = order.IdentityNumber,
+            SoXe = order.VehicleNumber,
+            MaSoThue = order.TaxCode,
+            TenCongTy = order.CompanyName,
+            DiaChi = order.CompanyAddress,
+            Email = order.CompanyEmail,
+            HouseBill = order.HouseBill,
+            SoCont = order.ContainerNumber,
+            SoToKhai = order.DeclarationNumber,
+            TrangThai = 1,
+            IDDanhMucKhachHangDoiLenh = order.UserId,
+            HoanThanh = true
+        };
+
+        var logPrefix = string.IsNullOrWhiteSpace(traceTag)
+            ? "[LegacyCustomerPortalService][MarkOrderAsCompleted]"
+            : $"[LegacyCustomerPortalService][MarkOrderAsCompleted][{traceTag}]";
+
+        Console.WriteLine($"{logPrefix} POST api/LenhOnlines/Update");
+        Console.WriteLine($"{logPrefix} Request={JsonSerializer.Serialize(request, JsonOptions)}");
+        Console.WriteLine($"{logPrefix} CompleteSync => TrangThai={request.TrangThai} | HoanThanh={request.HoanThanh?.ToString().ToLowerInvariant()}");
+
+        var response = await _httpClient.PostAsJsonAsync("api/LenhOnlines/Update", request, JsonOptions);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Console.WriteLine($"{logPrefix} Response={(int)response.StatusCode} {response.ReasonPhrase}");
+        Console.WriteLine($"{logPrefix} ResponseBody={responseBody}");
+
+        response.EnsureSuccessStatusCode();
+
+        ApiEnvelope? envelope;
+        try
+        {
+            envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException("Không thể cập nhật trạng thái hoàn thành cho lệnh online.", ex);
+        }
+
+        EnsureSuccess(envelope, "Không thể cập nhật trạng thái hoàn thành cho lệnh online.");
+    }
+
     public async Task ChangePasswordAsync(string email, string oldPassword, string newPassword, string newPasswordConfirm)
     {
         var payload = new
@@ -719,6 +774,7 @@ public sealed class LegacyCustomerPortalService
         public string? SoToKhai { get; set; }
         public int TrangThai { get; set; }
         public long IDDanhMucKhachHangDoiLenh { get; set; }
+        public bool? HoanThanh { get; set; }
     }
 }
 

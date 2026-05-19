@@ -27,6 +27,8 @@ namespace cenDTO
         public object LinkTaiHoaDon { get; set; }
         public object DuongDanFileHoaDon { get; set; }
 
+        public object IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
+
         public const string tableName = "tblLenhOnlines";
         public const string listProcedureName = "dbo.List_" + tableName;
         public const string insertProcedureName = "dbo.Insert_" + tableName;
@@ -63,7 +65,9 @@ namespace cenDTO
         public DateTime? NgayLayHang { get; set; }
         public string SoToKhai { get; set; }
         public int TrangThai { get; set; }
+        public bool? HoanThanh { get; set; }
         public long IDDanhMucKhachHangDoiLenh { get; set; }
+        public long? IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
     }
 
     public class LenhOnlinesDeleteRequest

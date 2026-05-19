@@ -119,6 +119,39 @@
 
             </div>
 
+
+            <div class="workflow-payment-row no-print" style="margin-top:12px; gap:12px; flex-wrap:wrap;">
+                @if (CanShowCreateAction)
+                {
+                    <button type="button"
+                            class="portal-primary-action enhanced-storage-btn"
+                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
+
+                        <i class="fas fa-file-invoice-dollar"></i>
+
+                        <span>
+                            Tạo biên nhận thanh toán &amp; lệnh xuất kho
+                        </span>
+
+                    </button>
+                }
+
+                @if (CanShowExtendAction)
+                {
+                    <button type="button"
+                            class="portal-secondary-action enhanced-extend-btn"
+                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
+
+                        <i class="fas fa-calendar-plus"></i>
+
+                        <span>
+                            Gia hạn biên nhận thanh toán
+                        </span>
+
+                    </button>
+                }
+            </div>
+
             @if (!string.IsNullOrWhiteSpace(WorkflowMessage))
             {
                 <div class="portal-alert portal-alert-success" style="margin-top:12px;">@WorkflowMessage</div>
@@ -161,10 +194,10 @@
 
                             <div class="workflow-payment-row" style="margin-bottom:12px; gap:12px; flex-wrap:wrap;">
                                 <span class="workflow-message" style="margin:0;">
-                                    Ngày nhập kho: <strong>@FormatDateTime(Workflow!.ChiTietHouseBill!.ParsedData!.NgayNhapKho)</strong>
+                                    Ngày nhập kho: <strong>@FormatDateTime(GetChiTietHouseBillFromApi()?.NgayNhapKho)</strong>
                                 </span>
                                 <span class="workflow-message" style="margin:0;">
-                                    Ngày gia hạn cuối: <strong>@FormatDateTime(Workflow!.ChiTietHouseBill!.ParsedData!.NgayGiaHanCuoi)</strong>
+                                    Ngày gia hạn cuối: <strong>@FormatDateTime(GetChiTietHouseBillFromApi()?.NgayGiaHanCuoi)</strong>
                                 </span>
                             </div>
 
@@ -335,6 +368,22 @@
                         </article>
                     }
 
+                    @if (HasConfirmedWarehouseCompletion)
+                    {
+                        <article class="workflow-card workflow-card-wide" style="order:-2; background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #86efac; box-shadow: 0 12px 28px rgba(34, 197, 94, 0.12);">
+                            <div class="section-heading">
+                                <h2 style="color:#166534; font-weight:800; letter-spacing:-0.02em;">
+                                    <i class="fas fa-check-circle" aria-hidden="true" style="color:#16a34a; margin-right:8px;"></i>
+                                    Xác nhận hoàn thành xuất kho
+                                </h2>
+                                <span class="status-chip success" style="background:#16a34a; color:#fff; border-color:#16a34a; font-weight:700;">Đã xác nhận</span>
+                            </div>
+                            <p class="workflow-message" style="margin:0; color:#14532d; font-weight:700; font-size:1.02rem;">
+                                Housebill đã xác nhận hoàn thành.
+                            </p>
+                        </article>
+                    }
+
                     <article class="workflow-card workflow-card-wide" style="order:-1;">
                         <div class="section-heading">
                             <h2>Thông tin chi tiết hàng hoá</h2>
@@ -366,8 +415,14 @@
                                     </thead>
                                     <tbody>
                                         @{
-                                            var chiTiet = Workflow!.ChiTietHouseBill!.ParsedData!;
+                                            var chiTiet = GetChiTietHouseBillFromApi();
                                         }
+                                        @if (chiTiet is null)
+                                        {
+                                            <tr><td colspan="2">Không có dữ liệu chi tiết hàng hoá.</td></tr>
+                                        }
+                                        else
+                                        {
                                         <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
                                         @* <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr> *@
                                         <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
@@ -400,41 +455,12 @@
                                         <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
                                         <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
                                         <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
+                                        }
                                     </tbody>
                                 </table>
                             </div>
 
-                            <div class="workflow-payment-row no-print" style="margin-top:12px; gap:12px; flex-wrap:wrap;">
-                                @if (CanShowCreateAction)
-                                {
-                                    <button type="button"
-                                            class="portal-primary-action enhanced-storage-btn"
-                                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
-
-                                        <i class="fas fa-file-invoice-dollar"></i>
-
-                                        <span>
-                                            Tạo biên nhận thanh toán &amp; lệnh xuất kho
-                                        </span>
-
-                                    </button>
-                                }
-
-                                @if (CanShowExtendAction)
-                                {
-                                    <button type="button"
-                                            class="portal-secondary-action enhanced-extend-btn"
-                                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
-
-                                        <i class="fas fa-calendar-plus"></i>
-
-                                        <span>
-                                            Gia hạn biên nhận thanh toán
-                                        </span>
-
-                                    </button>
-                                }
-                            </div>
+                            
 
                             @* @if (HasPhiLuuKho)
                         {
@@ -967,8 +993,8 @@
 
             @if (ShowPaymentConfirmDialog)
             {
-                <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px;" @onclick="ClosePaymentConfirmDialog">
-                    <div class="payment-confirm-modal" style="max-width:520px; width:min(100%, 520px); border-radius:20px; background:linear-gradient(180deg, #fff7d1 0%, #fff1a8 100%); border:1px solid #f3c846; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
+                <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px; pointer-events:auto;" @onclick="ClosePaymentConfirmDialog">
+                    <div class="payment-confirm-modal" style="position:relative; z-index:2601; pointer-events:auto; max-width:520px; width:min(100%, 520px); border-radius:20px; background:linear-gradient(180deg, #fff7d1 0%, #fff1a8 100%); border:1px solid #f3c846; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
                         <div style="display:flex; align-items:flex-start; gap:14px;">
                             <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#d97706; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(217, 119, 6, 0.35);">
                                 <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
@@ -982,7 +1008,7 @@
                         </div>
                         <div class="payment-confirm-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:22px;">
                             <button type="button" class="portal-secondary-action" style="padding:0.85rem 1.15rem;" @onclick="ClosePaymentConfirmDialog">Hủy</button>
-                            <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem;" @onclick="ConfirmPaymentAsync">Tiếp tục thanh toán</button>
+                            <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem;" @onclick="async () => await ConfirmPaymentAsync()" @onclick:stopPropagation="true">Tiếp tục thanh toán</button>
                         </div>
                     </div>
                 </div>
@@ -996,6 +1022,28 @@
                         Thanh toán QRCode
                     </button>
                 }
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowLenhXuatPdfWarningDialog)
+{
+    <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px; pointer-events:auto;" @onclick="CloseLenhXuatPdfWarningDialog">
+        <div class="payment-confirm-modal" style="position:relative; z-index:2601; pointer-events:auto; max-width:540px; width:min(100%, 540px); border-radius:20px; background:linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #60a5fa; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(37, 99, 235, 0.35);">
+                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                </div>
+                <div style="flex:1 1 auto;">
+                    <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#1e3a8a;">Không thể tải lệnh xuất kho</h4>
+                    <p style="margin:0; color:#1e3a8a; line-height:1.65; font-size:0.98rem;">
+                        Vui lòng thanh toán các biên nhận trước khi tải lệnh xuất kho.
+                    </p>
+                </div>
+            </div>
+            <div class="payment-confirm-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:22px;">
+                <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem; background:#2563eb; border-color:#2563eb;" @onclick="CloseLenhXuatPdfWarningDialog" @onclick:stopPropagation="true">Đã hiểu</button>
             </div>
         </div>
     </div>
@@ -1036,6 +1084,7 @@
     private string StorageActionDateText = string.Empty;
     private string? StorageActionPopupMessage;
     private bool CanShowPaymentQrButton = true;
+    private bool ShowLenhXuatPdfWarningDialog;
 
     private enum StorageActionPopupMode
     {
@@ -1140,19 +1189,48 @@
         {
             Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync start. OrderId={OrderId}, HouseBill={Order.HouseBill}, Container={Order.ContainerNumber}");
             Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
-                OrderId,
-                CurrentUserId,
-                Order.HouseBill,
-                Order.ContainerNumber,
-                Order.PickupDate,
-                Order.InvoiceDownloadUrl,
-                Order.PickupDate?.ToString("yyyy/MM/dd"),
-                traceTag);
+                idLenhOnline: OrderId,
+                idDanhMucKhachHangDoiLenh: CurrentUserId,
+                houseBill: Order.HouseBill,
+                soCont: Order.ContainerNumber,
+                idCtLenhNhapKhoHangNhapKhauChiTiet: Order.IDctLenhNhapKhoHangNhapKhauChiTiet,
+                pickupDate: Order.PickupDate,
+                invoiceDownloadUrl: Order.InvoiceDownloadUrl,
+                pickupDateStr: Order.PickupDate?.ToString("yyyy/MM/dd"),
+                traceTag: traceTag);
 
             if (Workflow is not null)
             {
                 Workflow.PhiLuuKho = null;
                 Workflow.PhiLuuKhoQuaHan = null;
+            }
+
+            if (Workflow?.ChiTietHouseBill?.ParsedData?.DaXacNhanHoanThanhXuatKho == 1)
+            {
+                Console.WriteLine($"[{traceTag}] DaXacNhanHoanThanhXuatKho=1, dang dong bo HoanThanh cho tblLenhOnlines.");
+
+                if (Order.IsHoanThanh != true)
+                {
+                    try
+                    {
+                        await LegacyCustomerPortalService.MarkOrderAsCompletedAsync(Order, traceTag);
+                        Order.IsHoanThanh = true;
+                        if (Workflow.ChiTietHouseBill.ParsedData is not null)
+                        {
+                            Workflow.ChiTietHouseBill.ParsedData.IsHoanThanh = true;
+                        }
+
+                        Console.WriteLine($"[{traceTag}] Da cap nhat HoanThanh=true thanh cong.");
+                    }
+                    catch (Exception updateEx)
+                    {
+                        Console.WriteLine($"[{traceTag}] Cap nhat HoanThanh that bai: {updateEx.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[{traceTag}] Bo qua cap nhat HoanThanh vi lenh da duoc danh dau hoan thanh.");
+                }
             }
 
             //Bo check thong quan trong chi tiết
@@ -1294,11 +1372,11 @@
             _ => "Không xác định"
         };
 
-    private static string GetChiTietHouseBillStatusClass(bool trangThaiKhoa)
-        => trangThaiKhoa ? "warning" : "success";
+    private static string GetChiTietHouseBillStatusClass(bool? trangThaiKhoa)
+        => trangThaiKhoa == true ? "warning" : "success";
 
-    private static string GetChiTietHouseBillStatusLabel(bool trangThaiKhoa)
-        => trangThaiKhoa ? "Đã khoá" : "Chua khóa";
+    private static string GetChiTietHouseBillStatusLabel(bool? trangThaiKhoa)
+        => trangThaiKhoa == true ? "Đã khoá" : "Chua khóa";
 
     private static string GetStorageExpiryStatusClass(DateTime? ngayGiaHan)
     {
@@ -1321,27 +1399,166 @@
     {
         get
         {
-            if (ReceiptPaymentCount < 1)
+            if (HasCompletedWarehouseAction)
             {
                 return false;
             }
-            
-            return true;
+
+            var lenhXuatKhoTemp = GetLenhXuatKhoTemp();
+            if (lenhXuatKhoTemp is null)
+            {
+                return false;
+            }
+
+            return IsExtendAction(lenhXuatKhoTemp);
         }
     }
 
     private bool CanShowCreateAction
-        => HasChiTietHouseBill && ReceiptPaymentCount == 0;
+    {
+        get
+        {
+            if (HasCompletedWarehouseAction)
+            {
+                return false;
+            }
+
+            var lenhXuatKhoTemps = Workflow?.LenhXuatKhoHangNhapKhauTemps;
+            if (lenhXuatKhoTemps?.Success == true && lenhXuatKhoTemps.Data.Count == 0)
+            {
+                return true;
+            }
+
+            var lenhXuatKhoTemp = GetLenhXuatKhoTemp();
+            if (lenhXuatKhoTemp is null)
+            {
+                return lenhXuatKhoTemps?.Success == true;
+            }
+
+            if (IsExtendAction(lenhXuatKhoTemp))
+            {
+                return false;
+            }
+
+            return IsCreateAction(lenhXuatKhoTemp);
+        }
+    }
 
     private int ReceiptPaymentCount
         => Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
             ? Workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Count
             : 0;
 
+    private bool CanDownloadLenhXuatPdf
+    {
+        get
+        {
+            var receipts = Workflow?.BienNhanThanhToanHangNhapKhauTemps;
+            if (receipts?.Success != true || receipts.Data.Count == 0)
+            {
+                return false;
+            }
+
+            return receipts.Data.All(item => item.DaThanhToan);
+        }
+    }
+
+    private LenhXuatKhoHangNhapKhauTempListItem? GetLenhXuatKhoTemp()
+        => Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true
+           && Workflow.LenhXuatKhoHangNhapKhauTemps.Data.Count > 0
+            ? Workflow.LenhXuatKhoHangNhapKhauTemps.Data
+                .OrderByDescending(item => item.NgayLap ?? DateTime.MinValue)
+                .FirstOrDefault()
+            : null;
+
+    private bool HasConfirmedWarehouseCompletion
+        => Workflow?.ChiTietHouseBill?.ParsedData?.DaXacNhanHoanThanhXuatKho == 1;
+
+    private bool HasCompletedWarehouseAction
+        => Order?.IsHoanThanh == true || HasConfirmedWarehouseCompletion;
+
+    private ChiTietHouseBillData? GetChiTietHouseBillFromApi()
+        => Workflow?.ChiTietHouseBill?.Success == true
+           ? Workflow.ChiTietHouseBill.ParsedData
+           : null;
+
+    private ChiTietHouseBillData? GetChiTietHouseBillForPayment()
+    {
+        var fromApi = GetChiTietHouseBillFromApi();
+        if (fromApi is not null)
+        {
+            return fromApi;
+        }
+
+        if (Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success != true)
+        {
+            return null;
+        }
+
+        var temp = GetLenhXuatKhoTemp();
+        if (temp is null)
+        {
+            return null;
+        }
+
+        return new ChiTietHouseBillData
+        {
+            SoVanDon = temp.SoVanDon,
+            SoContainer = temp.SoContainer,
+            MoTaHangHoa = temp.MoTaHangHoa,
+            TenChuHang = Order?.CustomerName ?? string.Empty,
+            MaDanhMucDonViTinh = temp.MaDanhMucDonViTinh,
+            SoLuongKienNhap = temp.SoLuongKienNhap,
+            KhoiLuongNhap = temp.KhoiLuongNhap,
+            CBMNhap = temp.CBMNhap,
+            MaDanhMucCuaLamHang = temp.MaDanhMucCuaLamHang,
+            NgayNhapKho = temp.NgayLap,
+            NgayGiaHanCuoi = temp.NgayGiaHan,
+            MaDanhMucDaiLy = temp.MaDanhMucDaiL,
+            SoSeal = temp.SoSeal,
+            MaDanhMucLoaiContainer = temp.MaDanhMucLoaiContainer,
+            MasterBill = Order?.HouseBill ?? temp.SoVanDon,
+            MaDanhMucHangTau = temp.MaDanhMucHangTau,
+            TenTau = temp.TenTau,
+            NgayTauDen = temp.NgayTauDen,
+            NgayTauDenEIM = temp.NgayTauDenEIM,
+            SoDinhDanhHangHoa = temp.SoDinhDanhHangHoa,
+            SoHieuPhuongTienVanTai = temp.SoHieuPhuongTienVanTai,
+            IsHoanThanh = temp.IsHoanThanh
+        };
+    }
+
+    private DateTime? GetCurrentNgayGiaHanForExtend()
+        => GetLenhXuatKhoTemp()?.NgayGiaHan;
+
+    private static bool IsCreateAction(LenhXuatKhoHangNhapKhauTempListItem temp)
+    {
+        if (!temp.NgayGiaHan.HasValue)
+        {
+            return true;
+        }
+
+        if (!temp.NgayLap.HasValue)
+        {
+            return true;
+        }
+
+        return temp.NgayGiaHan.Value.Date == temp.NgayLap.Value.Date;
+    }
+
+    private static bool IsExtendAction(LenhXuatKhoHangNhapKhauTempListItem temp)
+    {
+        if (!temp.NgayGiaHan.HasValue || !temp.NgayLap.HasValue)
+        {
+            return false;
+        }
+
+        return temp.NgayGiaHan.Value != temp.NgayLap.Value;
+    }
+
     private void OpenStorageActionPopup(StorageActionPopupMode mode)
     {
-        var chiTiet = Workflow?.ChiTietHouseBill?.ParsedData;
-        if (chiTiet is null || Order is null)
+        if (Order is null)
         {
             return;
         }
@@ -1353,9 +1570,12 @@
         StorageActionPopupMessage = null;
         WorkflowMessage = null;
 
+        var extendDate = GetCurrentNgayGiaHanForExtend()?.Date.AddDays(1);
         StorageActionDate = mode == StorageActionPopupMode.Payment
             ? DateTime.Today
-            : DateTime.Today.AddDays(1);
+            : extendDate.HasValue && extendDate.Value < DateTime.Today
+                ? DateTime.Today
+                : extendDate ?? DateTime.Today.AddDays(1);
         StorageActionDateText = StorageActionDate.HasValue
             ? StorageActionDate.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))
             : string.Empty;
@@ -1376,6 +1596,7 @@
         _shouldAutoLoadStorageAction = false;
         PaymentQrDetails = null;
         ShowPaymentConfirmDialog = false;
+        ShowLenhXuatPdfWarningDialog = false;
     }
 
     private async Task OnStorageActionDateInput(ChangeEventArgs args)
@@ -1516,8 +1737,7 @@
            && string.Equals(Workflow.ChiTietHouseBill.Data?.Trim(), "[]", StringComparison.Ordinal);
 
     private bool IsOverdueOrder
-        => Workflow?.ChiTietHouseBill?.ParsedData is not null
-           && Workflow.ChiTietHouseBill.ParsedData.IsHoanThanh == true
+        => Workflow?.ChiTietHouseBill?.ParsedData is { IsHoanThanh: true }
            && Order?.PickupDate.HasValue == true
            && Order.PickupDate.Value.Date < DateTime.Today
            && Workflow?.ThongQuan?.IsThongQuan == true;
@@ -1532,7 +1752,7 @@
 
     private async Task ShowPaymentPopupAsync()
     {
-        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null)
+        if (Order is null || GetChiTietHouseBillFromApi() is null)
         {
             return;
         }
@@ -1647,6 +1867,13 @@
             return;
         }
 
+        if (!CanDownloadLenhXuatPdf)
+        {
+            ShowLenhXuatPdfWarningDialog = true;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         SetActiveReceiptAction(item.So, "lenhxuat-download");
         try
         {
@@ -1661,6 +1888,11 @@
         {
             _ = ClearActiveReceiptActionAfterDelayAsync(item.So, "lenhxuat-download", 1200);
         }
+    }
+
+    private void CloseLenhXuatPdfWarningDialog()
+    {
+        ShowLenhXuatPdfWarningDialog = false;
     }
 
     private async Task DownloadBienNhanPdfAsync(BienNhanThanhToanHangNhapKhauTempListItem? item)
@@ -1761,7 +1993,7 @@
 
     private async Task ExecutePaymentAsync()
     {
-        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null || Workflow?.PhiLuuKho?.Data is null)
+        if (Order is null)
         {
             return;
         }
@@ -1777,13 +2009,14 @@
 
     private async Task ConfirmPaymentAsync()
     {
-        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null || Workflow?.PhiLuuKho?.Data is null)
+        if (Order is null)
         {
             return;
         }
 
         ShowPaymentConfirmDialog = false;
         SyncStorageActionDateFromText();
+        await InvokeAsync(StateHasChanged);
 
         IsLoadingPaymentInfo = true;
         PaymentPopupMessage = null;
@@ -1792,10 +2025,29 @@
 
         try
         {
-            var chiTiet = Workflow.ChiTietHouseBill.ParsedData;
+            var chiTiet = GetChiTietHouseBillForPayment();
+            if (chiTiet is null)
+            {
+                PaymentPopupMessage = "Không lấy được dữ liệu chi tiết để tiếp tục thanh toán.";
+                return;
+            }
+
             var ngayGiaHan = StorageActionDate ?? chiTiet.NgayGiaHanCuoi ?? chiTiet.NgayNhapKho ?? Order.PickupDate ?? DateTime.Today;
             chiTiet.NgayGiaHanCuoi = ngayGiaHan;
             var currentUserId = CurrentUserId > 0 ? CurrentUserId : GetCurrentUserId((await AuthenticationStateProvider.GetAuthenticationStateAsync()).User);
+
+            if (Workflow?.PhiLuuKho?.Data is null)
+            {
+                await ExecuteStorageActionAsync();
+            }
+
+            if (Workflow?.PhiLuuKho?.Data is null)
+            {
+                PaymentPopupMessage = Workflow?.PhiLuuKho?.Message
+                    ?? StorageActionPopupMessage
+                    ?? "Không thể tính cước thanh toán.";
+                return;
+            }
 
             PaymentInfo = await OnlineOrderService.InsertLenhXuatKhoHangNhapKhauTempAsync(
                 Order,
@@ -1810,6 +2062,7 @@
                 try
                 {
                     await Task.Delay(500);
+                    await RefreshPaymentDocumentsAsync(ngayGiaHan);
                     await LegacyCustomerPortalService.UpdateOrderPickupDateAsync(Order, ngayGiaHan);
                     var refreshedOrder = await OnlineOrderService.GetOrderByIdAsync(CurrentUserId, OrderId);
                     if (refreshedOrder is not null)
@@ -1866,12 +2119,17 @@
 
     private async Task RefreshPaymentDocumentsAsync(DateTime? selectedNgayGiaHan = null)
     {
-        if (Order is null || Workflow?.ChiTietHouseBill?.ParsedData is null)
+        if (Order is null)
         {
             return;
         }
 
-        var chiTiet = Workflow.ChiTietHouseBill.ParsedData;
+        var chiTiet = GetChiTietHouseBillFromApi();
+        if (chiTiet is null)
+        {
+            return;
+        }
+
         if (selectedNgayGiaHan.HasValue)
         {
             chiTiet.NgayGiaHanCuoi = selectedNgayGiaHan.Value;

@@ -332,6 +332,7 @@ public sealed class LenhXuatKhoHangNhapKhauTempListResponse
 public sealed class LenhXuatKhoHangNhapKhauTempListItem
 {
     [JsonPropertyName("ID")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
     public long ID { get; set; }
 
     [JsonPropertyName("So")]
@@ -344,10 +345,72 @@ public sealed class LenhXuatKhoHangNhapKhauTempListItem
     public DateTime? NgayGiaHan { get; set; }
 
     [JsonPropertyName("IDctLenhNhapKhoHangNhapKhauChiTiet")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
     public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
 
     [JsonPropertyName("SoVanDon")]
     public string SoVanDon { get; set; } = string.Empty;
+
+    [JsonPropertyName("TenTau")]
+    public string TenTau { get; set; } = string.Empty;
+
+    [JsonPropertyName("NgayTauDen")]
+    public DateTime? NgayTauDen { get; set; }
+
+    [JsonPropertyName("SoContainer")]
+    public string SoContainer { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoSeal")]
+    public string SoSeal { get; set; } = string.Empty;
+
+    [JsonPropertyName("MoTaHangHoa")]
+    public string MoTaHangHoa { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucDonViTinh")]
+    public string MaDanhMucDonViTinh { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoLuongKienNhap")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal SoLuongKienNhap { get; set; }
+
+    [JsonPropertyName("KhoiLuongNhap")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal KhoiLuongNhap { get; set; }
+
+    [JsonPropertyName("CBMNhap")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal CBMNhap { get; set; }
+
+    [JsonPropertyName("MaDanhMucDonViTinh1")]
+    public string MaDanhMucDonViTinh1 { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucDaiL")]
+    public string MaDanhMucDaiL { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucCuaLamHang")]
+    public string MaDanhMucCuaLamHang { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucLoaiContainer")]
+    public string MaDanhMucLoaiContainer { get; set; } = string.Empty;
+
+    [JsonPropertyName("MaDanhMucHangTau")]
+    public string MaDanhMucHangTau { get; set; } = string.Empty;
+
+    [JsonPropertyName("NgayTauDenEIM")]
+    public string NgayTauDenEIM { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoDinhDanhHangHoa")]
+    public string SoDinhDanhHangHoa { get; set; } = string.Empty;
+
+    [JsonPropertyName("SoHieuPhuongTienVanTai")]
+    public string SoHieuPhuongTienVanTai { get; set; } = string.Empty;
+
+    [JsonPropertyName("DaXacNhanHoanThanhXuatKho")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int DaXacNhanHoanThanhXuatKho { get; set; }
+
+    [JsonIgnore]
+    public bool IsHoanThanh => DaXacNhanHoanThanhXuatKho == 1;
 
     [JsonIgnore]
     public string DownloadUrl { get; set; } = string.Empty;
@@ -410,7 +473,11 @@ public sealed class ChiTietHouseBillData
     public string SoVanDon { get; set; } = string.Empty;
 
     [JsonPropertyName("TrangThaiKhoa")]
-    public bool TrangThaiKhoa { get; set; }
+    public bool? TrangThaiKhoa { get; set; }
+
+    [JsonPropertyName("DaXacNhanHoanThanhXuatKho")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int DaXacNhanHoanThanhXuatKho { get; set; }
 
     [JsonPropertyName("SoContainer")]
     public string SoContainer { get; set; } = string.Empty;
@@ -476,6 +543,7 @@ public sealed class ChiTietHouseBillData
     public string MaDanhMucCuaLamHang { get; set; } = string.Empty;
 
     [JsonPropertyName("IDDanhMucCuaLamHang")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
     public long IDDanhMucCuaLamHang { get; set; }
 
     [JsonPropertyName("NgayNhapKho")]
@@ -555,6 +623,12 @@ public sealed class ChiTietHouseBillData
 
     [JsonIgnore]
     public bool IsHoanThanh { get; set; }
+
+    [JsonIgnore]
+    public bool IsKhoa => TrangThaiKhoa == true;
+
+    [JsonIgnore]
+    public bool IsDaXacNhanHoanThanhXuatKho => DaXacNhanHoanThanhXuatKho == 1;
 
     [JsonIgnore]
     public long ResolvedIDDanhMucCuaLamHang

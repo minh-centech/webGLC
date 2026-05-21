@@ -105,10 +105,12 @@ app.UseAntiforgery();
 app.Use(async (context, next) =>
 {
     var cspOptions = context.RequestServices.GetRequiredService<IOptions<ContentSecurityPolicyOptions>>().Value;
-    var contentSecurityPolicy = BuildContentSecurityPolicy(cspOptions);
-
-    context.Response.Headers["Content-Security-Policy"] = contentSecurityPolicy;
-    context.Response.Headers["Permissions-Policy"] = "xr-spatial-tracking=()";
+    if (cspOptions.EnableContentSecurityPolicy)
+    {
+        var contentSecurityPolicy = BuildContentSecurityPolicy(cspOptions);
+        context.Response.Headers["Content-Security-Policy"] = contentSecurityPolicy;
+        context.Response.Headers["Permissions-Policy"] = "xr-spatial-tracking=()";
+    }
 
     await next();
 });

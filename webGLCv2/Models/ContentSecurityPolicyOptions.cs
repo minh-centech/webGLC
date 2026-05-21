@@ -4,6 +4,7 @@ public sealed class ContentSecurityPolicyOptions
 {
     public const string SectionName = "ContentSecurityPolicy";
 
+    public bool EnableContentSecurityPolicy { get; set; } = true;
     public List<string> DefaultSrc { get; set; } = new() { "'self'" };
     public List<string> BaseUri { get; set; } = new() { "'self'" };
     public List<string> ObjectSrc { get; set; } = new() { "'none'" };

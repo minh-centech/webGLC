@@ -225,9 +225,9 @@ public sealed class OnlineOrderService
     public async Task<ThongQuanCheckResponse> CheckThongQuanAsync(
     string houseBill,
     string soCont,
-    ChiTietHouseBillData? chiTiet,
-    bool test = false)
+    ChiTietHouseBillData? chiTiet)
     {
+        var isTest = _workflowOptions.TestCheckThongQuan;
         var ngayTauDenEim = BuildNgayTauDenEimText(chiTiet);
 
         var soDinhDanhHangHoa = !string.IsNullOrWhiteSpace(chiTiet?.SoDinhDanhHangHoa)
@@ -260,12 +260,16 @@ public sealed class OnlineOrderService
             // =========================
             // TEST MODE
             // =========================
-            if (test)
+            if (isTest)
             {
+                string SoToKhai = Random.Shared
+                .NextInt64(100000000000, 999999999999)
+                .ToString();
+                //string maHaiQuan = string.Join("", SoToKhai);
                 responseBody = $$"""
             {
                 "Status": 0,
-                "Data": "{\"SoHieuPhuongTienVanTai\":\"PRIDE PACIFIC\",\"SoChuyen\":null,\"NgayTauDen\":null,\"SoVanDon\":\"{{houseBill}}\",\"SoDinhDanhHangHoa\":\"{{houseBill}}\",\"SoToKhai\":\"108251462800\",\"NgayToKhai\":null,\"MaHaiQuanDangKyToKhai\":null,\"MaLoaiHinh\":null,\"MaHaiQuanGiamSat\":null,\"SoLuong\":null,\"DonViTinh\":null,\"ViTriKho\":null,\"MoTaHangHoa\":null,\"GhiChu\":null,\"ThoiGianKetXuatDuLieu\":null,\"LuongToKhai\":null,\"TrangThaiToKhai\":\"TQ\",\"MaDoanhNghiep\":\"2301017603\",\"TenDoanhNghiep\":\"CôNG TY Cổ PHầN NHựA ZION\"}",
+                "Data": "{\"SoHieuPhuongTienVanTai\":\"PRIDE PACIFIC\",\"SoChuyen\":null,\"NgayTauDen\":null,\"SoVanDon\":\"{{houseBill}}\",\"SoDinhDanhHangHoa\":\"{{houseBill}}\",\"SoToKhai\":\"{{SoToKhai}}\",\"NgayToKhai\":null,\"MaHaiQuanDangKyToKhai\":null,\"MaLoaiHinh\":null,\"MaHaiQuanGiamSat\":null,\"SoLuong\":null,\"DonViTinh\":null,\"ViTriKho\":null,\"MoTaHangHoa\":null,\"GhiChu\":null,\"ThoiGianKetXuatDuLieu\":null,\"LuongToKhai\":null,\"TrangThaiToKhai\":\"TQ\",\"MaDoanhNghiep\":\"2301017603\",\"TenDoanhNghiep\":\"CôNG TY Cổ PHầN NHựA ZION\"}",
                 "ErrorMsg": ""
             }
             """;
@@ -844,6 +848,7 @@ public sealed class OnlineOrderService
         Console.WriteLine($"[ChiTietHouseBillNew] ParsedEnvelope={JsonSerializer.Serialize(result, JsonOptions)}");
         result.ParsedData = ParseChiTietHouseBillData(result.Data, houseBill, soCont);
         Console.WriteLine($"[ChiTietHouseBillNew] ParsedData={(result.ParsedData is null ? "null" : JsonSerializer.Serialize(result.ParsedData, JsonOptions))}");
+        
         if (result.Success && result.ParsedData is null && !string.Equals(result.Data?.Trim(), "[]", StringComparison.Ordinal))
         {
             result.Success = false;
@@ -1083,9 +1088,12 @@ public sealed class OnlineOrderService
         Console.WriteLine($"{tracePrefix}LenhXuatKhoHangNhapKhauTemp/ListTemp.Response={JsonSerializer.Serialize(result.LenhXuatKhoHangNhapKhauTemps, JsonOptions)}");
 
         Console.WriteLine($"{tracePrefix}Calling BienNhanThanhToanHangNhapKhauTemp/ListTemp...");
+        long id = (long?)chiTiet?.ID
+          ?? (long?)idCtLenhNhapKhoHangNhapKhauChiTiet
+          ?? 0L;
         result.BienNhanThanhToanHangNhapKhauTemps = await GetBienNhanThanhToanHangNhapKhauTempListAsync(
             //chiTiet.ID,
-            idCtLenhNhapKhoHangNhapKhauChiTiet,
+            id,
             idDanhMucKhachHangDoiLenh);
         Console.WriteLine($"{tracePrefix}BienNhanThanhToanHangNhapKhauTemp/ListTemp.Response={JsonSerializer.Serialize(result.BienNhanThanhToanHangNhapKhauTemps, JsonOptions)}");
         //End
@@ -1832,6 +1840,13 @@ public sealed class OnlineOrderService
             "SoBienNhan",
             soBienNhan,
             "BienNhanThanhToan");
+
+    public Task<PdfDownloadResult> DownloadHoaDonDienTuHangNhapKhauTempPdfAsync(string fKey)
+        => DownloadTempPdfAsync(
+            "/api/ctLenhXuatKhoHangNhapKhauTemp/TaiPDFHDDTAsync",
+            "FKey",
+            fKey,
+            "HoaDonDienTu");
 
     private async Task<PdfDownloadResult> DownloadTempPdfAsync(string relativePath, string queryName, string so, string filePrefix)
     {

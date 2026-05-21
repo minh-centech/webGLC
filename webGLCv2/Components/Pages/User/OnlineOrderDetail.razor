@@ -1,6 +1,7 @@
 ﻿@page "/user/orders/{OrderId:long}"
 @rendermode InteractiveServer
 @attribute [Authorize]
+@implements IAsyncDisposable
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject OnlineOrderService OnlineOrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -8,6 +9,7 @@
 @inject IJSRuntime JSRuntime
 @using System.Globalization
 @using System.Security.Claims
+@using System.Threading
 
 <PageTitle>Chi tiết lệnh online</PageTitle>
 
@@ -529,7 +531,7 @@
                 <section class="workflow-grid" style="margin-top:16px;">
                     <article class="workflow-card workflow-card-wide">
                         <div class="section-heading">
-                            <h2>Lệnh xuất kho đã tạo</h2>
+                            <h2>Lệnh xuất kho</h2>
                             <span class="status-chip @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
                                 @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true
                                     ? $"Vui lòng thanh toán các biên nhận để tải lệnh xuất kho"
@@ -575,7 +577,7 @@
                                                             class="portal-secondary-action"
                                                             style="@GetLenhXuatDownloadButtonStyle(item.So)"
                                                             @onclick="() => DownloadLenhXuatPdfAsync(item)">
-                                                        Tải PDF
+                                                        Tải Lệnh PDF
                                                     </button>
                                                 </td>
                                             </tr>
@@ -587,13 +589,22 @@
                     </article>
 
                     <article class="workflow-card workflow-card-wide">
-                        <div class="section-heading">
-                            <h2>Danh sách biên nhận thanh toán đã tạo</h2>
-                            <span class="status-chip @(Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
-                                @(Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
-                                    ? $"{Workflow.BienNhanThanhToanHangNhapKhauTemps!.Data.Count} mục"
-                                    : "Chưa có dữ liệu")
-                            </span>
+                        <div class="section-heading" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                <h2 style="margin:0;">Danh sách biên nhận thanh toán</h2>
+                                <span class="status-chip @(Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
+                                    @(Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
+                                        ? $"{Workflow.BienNhanThanhToanHangNhapKhauTemps!.Data.Count} mục"
+                                        : "Chưa có dữ liệu")
+                                </span>
+                            </div>
+                            <button type="button"
+                                    class="portal-secondary-action"
+                                    style="padding:0.45rem 0.75rem; min-height:32px; font-size:0.84rem; line-height:1;"
+                                    @onclick="RefreshReceiptPaymentsAsync"
+                                    disabled="@IsRefreshingReceipts">
+                                @(IsRefreshingReceipts ? "Đang xử lý" : "Làm mới")
+                            </button>
                         </div>
 
                         @{
@@ -661,6 +672,16 @@
                                                                     style="@GetReceiptDownloadButtonStyle(item.So)"
                                                                     @onclick="() => DownloadBienNhanPdfAsync(item)">
                                                                 Tải PDF
+                                                            </button>
+                                                        }
+
+                                                        @if (CanDownloadElectronicInvoice(item))
+                                                        {
+                                                            <button type="button"
+                                                                    class="portal-primary-action"
+                                                                    style="@GetReceiptElectronicInvoiceButtonStyle(item.FKey)"
+                                                                    @onclick="() => DownloadHoaDonDienTuAsync(item)">
+                                                                Tải Hoá đơn điện tử
                                                             </button>
                                                         }
 
@@ -849,7 +870,7 @@
                                 <div class="payment-detail-row">
                                     <span>Số tiền</span>
                                     <span style="display:flex; align-items:center; gap:8px;">
-                                        <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoney(PaymentQrDetails.Amount ?? 0m)</strong>
+                                        <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoneyVnd(PaymentQrDetails.Amount ?? 0m)</strong>
                                         <button type="button"
                                                 style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;"
                                                 title="Copy số tiền"
@@ -954,8 +975,8 @@
                                             <div class="payment-detail-row">
                                                 <span>Số tiền</span>
                                                 <span style="display:flex; align-items:center; gap:8px;">
-                                                    <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m)</strong>
-                                                    <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tiền" aria-label="Copy số tiền" @onclick="() => CopyPaymentQrValueAsync(FormatMoney(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m))">
+                                                    <strong style="display:inline-block; min-width:120px; text-align:right;">@FormatMoneyVnd(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m)</strong>
+                                                    <button type="button" style="border:0; background:transparent; color:var(--portal-primary, #1f6feb); padding:0; line-height:1; cursor:pointer;" title="Copy số tiền" aria-label="Copy số tiền" @onclick="() => CopyPaymentQrValueAsync(FormatMoneyVnd(SelectedReceiptPaymentQrDetails.Amount ?? SelectedReceiptPaymentItem?.TongTien ?? 0m))">
                                                         <i class="fa-regular fa-copy"></i>
                                                     </button>
                                                 </span>
@@ -1049,6 +1070,28 @@
     </div>
 }
 
+@if (ShowReceiptPdfWarningDialog)
+{
+    <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px; pointer-events:auto;" @onclick="CloseReceiptPdfWarningDialog">
+        <div class="payment-confirm-modal" style="position:relative; z-index:2601; pointer-events:auto; max-width:540px; width:min(100%, 540px); border-radius:20px; background:linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border:1px solid #fb923c; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#ea580c; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(234, 88, 12, 0.35);">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                </div>
+                <div style="flex:1 1 auto;">
+                    <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#9a3412;">Không thể tải biên nhận</h4>
+                    <p style="margin:0; color:#9a3412; line-height:1.65; font-size:0.98rem;">
+                        Vui lòng thanh toán để tải biên nhận PDF.
+                    </p>
+                </div>
+            </div>
+            <div class="payment-confirm-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:22px;">
+                <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem; background:#ea580c; border-color:#ea580c;" @onclick="CloseReceiptPdfWarningDialog" @onclick:stopPropagation="true">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public long OrderId { get; set; }
@@ -1060,6 +1103,10 @@
     private string? WorkflowMessage;
     private string? ErrorMessage;
     private bool IsLoadingPaymentInfo;
+    private bool IsRefreshingReceipts;
+    private CancellationTokenSource? _receiptPollingCts;
+    private Task? _receiptPollingTask;
+    private long _receiptTempDetailId;
     private LenhXuatKhoHangNhapKhauTempInsertResponse? PaymentInfo;
     private PaymentQrDecodedInfo? PaymentQrDetails;
     private string? PaymentPopupMessage;
@@ -1080,6 +1127,7 @@
     private bool _shouldInitStorageDatePicker;
     private bool _shouldAutoLoadStorageAction;
     private bool ShowPaymentConfirmDialog;
+    private bool ShowReceiptPdfWarningDialog;
     private DateTime? StorageActionDate;
     private string StorageActionDateText = string.Empty;
     private string? StorageActionPopupMessage;
@@ -1205,6 +1253,13 @@
                 Workflow.PhiLuuKhoQuaHan = null;
             }
 
+            _receiptTempDetailId = Workflow?.ChiTietHouseBill?.ParsedData?.ID
+                ?? Order.IDctLenhNhapKhoHangNhapKhauChiTiet;
+            var chiTietHouseBillIdText = Workflow?.ChiTietHouseBill?.ParsedData is not null
+                ? Workflow.ChiTietHouseBill.ParsedData.ID.ToString()
+                : "null";
+            Console.WriteLine($"[{traceTag}] Receipt temp detail id resolved to {_receiptTempDetailId} (ChiTietHouseBill.ID={chiTietHouseBillIdText}, Order.IDctLenhNhapKhoHangNhapKhauChiTiet={Order.IDctLenhNhapKhoHangNhapKhauChiTiet}).");
+
             if (Workflow?.ChiTietHouseBill?.ParsedData?.DaXacNhanHoanThanhXuatKho == 1)
             {
                 Console.WriteLine($"[{traceTag}] DaXacNhanHoanThanhXuatKho=1, dang dong bo HoanThanh cho tblLenhOnlines.");
@@ -1260,6 +1315,7 @@
             Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync end.");
             IsLoadingWorkflow = false;
             await InvokeAsync(StateHasChanged);
+            await UpdateReceiptPollingStateAsync();
         }
     }
 
@@ -1597,6 +1653,7 @@
         PaymentQrDetails = null;
         ShowPaymentConfirmDialog = false;
         ShowLenhXuatPdfWarningDialog = false;
+        ShowReceiptPdfWarningDialog = false;
     }
 
     private async Task OnStorageActionDateInput(ChangeEventArgs args)
@@ -1750,6 +1807,202 @@
     private bool HasInvoiceDownload
         => !string.IsNullOrWhiteSpace(Order?.InvoiceDownloadUrl);
 
+    private bool CanDownloadElectronicInvoice(BienNhanThanhToanHangNhapKhauTempListItem? item)
+        => item?.DaThanhToan == true
+           && !string.IsNullOrWhiteSpace(item.FKey);
+
+    private string GetReceiptPollingLogPrefix()
+        => $"[ReceiptPolling][OrderId={OrderId}]";
+
+    private bool HasUnpaidReceiptItems()
+        => Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
+           && Workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Any(item => !item.DaThanhToan);
+
+    private int GetUnpaidReceiptItemCount()
+        => Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
+           ? Workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Count(item => !item.DaThanhToan)
+           : 0;
+
+    private async Task UpdateReceiptPollingStateAsync()
+    {
+        if (!HasUnpaidReceiptItems())
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} no unpaid receipts found, stopping polling.");
+            await StopReceiptPollingAsync();
+            return;
+        }
+
+        if (_receiptPollingTask is not null && !_receiptPollingTask.IsCompleted)
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} polling already running, skip start.");
+            return;
+        }
+
+        Console.WriteLine($"{GetReceiptPollingLogPrefix()} unpaid receipts detected ({GetUnpaidReceiptItemCount()} items), starting polling.");
+        await StartReceiptPollingAsync();
+    }
+
+    private async Task StartReceiptPollingAsync()
+    {
+        await StopReceiptPollingAsync();
+
+        if (!HasUnpaidReceiptItems())
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} no unpaid receipts at start, polling not started.");
+            return;
+        }
+
+        _receiptPollingCts = new CancellationTokenSource();
+        Console.WriteLine($"{GetReceiptPollingLogPrefix()} polling loop created.");
+        _receiptPollingTask = PollReceiptPaymentsAsync(_receiptPollingCts);
+    }
+
+    private async Task StopReceiptPollingAsync()
+    {
+        var receiptPollingCts = _receiptPollingCts;
+        _receiptPollingCts = null;
+        _receiptPollingTask = null;
+
+        if (receiptPollingCts is null)
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} polling already stopped.");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} cancelling polling loop.");
+            await receiptPollingCts.CancelAsync();
+        }
+        catch
+        {
+        }
+
+        receiptPollingCts.Dispose();
+    }
+
+    private async Task PollReceiptPaymentsAsync(CancellationTokenSource receiptPollingCts)
+    {
+        var cancellationToken = receiptPollingCts.Token;
+
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} loop started, interval=2s.");
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                Console.WriteLine($"{GetReceiptPollingLogPrefix()} tick fired, unpaid={GetUnpaidReceiptItemCount()}, loading={IsLoadingWorkflow || IsLoadingPaymentInfo || IsLoadingReceiptPaymentInfo || IsExecutingStorageAction}.");
+
+                if (IsLoadingWorkflow || IsLoadingPaymentInfo || IsLoadingReceiptPaymentInfo || IsExecutingStorageAction)
+                {
+                    Console.WriteLine($"{GetReceiptPollingLogPrefix()} tick skipped because page is busy.");
+                    continue;
+                }
+
+                if (!HasUnpaidReceiptItems())
+                {
+                    Console.WriteLine($"{GetReceiptPollingLogPrefix()} no unpaid receipts remain, stopping loop.");
+                    break;
+                }
+
+                Console.WriteLine($"{GetReceiptPollingLogPrefix()} refreshing receipt temp list from API.");
+                await RefreshReceiptPaymentsAsync();
+
+                if (!HasUnpaidReceiptItems())
+                {
+                    Console.WriteLine($"{GetReceiptPollingLogPrefix()} all receipts are paid after refresh, stopping loop.");
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            try
+            {
+                receiptPollingCts.Dispose();
+            }
+            catch
+            {
+            }
+
+            if (ReferenceEquals(_receiptPollingCts, receiptPollingCts))
+            {
+                _receiptPollingCts = null;
+            }
+
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} loop ended.");
+        }
+    }
+
+    private async Task RefreshReceiptPaymentsAsync()
+    {
+        if (Order is null || CurrentUserId <= 0)
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} cannot refresh because order/current user is missing.");
+            return;
+        }
+
+        if (IsRefreshingReceipts)
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} refresh already running, skip click.");
+            return;
+        }
+
+        IsRefreshingReceipts = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            if (_receiptTempDetailId <= 0)
+            {
+                _receiptTempDetailId = Workflow?.ChiTietHouseBill?.ParsedData?.ID
+                    ?? Order.IDctLenhNhapKhoHangNhapKhauChiTiet;
+                Console.WriteLine($"{GetReceiptPollingLogPrefix()} resolved receipt temp detail id during refresh: {_receiptTempDetailId}.");
+            }
+
+            if (_receiptTempDetailId <= 0)
+            {
+                Console.WriteLine($"{GetReceiptPollingLogPrefix()} skip refresh because receipt temp detail id is 0.");
+                return;
+            }
+
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} calling ListTemp with IDctLenhNhapKhoHangNhapKhauChiTiet={_receiptTempDetailId}, IDDanhMucKhachHangDoLenh={CurrentUserId}.");
+            var response = await OnlineOrderService.GetBienNhanThanhToanHangNhapKhauTempListAsync(
+                _receiptTempDetailId,
+                CurrentUserId);
+
+            if (!response.Success)
+            {
+                Console.WriteLine($"{GetReceiptPollingLogPrefix()} API returned failure: {response.Message}");
+                return;
+            }
+
+            var statusSummary = response.Data.Count == 0
+                ? "(empty)"
+                : string.Join(", ", response.Data.Select(item => $"{item.So}:{(item.DaThanhToan ? "paid" : "unpaid")}"));
+
+            await InvokeAsync(() =>
+            {
+                Workflow ??= new OnlineOrderWorkflowResult();
+                Workflow.BienNhanThanhToanHangNhapKhauTemps = response;
+                Console.WriteLine($"{GetReceiptPollingLogPrefix()} API refresh success, unpaid={GetUnpaidReceiptItemCount()}, total={response.Data.Count}, statuses={statusSummary}.");
+                StateHasChanged();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{GetReceiptPollingLogPrefix()} refresh failed: {ex.Message}");
+        }
+        finally
+        {
+            IsRefreshingReceipts = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
     private async Task ShowPaymentPopupAsync()
     {
         if (Order is null || GetChiTietHouseBillFromApi() is null)
@@ -1789,8 +2042,13 @@
                 {
                     base64 = item.QRCodeThanhToan,
                     receiptNo = item.So,
-                    amountText = FormatMoney(item.TongTien)
+                    amountText = FormatMoneyVnd(item.TongTien)
                 });
+
+            IsReceiptPaymentPopupOpen = true;
+            IsLoadingReceiptPaymentInfo = false;
+            Console.WriteLine($"[ReceiptPaymentPopup] JS popup opened successfully for receipt {item.So}.");
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -1857,7 +2115,13 @@
         SelectedReceiptPaymentQrDetails = null;
         ReceiptPaymentPopupMessage = null;
         ClearActiveReceiptAction("payment");
+        _ = UpdateReceiptPollingStateAsync();
         return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopReceiptPollingAsync();
     }
 
     private async Task DownloadLenhXuatPdfAsync(LenhXuatKhoHangNhapKhauTempListItem? item)
@@ -1895,10 +2159,22 @@
         ShowLenhXuatPdfWarningDialog = false;
     }
 
+    private void CloseReceiptPdfWarningDialog()
+    {
+        ShowReceiptPdfWarningDialog = false;
+    }
+
     private async Task DownloadBienNhanPdfAsync(BienNhanThanhToanHangNhapKhauTempListItem? item)
     {
         if (item is null || string.IsNullOrWhiteSpace(item.So))
         {
+            return;
+        }
+
+        if (!item.DaThanhToan)
+        {
+            ShowReceiptPdfWarningDialog = true;
+            await InvokeAsync(StateHasChanged);
             return;
         }
 
@@ -1915,6 +2191,29 @@
         finally
         {
             _ = ClearActiveReceiptActionAfterDelayAsync(item.So, "download", 1200);
+        }
+    }
+
+    private async Task DownloadHoaDonDienTuAsync(BienNhanThanhToanHangNhapKhauTempListItem? item)
+    {
+        if (item is null || item.DaThanhToan != true || string.IsNullOrWhiteSpace(item.FKey))
+        {
+            return;
+        }
+
+        SetActiveReceiptAction(item.FKey, "invoice");
+        try
+        {
+            var file = await OnlineOrderService.DownloadHoaDonDienTuHangNhapKhauTempPdfAsync(item.FKey);
+            await DownloadPdfToBrowserAsync(file);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DownloadHoaDonDienTu] {ex.Message}");
+        }
+        finally
+        {
+            _ = ClearActiveReceiptActionAfterDelayAsync(item.FKey, "invoice", 1200);
         }
     }
 
@@ -1936,16 +2235,24 @@
     {
         var active = IsReceiptActionActive(receiptNo, "payment");
         return active
-            ? "padding:0.55rem 0.85rem; background:#16a34a; border-color:#16a34a; color:#fff;"
-            : "padding:0.55rem 0.85rem; background:#22c55e; border-color:#22c55e; color:#fff;";
+            ? "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#16a34a; border-color:#16a34a; color:#fff;"
+            : "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#22c55e; border-color:#22c55e; color:#fff;";
     }
 
     private string GetReceiptDownloadButtonStyle(string? receiptNo)
     {
         var active = IsReceiptActionActive(receiptNo, "download");
         return active
-            ? "padding:0.55rem 0.85rem; background:#c26b12; border-color:#c26b12; color:#fff;"
-            : "padding:0.55rem 0.85rem; background:#d97706; border-color:#d97706; color:#fff;";
+            ? "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#c26b12; border-color:#c26b12; color:#fff;"
+            : "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#d97706; border-color:#d97706; color:#fff;";
+    }
+
+    private string GetReceiptElectronicInvoiceButtonStyle(string? fKey)
+    {
+        var active = IsReceiptActionActive(fKey, "invoice");
+        return active
+            ? "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#1d4ed8; border-color:#1d4ed8; color:#fff;"
+            : "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#2563eb; border-color:#2563eb; color:#fff;";
     }
 
     private string GetLenhXuatDownloadButtonStyle(string? receiptNo)
@@ -2095,6 +2402,8 @@
                     "paymentQr.decodeFromBase64Image",
                     PaymentInfo.QRCodeThanhToan);
             }
+
+            _ = UpdateReceiptPollingStateAsync();
         }
         catch (Exception ex)
         {
@@ -2276,6 +2585,9 @@
 
     private static string FormatMoney(decimal amount)
         => amount.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
+
+    private static string FormatMoneyVnd(decimal amount)
+        => $"{FormatMoney(amount)} đ";
 
     private static string FormatNumber(decimal value)
         => value.ToString("0.###", CultureInfo.GetCultureInfo("vi-VN"));

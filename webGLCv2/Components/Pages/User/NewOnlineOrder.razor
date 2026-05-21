@@ -151,7 +151,7 @@
 
             @if (!string.IsNullOrWhiteSpace(TaxLookupMessage))
             {
-                <div class="portal-alert @(TaxLookupIsError ? "portal-alert-error" : "portal-alert-success")" style="margin-top:12px;">@TaxLookupMessage</div>
+                <div class="portal-alert @(TaxLookupIsError ? "portal-alert-error" : TaxLookupIsWarning ? "portal-alert-warning" : "portal-alert-success")" style="margin-top:12px;">@TaxLookupMessage</div>
             }
 
             @if (TaxLookupResult.Count > 0)
@@ -207,6 +207,7 @@
     private bool IsTaxLookupPopupOpen { get; set; }
     private bool TaxLookupIsBusy { get; set; }
     private bool TaxLookupIsError { get; set; }
+    private bool TaxLookupIsWarning { get; set; }
     private string TaxLookupInput { get; set; } = string.Empty;
     private string? TaxLookupMessage { get; set; }
     private List<KeyValuePair<string, string>> TaxLookupResult { get; set; } = new();
@@ -362,6 +363,7 @@
         TaxLookupInput = Draft.TaxCode;
         TaxLookupMessage = null;
         TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
         TaxLookupResult.Clear();
         IsTaxLookupPopupOpen = true;
 
@@ -373,6 +375,7 @@
         {
             TaxLookupMessage = "Vui lòng nhập mã số thuế trước khi tra cứu.";
             TaxLookupIsError = true;
+            TaxLookupIsWarning = false;
         }
     }
 
@@ -382,6 +385,7 @@
         TaxLookupIsBusy = false;
         TaxLookupMessage = null;
         TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -389,6 +393,7 @@
     {
         TaxLookupMessage = null;
         TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
         TaxLookupResult.Clear();
 
         var taxCode = TaxLookupInput.Trim();
@@ -396,6 +401,7 @@
         {
             TaxLookupMessage = "Vui lòng nhập mã số thuế.";
             TaxLookupIsError = true;
+            TaxLookupIsWarning = false;
             return;
         }
 
@@ -407,6 +413,7 @@
             {
                 TaxLookupMessage = "Không tìm thấy dữ liệu phù hợp cho mã số thuế này.";
                 TaxLookupIsError = true;
+                TaxLookupIsWarning = false;
                 return;
             }
 
@@ -435,13 +442,16 @@
             }
 
             await ApplyTaxLookupResultToDraftAsync();
-            TaxLookupMessage = "Đã tải dữ liệu tra cứu và tự động điền vào form.";
+            TaxLookupMessage = "Chú ý: dữ liệu này sẽ được dùng để xuất hóa đơn điện tử, vui lòng kiểm tra thật kỹ các thông tin trước khi tiếp tục.";
+            TaxLookupIsWarning = true;
+            TaxLookupIsError = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             TaxLookupMessage = ex.Message;
             TaxLookupIsError = true;
+            TaxLookupIsWarning = false;
         }
         finally
         {
@@ -455,6 +465,7 @@
         TaxLookupResult.Clear();
         TaxLookupMessage = "Đã xoá dữ liệu tra cứu.";
         TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
 
         SelectedTaxCode = string.Empty;
         Draft.TaxCode = string.Empty;

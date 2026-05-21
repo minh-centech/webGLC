@@ -49,7 +49,7 @@ begin
 			ct.ID as ChiTietId,
 			ct.TrangThaiThanhToan,
 			case
-				when isnull(ct.IsHoanThanh, 0) = 1 or isnull(lo.HoanThanh, 0) = 1 then 1
+				when isnull(ct.IsHoanThanh, 0) = 1 then 1
 				else 0
 			end as IsHoanThanh,
 			ct.LinkTaiHoaDon,
@@ -124,7 +124,6 @@ alter procedure dbo.Insert_tblLenhOnlines
 	@TrangThai		int = 0,
 	@HoanThanh		bit = 0,
 	@IDDanhMucKhachHangDoiLenh	bigint,
-	@IDctLenhNhapKhoHangNhapKhauChiTiet	bigint = null,
 	@CreateDate		datetime = null out
 as
 begin
@@ -206,9 +205,7 @@ begin
 			NgayLayHang,
 			SoToKhai,
 			TrangThai,
-			HoanThanh,
 			IDDanhMucKhachHangDoiLenh,
-			IDctLenhNhapKhoHangNhapKhauChiTiet,
 			CreateDate
 		)
 		values
@@ -229,9 +226,7 @@ begin
 			@NgayLayHang,
 			@SoToKhai,
 			@TrangThai,
-			@HoanThanh,
 			@IDDanhMucKhachHangDoiLenh,
-			@IDctLenhNhapKhoHangNhapKhauChiTiet,
 			@CreateDate
 		);
 
@@ -266,7 +261,6 @@ alter procedure dbo.Update_tblLenhOnlines
 	@TrangThai		int = null,
 	@HoanThanh		bit = null,
 	@IDDanhMucKhachHangDoiLenh	bigint = null,
-	@IDctLenhNhapKhoHangNhapKhauChiTiet	bigint = null,
 	@EditDate		datetime = null out
 as
 begin
@@ -286,9 +280,7 @@ begin
 	declare @CurrentNgayLayHang datetime;
 	declare @CurrentSoToKhai nvarchar(100);
 	declare @CurrentTrangThai int;
-	declare @CurrentHoanThanh bit;
 	declare @CurrentIDDanhMucKhachHangDoiLenh bigint;
-	declare @CurrentIDctLenhNhapKhoHangNhapKhauChiTiet bigint;
 
 	select
 		@CurrentHoVaTen = HoVaTen,
@@ -304,9 +296,7 @@ begin
 		@CurrentNgayLayHang = NgayLayHang,
 		@CurrentSoToKhai = SoToKhai,
 		@CurrentTrangThai = TrangThai,
-		@CurrentHoanThanh = HoanThanh,
-		@CurrentIDDanhMucKhachHangDoiLenh = IDDanhMucKhachHangDoiLenh,
-		@CurrentIDctLenhNhapKhoHangNhapKhauChiTiet = IDctLenhNhapKhoHangNhapKhauChiTiet
+		@CurrentIDDanhMucKhachHangDoiLenh = IDDanhMucKhachHangDoiLenh
 	from tblLenhOnlines
 	where ID = @ID;
 
@@ -340,9 +330,7 @@ begin
 	set @NgayLayHang = isnull(@NgayLayHang, @CurrentNgayLayHang);
 	set @SoToKhai = isnull(@SoToKhai, @CurrentSoToKhai);
 	set @TrangThai = isnull(@TrangThai, @CurrentTrangThai);
-	set @HoanThanh = isnull(@HoanThanh, @CurrentHoanThanh);
 	set @IDDanhMucKhachHangDoiLenh = isnull(@IDDanhMucKhachHangDoiLenh, @CurrentIDDanhMucKhachHangDoiLenh);
-	set @IDctLenhNhapKhoHangNhapKhauChiTiet = isnull(@IDctLenhNhapKhoHangNhapKhauChiTiet, @CurrentIDctLenhNhapKhoHangNhapKhauChiTiet);
 
 	if @HoVaTen is null or len(ltrim(rtrim(@HoVaTen))) = 0 or len(ltrim(rtrim(@HoVaTen))) > 255
 	begin
@@ -399,9 +387,7 @@ begin
 			NgayLayHang = @NgayLayHang,
 			SoToKhai = @SoToKhai,
 			TrangThai = @TrangThai,
-			HoanThanh = @HoanThanh,
 			IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh,
-			IDctLenhNhapKhoHangNhapKhauChiTiet = @IDctLenhNhapKhoHangNhapKhauChiTiet,
 			EditDate = @EditDate
 		where ID = @ID;
 

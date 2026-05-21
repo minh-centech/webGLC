@@ -428,6 +428,9 @@ public sealed class BienNhanThanhToanHangNhapKhauTempListItem
     [JsonPropertyName("ID")]
     public long ID { get; set; }
 
+    [JsonPropertyName("FKey")]
+    public string? FKey { get; set; }
+
     [JsonPropertyName("So")]
     public string So { get; set; } = string.Empty;
 

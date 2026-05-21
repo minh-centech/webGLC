@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 using System.Globalization;
 using webGLCv2.Components;
 using webGLCv2.Controllers;
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 var legacyApiSection = builder.Configuration.GetSection(LegacyApiOptions.SectionName);
 var onlineOrderWorkflowSection = builder.Configuration.GetSection(OnlineOrderWorkflowOptions.SectionName);
 var turnstileSection = builder.Configuration.GetSection(TurnstileOptions.SectionName);
+var cspSection = builder.Configuration.GetSection(ContentSecurityPolicyOptions.SectionName);
 var emailSenderSection = builder.Configuration.GetSection(EmailSenderOptions.SectionName);
 
 builder.Services.AddHttpContextAccessor();
@@ -27,6 +29,7 @@ builder.Services.AddAuthorization();
 builder.Services.Configure<LegacyApiOptions>(legacyApiSection);
 builder.Services.Configure<OnlineOrderWorkflowOptions>(onlineOrderWorkflowSection);
 builder.Services.Configure<TurnstileOptions>(turnstileSection);
+builder.Services.Configure<ContentSecurityPolicyOptions>(cspSection);
 builder.Services.Configure<EmailSenderOptions>(emailSenderSection);
 
 builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
@@ -99,9 +102,48 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
+app.Use(async (context, next) =>
+{
+    var cspOptions = context.RequestServices.GetRequiredService<IOptions<ContentSecurityPolicyOptions>>().Value;
+    var contentSecurityPolicy = BuildContentSecurityPolicy(cspOptions);
+
+    context.Response.Headers["Content-Security-Policy"] = contentSecurityPolicy;
+    context.Response.Headers["Permissions-Policy"] = "xr-spatial-tracking=()";
+
+    await next();
+});
+
 app.MapStaticAssets();
 app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+static string BuildContentSecurityPolicy(ContentSecurityPolicyOptions options)
+{
+    static string JoinDirective(IEnumerable<string> values) => string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    var directives = new List<string>
+    {
+        $"default-src {JoinDirective(options.DefaultSrc)}",
+        $"base-uri {JoinDirective(options.BaseUri)}",
+        $"object-src {JoinDirective(options.ObjectSrc)}",
+        $"frame-ancestors {JoinDirective(options.FrameAncestors)}",
+        $"form-action {JoinDirective(options.FormAction)}",
+        $"img-src {JoinDirective(options.ImgSrc)}",
+        $"font-src {JoinDirective(options.FontSrc)}",
+        $"style-src {JoinDirective(options.StyleSrc)}",
+        $"script-src {JoinDirective(options.ScriptSrc)}",
+        $"connect-src {JoinDirective(options.ConnectSrc)}",
+        $"frame-src {JoinDirective(options.FrameSrc)}",
+        $"worker-src {JoinDirective(options.WorkerSrc)}"
+    };
+
+    if (options.UpgradeInsecureRequests)
+    {
+        directives.Add("upgrade-insecure-requests");
+    }
+
+    return string.Join("; ", directives);
+}

@@ -9,6 +9,8 @@ public sealed class TurnstileValidationService
     private readonly HttpClient _httpClient;
     private readonly TurnstileOptions _options;
 
+    public bool IsValidationEnabled => _options.EnableValidation;
+
     public TurnstileValidationService(HttpClient httpClient, IOptions<TurnstileOptions> options)
     {
         _httpClient = httpClient;
@@ -26,6 +28,11 @@ public sealed class TurnstileValidationService
         string? remoteIp,
         CancellationToken cancellationToken = default)
     {
+        if (!_options.EnableValidation)
+        {
+            return (true, null);
+        }
+
         if (string.IsNullOrWhiteSpace(_options.SecretKey))
         {
             throw new InvalidOperationException("Missing configuration: CloudflareTurnstile:SecretKey");

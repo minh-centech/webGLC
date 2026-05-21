@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace webGLCv2.Models;
 
@@ -14,3 +14,4 @@ public sealed class LoginPostModel
 
     public string? ReturnUrl { get; set; }
 }
+

@@ -13,7 +13,10 @@
 @using System.Text.Json
 
 <HeadContent>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    @if (TurnstileConfiguration.Value.EnableValidation)
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    }
 </HeadContent>
 
 <PageTitle>Đăng ký tài khoản</PageTitle>
@@ -357,15 +360,18 @@
                     </div>
                 </section>
 
-                <section class="register-section-card">
-                    <div class="section-heading">
-                        <h3>Xác thực Cloudflare</h3>
-                        <p>Hoàn tất xác thực bảo mật trước khi gửi đăng ký.</p>
-                    </div>
+                @if (TurnstileConfiguration.Value.EnableValidation)
+                {
+                    <section class="register-section-card">
+                        <div class="section-heading">
+                            <h3>Xác thực Cloudflare</h3>
+                            <p>Hoàn tất xác thực bảo mật trước khi gửi đăng ký.</p>
+                        </div>
 
-                    <input type="hidden" id="register-turnstile-token" name="cf-turnstile-response" @bind="RegisterTurnstileToken" @bind:event="oninput" />
-                    <div id="register-turnstile" class="turnstile-host"></div>
-                </section>
+                        <input type="hidden" id="register-turnstile-token" name="cf-turnstile-response" @bind="RegisterTurnstileToken" @bind:event="oninput" />
+                        <div id="register-turnstile" class="turnstile-host"></div>
+                    </section>
+                }
 
                 <div class="register-actions">
                     <a class="portal-secondary-action" href="/login">Hủy</a>
@@ -401,10 +407,12 @@
 
     private string SiteKey => TurnstileConfiguration.Value.SiteKey;
     private bool HasTurnstileUiConfiguration =>
-        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey);
+        TurnstileConfiguration.Value.EnableValidation
+        && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey);
 
     private bool HasTurnstileValidationConfiguration =>
-        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
+        TurnstileConfiguration.Value.EnableValidation
+        && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
         && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
 
     protected override void OnParametersSet()
@@ -430,9 +438,9 @@
         ErrorMessage = null;
         SuccessMessage = null;
 
-        if (!HasTurnstileValidationConfiguration)
+        if (HasTurnstileValidationConfiguration && string.IsNullOrWhiteSpace(RegisterTurnstileToken))
         {
-            ErrorMessage = "Chưa cấu hình Cloudflare Turnstile. Vui lòng liên hệ quản trị viên.";
+            ErrorMessage = "Vui lòng xác thực Turnstile trước khi gửi đăng ký.";
             return;
         }
 
@@ -446,25 +454,28 @@
         try
         {
             var turnstileToken = RegisterTurnstileToken;
-            if (string.IsNullOrWhiteSpace(turnstileToken))
+            if (HasTurnstileValidationConfiguration && string.IsNullOrWhiteSpace(turnstileToken))
             {
                 ErrorMessage = "Vui lòng xác thực bảo mật Cloudflare trước khi đăng ký.";
                 return;
             }
 
-            var turnstileResult = await TurnstileValidationService.ValidateDetailedAsync(
-                turnstileToken,
-                null,
-                CancellationToken.None);
-
-            if (!turnstileResult.Success)
+            if (HasTurnstileValidationConfiguration)
             {
-                ErrorMessage = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
-                    ? "Xác thực Turnstile không thành công. Vui lòng thử lại."
-                    : $"Xác thực Turnstile không thành công: {turnstileResult.ErrorDetail}";
-                _shouldRenderTurnstile = true;
-                RegisterTurnstileToken = null;
-                return;
+                var turnstileResult = await TurnstileValidationService.ValidateDetailedAsync(
+                    turnstileToken!,
+                    null,
+                    CancellationToken.None);
+
+                if (!turnstileResult.Success)
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
+                        ? "Xác thực Turnstile không thành công. Vui lòng thử lại."
+                        : $"Xác thực Turnstile không thành công: {turnstileResult.ErrorDetail}";
+                    _shouldRenderTurnstile = true;
+                    RegisterTurnstileToken = null;
+                    return;
+                }
             }
 
             Model.TenDangNhap = Model.Email;

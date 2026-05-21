@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -28,27 +28,36 @@ public sealed class AuthController : Controller
         [FromForm] LoginPostModel model,
         [FromForm(Name = "cf-turnstile-response")] string turnstileToken)
     {
-        if (!ModelState.IsValid || string.IsNullOrWhiteSpace(turnstileToken))
+        if (model is null ||
+            string.IsNullOrWhiteSpace(model.Email) ||
+            string.IsNullOrWhiteSpace(model.Password))
         {
-            return RedirectToLogin(model.ReturnUrl, "Để truy cập hệ thống, vui lòng nhập email, mật khẩu và mã xác thực bảo mật của bạn.", model.Email);
+            return RedirectToLogin(model?.ReturnUrl, "Để truy cập hệ thống, vui lòng nhập đầy đủ email và mật khẩu.", model?.Email);
         }
 
         try
         {
             var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var turnstileResult = await _turnstileValidationService.ValidateDetailedAsync(
-                turnstileToken,
-                remoteIp,
-                HttpContext.RequestAborted);
-
-            if (!turnstileResult.Success)
+            if (_turnstileValidationService.IsValidationEnabled)
             {
-                var errorDetail = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
-                    ? "unknown-turnstile-error"
-                    : turnstileResult.ErrorDetail;
-                return RedirectToLogin(model.ReturnUrl, $"Xac thuc Turnstile khong thanh cong. Vui long thu lai. ({errorDetail})", model.Email);
-            }
+                if (string.IsNullOrWhiteSpace(turnstileToken))
+                {
+                    return RedirectToLogin(model.ReturnUrl, "Vui lòng xác thực bảo mật trước khi đăng nhập.", model.Email);
+                }
 
+                var turnstileResult = await _turnstileValidationService.ValidateDetailedAsync(
+                    turnstileToken,
+                    remoteIp,
+                    HttpContext.RequestAborted);
+
+                if (!turnstileResult.Success)
+                {
+                    var errorDetail = string.IsNullOrWhiteSpace(turnstileResult.ErrorDetail)
+                        ? "unknown-turnstile-error"
+                        : turnstileResult.ErrorDetail;
+                    return RedirectToLogin(model.ReturnUrl, $"Xác thực Turnstile không thành công. Vui lòng thử lại. ({errorDetail})", model.Email);
+                }
+            }
             var loginResult = await _legacyCustomerPortalService.LoginAsync(
                 model.Email.Trim(),
                 model.Password);
@@ -122,5 +131,6 @@ public sealed class AuthController : Controller
             ? "/admin/users"
             : "/user/orders";
 }
+
 
 

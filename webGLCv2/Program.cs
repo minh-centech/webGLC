@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using System.Globalization;
@@ -31,6 +32,15 @@ builder.Services.Configure<OnlineOrderWorkflowOptions>(onlineOrderWorkflowSectio
 builder.Services.Configure<TurnstileOptions>(turnstileSection);
 builder.Services.Configure<ContentSecurityPolicyOptions>(cspSection);
 builder.Services.Configure<EmailSenderOptions>(emailSenderSection);
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedHost
+        | ForwardedHeaders.XForwardedProto;
+
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
 {
@@ -96,6 +106,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseRequestLocalization();
 app.UseAuthentication();
@@ -105,7 +116,9 @@ app.UseAntiforgery();
 app.Use(async (context, next) =>
 {
     var cspOptions = context.RequestServices.GetRequiredService<IOptions<ContentSecurityPolicyOptions>>().Value;
-    if (cspOptions.EnableContentSecurityPolicy)
+    var enableContentSecurityPolicy = cspOptions.EnableContentSecurityPolicy && !app.Environment.IsProduction();
+
+    if (enableContentSecurityPolicy)
     {
         var contentSecurityPolicy = BuildContentSecurityPolicy(cspOptions);
         context.Response.Headers["Content-Security-Policy"] = contentSecurityPolicy;
@@ -124,7 +137,19 @@ app.Run();
 
 static string BuildContentSecurityPolicy(ContentSecurityPolicyOptions options)
 {
-    static string JoinDirective(IEnumerable<string> values) => string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)));
+    static string JoinDirective(IEnumerable<string> values, IEnumerable<string>? extraValues = null)
+    {
+        var merged = extraValues is null
+            ? values
+            : values.Concat(extraValues);
+
+        return string.Join(" ", merged.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.OrdinalIgnoreCase));
+    }
+
+    var trustedOrigins = options.TrustedOrigins
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 
     var directives = new List<string>
     {
@@ -132,13 +157,13 @@ static string BuildContentSecurityPolicy(ContentSecurityPolicyOptions options)
         $"base-uri {JoinDirective(options.BaseUri)}",
         $"object-src {JoinDirective(options.ObjectSrc)}",
         $"frame-ancestors {JoinDirective(options.FrameAncestors)}",
-        $"form-action {JoinDirective(options.FormAction)}",
+        $"form-action {JoinDirective(options.FormAction, trustedOrigins)}",
         $"img-src {JoinDirective(options.ImgSrc)}",
         $"font-src {JoinDirective(options.FontSrc)}",
         $"style-src {JoinDirective(options.StyleSrc)}",
         $"script-src {JoinDirective(options.ScriptSrc)}",
-        $"connect-src {JoinDirective(options.ConnectSrc)}",
-        $"frame-src {JoinDirective(options.FrameSrc)}",
+        $"connect-src {JoinDirective(options.ConnectSrc, trustedOrigins)}",
+        $"frame-src {JoinDirective(options.FrameSrc, trustedOrigins)}",
         $"worker-src {JoinDirective(options.WorkerSrc)}"
     };
 
@@ -149,3 +174,4 @@ static string BuildContentSecurityPolicy(ContentSecurityPolicyOptions options)
 
     return string.Join("; ", directives);
 }
+

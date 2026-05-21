@@ -56,7 +56,13 @@
                             <strong>@displayName</strong>
                             <span>@(user.Identity?.Name ?? "no-email")</span>
                         </div>
-                        <a class="portal-secondary-action" href="/auth/logout">Đăng xuất</a>
+                        <a class="portal-secondary-action portal-secondary-button"
+                           href="@GetLogoutUrl()"
+                           data-enhance-nav="false"
+                           target="_self"
+                           rel="noopener">
+                            Đăng xuất
+                        </a>
                     </div>
                 </header>
 
@@ -71,5 +77,8 @@
 @code {
     private string GetNavClass(string href)
         => NavigationManager.Uri.Contains(href, StringComparison.OrdinalIgnoreCase) ? "is-active" : string.Empty;
+
+    private string GetLogoutUrl()
+        => $"/auth/logout?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 }
 

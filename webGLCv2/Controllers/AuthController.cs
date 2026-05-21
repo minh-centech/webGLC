@@ -106,7 +106,8 @@ public sealed class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return Redirect("/login");
+        var loginUrl = $"/login?t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        return Redirect(loginUrl);
     }
 
     private IActionResult RedirectToLogin(string? returnUrl, string error, string? email)

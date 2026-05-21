@@ -13,7 +13,7 @@
 @using System.Text.Json
 
 <HeadContent>
-    @if (TurnstileConfiguration.Value.EnableValidation)
+    @if (HasTurnstileUiConfiguration)
     {
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     }
@@ -360,7 +360,7 @@
                     </div>
                 </section>
 
-                @if (TurnstileConfiguration.Value.EnableValidation)
+                @if (HasTurnstileUiConfiguration)
                 {
                     <section class="register-section-card">
                         <div class="section-heading">
@@ -407,8 +407,7 @@
 
     private string SiteKey => TurnstileConfiguration.Value.SiteKey;
     private bool HasTurnstileUiConfiguration =>
-        TurnstileConfiguration.Value.EnableValidation
-        && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey);
+        !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey);
 
     private bool HasTurnstileValidationConfiguration =>
         TurnstileConfiguration.Value.EnableValidation

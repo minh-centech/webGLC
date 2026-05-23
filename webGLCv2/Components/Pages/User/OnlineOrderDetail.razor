@@ -93,7 +93,7 @@
                     <input class="portal-input" value="@Order.DeclarationNumber" readonly />
                 </div>
             </div>
-            @* 
+            @*
             <div class="form-actions no-print">
                 <button class="portal-primary-action query-info-button" @onclick='() => RunWorkflowAsync("button")' disabled="@IsLoadingWorkflow">
                     @(IsLoadingWorkflow ? "Đang truy vấn..." : "Truy vấn thông tin")
@@ -121,38 +121,6 @@
 
             </div>
 
-
-            <div class="workflow-payment-row no-print" style="margin-top:12px; gap:12px; flex-wrap:wrap;">
-                @if (CanShowCreateAction)
-                {
-                    <button type="button"
-                            class="portal-primary-action enhanced-storage-btn"
-                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
-
-                        <i class="fas fa-file-invoice-dollar"></i>
-
-                        <span>
-                            Tạo biên nhận thanh toán &amp; lệnh xuất kho
-                        </span>
-
-                    </button>
-                }
-
-                @if (CanShowExtendAction)
-                {
-                    <button type="button"
-                            class="portal-secondary-action enhanced-extend-btn"
-                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
-
-                        <i class="fas fa-calendar-plus"></i>
-
-                        <span>
-                            Gia hạn biên nhận thanh toán
-                        </span>
-
-                    </button>
-                }
-            </div>
 
             @if (!string.IsNullOrWhiteSpace(WorkflowMessage))
             {
@@ -425,38 +393,38 @@
                                         }
                                         else
                                         {
-                                        <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
-                                        @* <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr> *@
-                                        <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
-                                        <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
-                                        <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
-                                        @* <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr> *@
-                                        <tr><td>Số lượng kiện nhập</td><td>@FormatNumber(chiTiet.SoLuongKienNhap)</td></tr>
-                                        <tr><td>Khối lượng nhập</td><td>@FormatNumber(chiTiet.KhoiLuongNhap)</td></tr>
-                                        <tr><td>CBM nhập</td><td>@FormatNumber(chiTiet.CBMNhap)</td></tr>
-                                        @*  <tr><td>Đơn giá luu kho</td><td>@FormatMoney(chiTiet.DonGiaLuuKho)</td></tr>
+                                            <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
+                                            @* <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr> *@
+                                            <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
+                                            <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
+                                            <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
+                                            @* <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr> *@
+                                            <tr><td>Số lượng kiện nhập</td><td>@FormatNumber(chiTiet.SoLuongKienNhap)</td></tr>
+                                            <tr><td>Khối lượng nhập</td><td>@FormatNumber(chiTiet.KhoiLuongNhap)</td></tr>
+                                            <tr><td>CBM nhập</td><td>@FormatNumber(chiTiet.CBMNhap)</td></tr>
+                                            @*  <tr><td>Đơn giá luu kho</td><td>@FormatMoney(chiTiet.DonGiaLuuKho)</td></tr>
                                     <tr><td>Đơn giá giao nh?n</td><td>@FormatMoney(chiTiet.DonGiaGiaoNhan)</td></tr>
                                     <tr><td>Đơn giá b?c x?p</td><td>@FormatMoney(chiTiet.DonGiaBocXep)</td></tr>
                                     <tr><td>Đơn giá qu?n l�</td><td>@FormatMoney(chiTiet.DonGiaQuanLy)</td></tr> *@
-                                        <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
-                                        <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
-                                        <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
-                                        <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
-                                        <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr>
-                                        <tr><td>EDO</td><td>@chiTiet.EDO</td></tr>
-                                        @* <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> *@
-                                        <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
-                                        <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
-                                        <tr><td>Mã danh mục đại lý</td><td>@chiTiet.MaDanhMucDaiLy</td></tr>
-                                        @* <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
-                                        <tr><td>Số seal</td><td>@chiTiet.SoSeal</td></tr>
-                                        <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
-                                        <tr><td>Master Bill</td><td>@chiTiet.MasterBill</td></tr>
-                                        <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
-                                        <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
-                                        <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
-                                        <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
-                                        <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
+                                            <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
+                                            <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
+                                            <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
+                                            <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
+                                            <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr>
+                                            <tr><td>EDO</td><td>@chiTiet.EDO</td></tr>
+                                            @* <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> *@
+                                            <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
+                                            <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
+                                            <tr><td>Mã danh mục đại lý</td><td>@chiTiet.MaDanhMucDaiLy</td></tr>
+                                            @* <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
+                                            <tr><td>Số seal</td><td>@chiTiet.SoSeal</td></tr>
+                                            <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
+                                            <tr><td>Master Bill</td><td>@chiTiet.MasterBill</td></tr>
+                                            <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
+                                            <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
+                                            <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
+                                            <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
+                                            <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
                                         }
                                     </tbody>
                                 </table>
@@ -530,13 +498,47 @@
 
                 <section class="workflow-grid" style="margin-top:16px;">
                     <article class="workflow-card workflow-card-wide">
-                        <div class="section-heading">
-                            <h2>Lệnh xuất kho</h2>
-                            <span class="status-chip @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
-                                @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true
-                                    ? $"Vui lòng thanh toán các biên nhận để tải lệnh xuất kho"
-                                    : "Chưa có dữ liệu")
-                            </span>
+                        <div class="section-heading workflow-section-heading">
+                            <div class="workflow-heading-text">
+                                <h2>Lệnh xuất kho</h2>
+                                <span class="status-chip @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true ? "success" : "neutral")">
+                                    @(Workflow?.LenhXuatKhoHangNhapKhauTemps?.Success == true
+                                        ? $"Vui lòng thanh toán các biên nhận để tải lệnh xuất kho"
+                                        : "Chưa có dữ liệu")
+                                </span>
+                            </div>
+
+                            <div class="workflow-header-actions no-print">
+                                @if (CanShowCreateAction)
+                                {
+                                    <button type="button"
+                                            class="portal-primary-action enhanced-storage-btn workflow-header-action-btn"
+                                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Payment)">
+
+                                        <i class="fas fa-file-invoice-dollar"></i>
+
+                                        <span>
+                                            Tạo lệnh xuất kho
+                                        </span>
+
+                                    </button>
+                                }
+
+                                @if (CanShowExtendAction)
+                                {
+                                    <button type="button"
+                                            class="portal-secondary-action enhanced-extend-btn workflow-header-action-btn"
+                                            @onclick="() => OpenStorageActionPopup(StorageActionPopupMode.Extend)">
+
+                                        <i class="fas fa-calendar-plus"></i>
+
+                                        <span>
+                                            Gia hạn
+                                        </span>
+
+                                    </button>
+                                }
+                            </div>
                         </div>
 
                         @{

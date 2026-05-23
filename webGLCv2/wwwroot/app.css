@@ -25,7 +25,7 @@ html, body {
         radial-gradient(circle at top left, rgba(141, 211, 139, 0.18), transparent 28%),
         linear-gradient(180deg, #f9fcf8 0%, var(--portal-bg) 100%);
     color: var(--portal-text);
-    font-family: Poppins, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -328,6 +328,10 @@ select {
     padding: 16px;
 }
 
+.workspace-card:last-of-type {
+    margin-bottom: 96px;
+}
+
 .stat-label {
     display: block;
     color: var(--portal-text-soft);
@@ -528,6 +532,15 @@ select {
     .footer-pagination {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .workflow-section-heading {
+        flex-direction: column;
+    }
+
+    .workflow-header-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 }
 
@@ -1055,7 +1068,7 @@ select {
     min-height: 52px;
     padding: 0 26px;
     font-size: 1rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.2px;
     border-radius: 16px;
     box-shadow: 0 14px 28px rgba(47, 125, 86, 0.18);
@@ -1445,6 +1458,44 @@ select {
     flex-wrap: wrap;
     gap: 12px;
     margin: 12px 0 14px;
+}
+
+.workflow-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.workflow-heading-text {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.workflow-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 2px;
+}
+
+.workflow-header-action-btn {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 11px;
+    font-size: 0.86rem;
+    gap: 8px;
+}
+
+.workflow-header-action-btn i {
+    font-size: 16px;
+}
+
+.workflow-header-action-btn span {
+    line-height: 1.15;
 }
 
 .portal-table tbody tr.order-row-completed td {
@@ -1963,26 +2014,27 @@ select {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    min-width: 220px;
-    height: 48px;
-    padding: 0 22px;
+    gap: 12px;
+    min-width: max-content;
+    min-height: 54px;
+    padding: 0 24px;
     border: none;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #127F42, #18a957);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #127F42, #19b15d);
     color: #fff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
+    line-height: 1.4;
     cursor: pointer;
     transition: all 0.25s ease;
-    box-shadow: 0 8px 20px rgba(18, 127, 66, 0.22);
+    box-shadow: 0 10px 24px rgba(18, 127, 66, 0.24);
     position: relative;
     overflow: hidden;
 }
 
     .enhanced-action-btn:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 12px 26px rgba(18, 127, 66, 0.32);
+        box-shadow: 0 14px 30px rgba(18, 127, 66, 0.34);
     }
 
     .enhanced-action-btn:active:not(:disabled) {
@@ -1995,7 +2047,12 @@ select {
     }
 
     .enhanced-action-btn i {
-        font-size: 15px;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .enhanced-action-btn span {
+        text-align: center;
     }
 
 .btn-spinner {

@@ -70,15 +70,15 @@
             <table class="portal-table dense">
                 <thead>
                     <tr>
-                        <th>Mã lệnh / Biển số</th>
+                        <th>Biển số/ Mã lệnh</th>
                         <th>Ngày lập lệnh</th>
                         <th>Ngày dự kiến lấy</th>
                         <th>House Bill</th>
                         <th>Khách hàng</th>
-                        <th>Tên doanh nghiệp</th>
+                        <th>Mã ST/ Tên DN</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
-                        <th>Tải hóa đơn</th>
+                        @* <th>Tải hóa đơn</th> *@
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -100,17 +100,20 @@
                         {
                             <tr class="@GetRowClass(order)">
                                 <td>
-                                    <div class="cell-title">@order.OrderCode</div>
-                                    <div class="cell-subtitle">@order.VehicleNumber</div>
+                                    <div class="cell-title">@order.VehicleNumber</div>
+                                    <div class="cell-subtitle">@order.OrderCode</div>
                                 </td>
                                 <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>@(order.PickupDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td>@order.HouseBill</td>
                                 <td>@order.CustomerName</td>
-                                <td>@order.CompanyName</td>
+                                <td>
+                                    <div class="cell-title">@order.TaxCode</div>
+                                    <div class="cell-subtitle">@order.CompanyName</div>
+                                </td>
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
-                                <td>
+                                @* <td>
                                     @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
                                     {
                                         <a class="invoice-download-link"
@@ -125,7 +128,7 @@
                                     {
                                         <span class="portal-text-muted">-</span>
                                     }
-                                </td>
+                                </td> *@
                                 <td>
                                     <button type="button" class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
                                         Xem chi tiết

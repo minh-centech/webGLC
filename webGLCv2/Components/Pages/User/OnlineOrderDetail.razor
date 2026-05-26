@@ -783,8 +783,8 @@
                 @if (Workflow?.PhiLuuKho?.Data is not null)
                 {
                     <div class="workflow-payment-row" style="margin-top:16px;">
-                        <span class="status-chip @GetPaymentStatusClass(Workflow.PhiLuuKho.Data.TrangThaiThanhToan)">
-                            @GetPaymentStatusLabel(Workflow.PhiLuuKho.Data.TrangThaiThanhToan)
+                        <span class="status-chip">
+                            Hướng dẫn: Thay đổi ngày hệ thống sẽ cập nhật lại bảng giá dịch vụ
                         </span>
                     </div>
 
@@ -840,10 +840,18 @@
                 else if (PaymentInfo is not null)
                 {
                     <div class="payment-modal-grid" style="margin-top:16px;">
-                        <div class="payment-qr-card">
-                            <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.QRCodeThanhToan)" alt="QR thanh toán" />
-                            <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này.</p>
-                        </div>
+                    <div class="payment-qr-card">
+                        <img class="payment-qr-image" src="@GetQrCodeDataUrl(PaymentInfo.QRCodeThanhToan)" alt="QR thanh toán" />
+                        <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này.</p>
+                        <button type="button"
+                                class="portal-secondary-action"
+                                style="align-self:flex-start; padding:0.65rem 1rem; margin-top:8px;"
+                                title="Tải xuống ảnh QR"
+                                aria-label="Tải xuống ảnh QR"
+                                @onclick="() => DownloadQrImageAsync(PaymentInfo.QRCodeThanhToan, PaymentInfo.So)">
+                            Tải xuống ảnh QR
+                        </button>
+                    </div>
 
                         <div class="payment-details">
                             @* <div class="payment-detail-row">
@@ -968,6 +976,14 @@
                                     <div class="payment-qr-card">
                                         <img class="payment-qr-image" src="@GetQrCodeDataUrl(SelectedReceiptPaymentQrBase64)" alt="QR thanh toán biên nhận" />
                                         <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này để chuyển khoản.</p>
+                                        <button type="button"
+                                                class="portal-secondary-action"
+                                                style="align-self:flex-start; padding:0.65rem 1rem; margin-top:8px;"
+                                                title="Tải xuống ảnh QR"
+                                                aria-label="Tải xuống ảnh QR"
+                                                @onclick="() => DownloadQrImageAsync(SelectedReceiptPaymentQrBase64, SelectedReceiptPaymentItem?.So)">
+                                            Tải xuống ảnh QR
+                                        </button>
                                         <div class="portal-alert portal-alert-warning" style="margin-top:12px;">
                                             Quý khách hàng vui lòng không thay đổi nội dung chuyển khoản. Vui lòng giữ nguyên nội dung là mã thanh toán đã tạo.
                                         </div>
@@ -1045,7 +1061,14 @@
                             <div style="flex:1 1 auto;">
                                 <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#7c2d12;">Xác nhận thanh toán</h4>
                                 <p style="margin:0; color:#7c2d12; line-height:1.65; font-size:0.98rem;">
-                                    Bạn đã chọn ngày lấy hàng là ngày <strong>@FormatDateTime(StorageActionDate)</strong>, bạn có muốn tiếp tục thanh toán không?
+                                    Bạn đã chọn ngày lấy hàng là
+                                    <strong style="color:#dc2626; font-size:1rem;">
+                                        @FormatDateTime(StorageActionDate)
+                                    </strong>.
+                                    Sau khi thực hiện thanh toán, bạn sẽ <strong style="color:#dc2626;">không thể thay đổi ngày lấy hàng</strong>.
+                                    Bạn có chắc chắn muốn tiếp tục thanh toán <strong style="color:#dc2626; font-size:1rem;">
+                                    @FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!)) VNĐ
+                                </strong> không?
                                 </p>
                             </div>
                         </div>
@@ -1073,20 +1096,20 @@
 @if (ShowLenhXuatPdfWarningDialog)
 {
     <div class="payment-confirm-backdrop" style="position:fixed; inset:0; z-index:2600; background:rgba(15, 23, 42, 0.64); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; padding:24px; pointer-events:auto;" @onclick="CloseLenhXuatPdfWarningDialog">
-        <div class="payment-confirm-modal" style="position:relative; z-index:2601; pointer-events:auto; max-width:540px; width:min(100%, 540px); border-radius:20px; background:linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #60a5fa; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
+        <div class="payment-confirm-modal" style="position:relative; z-index:2601; pointer-events:auto; max-width:540px; width:min(100%, 540px); border-radius:20px; background:linear-gradient(180deg, #fff7d1 0%, #fff1a8 100%); border:1px solid #f3c846; box-shadow:0 24px 60px rgba(0,0,0,0.25); padding:24px 24px 20px;" @onclick:stopPropagation="true">
             <div style="display:flex; align-items:flex-start; gap:14px;">
-                <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(37, 99, 235, 0.35);">
-                    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#d97706; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(217, 119, 6, 0.35);">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
                 </div>
                 <div style="flex:1 1 auto;">
-                    <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#1e3a8a;">Không thể tải lệnh xuất kho</h4>
-                    <p style="margin:0; color:#1e3a8a; line-height:1.65; font-size:0.98rem;">
+                    <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#7c2d12;">Không thể tải lệnh xuất kho</h4>
+                    <p style="margin:0; color:#7c2d12; line-height:1.65; font-size:0.98rem;">
                         Vui lòng thanh toán các biên nhận trước khi tải lệnh xuất kho.
                     </p>
                 </div>
             </div>
             <div class="payment-confirm-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:22px;">
-                <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem; background:#2563eb; border-color:#2563eb;" @onclick="CloseLenhXuatPdfWarningDialog" @onclick:stopPropagation="true">Đã hiểu</button>
+                <button type="button" class="portal-primary-action" style="padding:0.85rem 1.15rem; background:#d97706; border-color:#d97706;" @onclick="CloseLenhXuatPdfWarningDialog" @onclick:stopPropagation="true">Đã hiểu</button>
             </div>
         </div>
     </div>
@@ -2630,7 +2653,7 @@
         => value.ToString("0.###", CultureInfo.GetCultureInfo("vi-VN"));
 
     private static string FormatDateTime(DateTime? value)
-        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
 
     private static string FormatYesNo(bool value)
         => value ? "Có" : "Không";
@@ -2675,6 +2698,29 @@
         }
 
         await JSRuntime.InvokeVoidAsync("paymentQr.copyText", value);
+    }
+
+    private async Task DownloadQrImageAsync(string? base64, string? receiptNo)
+    {
+        if (string.IsNullOrWhiteSpace(base64))
+        {
+            return;
+        }
+
+        var safeReceiptNo = string.IsNullOrWhiteSpace(receiptNo)
+            ? "qr-thanh-toan"
+            : new string(receiptNo.Trim().Where(ch => !Path.GetInvalidFileNameChars().Contains(ch)).ToArray());
+
+        if (string.IsNullOrWhiteSpace(safeReceiptNo))
+        {
+            safeReceiptNo = "qr-thanh-toan";
+        }
+
+        await JSRuntime.InvokeVoidAsync(
+            "paymentQr.downloadFile",
+            $"qr-{safeReceiptNo}.png",
+            "image/png",
+            base64);
     }
 
     private static long GetCurrentUserId(ClaimsPrincipal user)

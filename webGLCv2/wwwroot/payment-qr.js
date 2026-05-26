@@ -126,23 +126,37 @@ window.paymentQr = (function () {
       .replace(/'/g, "&#39;");
   }
 
-    function formatVndAmount(value) {
-        if (value === null || value === undefined || value === "") {
-            return "";
-        }
-
-        const numericValue = typeof value === "number"
-            ? value
-            : Number(String(value).replace(/[^\d-]/g, ""));
-
-        if (!Number.isFinite(numericValue)) {
-            return String(value);
-        }
-
-        return new Intl.NumberFormat("vi-VN", {
-            maximumFractionDigits: 0
-        }).format(numericValue);
+  function formatVndAmount(value) {
+    if (value === null || value === undefined || value === "") {
+      return "";
     }
+
+    const numericValue = typeof value === "number"
+      ? value
+      : Number(String(value).replace(/[^\d-]/g, ""));
+
+    if (!Number.isFinite(numericValue)) {
+      return String(value);
+    }
+
+    return new Intl.NumberFormat("vi-VN", {
+      maximumFractionDigits: 0
+    }).format(numericValue);
+  }
+
+  function downloadQrImage(src, receiptNo) {
+    if (!src) {
+      return;
+    }
+
+    const anchor = document.createElement("a");
+    anchor.href = src;
+    anchor.download = `qr-${String(receiptNo || "thanh-toan").trim() || "thanh-toan"}.png`;
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
 
   function downloadFile(fileName, contentType, base64Content) {
     if (!base64Content) {
@@ -241,11 +255,22 @@ window.paymentQr = (function () {
     qrCard.innerHTML = `
       <img class="payment-qr-image" src="${src}" alt="QR thanh toán biên nhận" />
       <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này để chuyển khoản.</p>
+      <button type="button" class="portal-secondary-action" style="align-self:flex-start; padding:0.65rem 1rem; margin-top:8px;" aria-label="Tải xuống ảnh QR" title="Tải xuống ảnh QR">
+        Tải xuống ảnh QR
+      </button>
     `;
 
     const details = document.createElement("div");
     details.className = "payment-details";
     details.innerHTML = '<div class="portal-empty-inline">Đang phân tích mã QR thanh toán...</div>';
+
+    const downloadButton = qrCard.querySelector("button");
+    if (downloadButton) {
+      downloadButton.addEventListener("click", event => {
+        event.stopPropagation();
+        downloadQrImage(src, receiptNo);
+      });
+    }
 
     grid.appendChild(qrCard);
     grid.appendChild(details);

@@ -91,7 +91,7 @@
                     </div>
                     <div>
                         <label class="portal-label">Email</label>
-                        <InputText class="portal-input" @bind-Value="Draft.CompanyEmail" />
+                        <InputText class="portal-input" @bind-Value="Draft.CompanyEmail" readonly />
                     </div>
 
                     <div>
@@ -123,7 +123,7 @@
 
         <div class="form-actions">
             <button type="submit" class="portal-primary-action">Lưu lệnh</button>
-            <button type="button" class="portal-secondary-action" @onclick="ResetForm">Reset thông tin</button>
+            <button type="button" class="portal-secondary-action" @onclick="ResetForm">Thiết lập lại thông tin</button>
         </div>
     </EditForm>
 </section>
@@ -223,8 +223,8 @@
         CurrentUserEmail = authState.User.FindFirstValue(ClaimTypes.Email) ?? authState.User.Identity?.Name ?? string.Empty;
         CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
         CurrentUserAccountType = int.TryParse(authState.User.FindFirstValue("account_type"), out var accountType) ? accountType : 1;
-
         await LoadCustomerCompaniesAsync();
+        EnsureCompanyEmailFallback();
     }
 
     protected override Task OnParametersSetAsync()
@@ -234,44 +234,7 @@
             return Task.CompletedTask;
         }
 
-        var houseBill = HouseBillFromQuery?.Trim();
-        var soCont = SoContFromQuery?.Trim();
-        var soVanDon = SoVanDonFromQuery?.Trim();
-        var soToKhai = SoToKhaiFromQuery?.Trim();
-        var idCtLenhNhapKhoHangNhapKhauChiTiet = IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery?.Trim();
-
-        if (!string.IsNullOrWhiteSpace(houseBill))
-        {
-            Draft.HouseBill = houseBill;
-        }
-
-        if (!string.IsNullOrWhiteSpace(soCont))
-        {
-            Draft.ContainerNumber = soCont;
-        }
-        else if (!string.IsNullOrWhiteSpace(soVanDon))
-        {
-            Draft.ContainerNumber = soVanDon;
-        }
-
-        if (!string.IsNullOrWhiteSpace(soToKhai))
-        {
-            Draft.DeclarationNumber = soToKhai;
-        }
-
-        if (long.TryParse(idCtLenhNhapKhoHangNhapKhauChiTiet, out var parsedIdCt) && parsedIdCt > 0)
-        {
-            Draft.IDctLenhNhapKhoHangNhapKhauChiTiet = parsedIdCt;
-        }
-
-        if (!string.IsNullOrWhiteSpace(houseBill)
-            || !string.IsNullOrWhiteSpace(soCont)
-            || !string.IsNullOrWhiteSpace(soVanDon)
-            || !string.IsNullOrWhiteSpace(soToKhai)
-            || !string.IsNullOrWhiteSpace(idCtLenhNhapKhoHangNhapKhauChiTiet))
-        {
-            AppliedQueryDefaults = true;
-        }
+        ApplyQueryDefaultsToDraft(markApplied: true);
 
         return Task.CompletedTask;
     }
@@ -353,7 +316,6 @@
         {
             Draft.CompanyName = result.CompanyName;
             Draft.CompanyAddress = result.CompanyAddress;
-            Draft.CompanyEmail = result.CompanyEmail;
         }
     }
 
@@ -470,7 +432,7 @@
         Draft.TaxCode = string.Empty;
         Draft.CompanyName = string.Empty;
         Draft.CompanyAddress = string.Empty;
-        Draft.CompanyEmail = string.Empty;
+        EnsureCompanyEmailFallback();
         Draft.PhoneNumber = string.Empty;
 
         EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.TaxCode));
@@ -520,6 +482,8 @@
             Draft.CompanyEmail = email;
             EditContext.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyEmail));
         }
+
+        EnsureCompanyEmailFallback();
 
         var phone = GetTaxLookupValue("số điện thoại");
         if (!string.IsNullOrWhiteSpace(phone))
@@ -594,7 +558,7 @@
             Draft.TaxCode = string.Empty;
             Draft.CompanyName = string.Empty;
             Draft.CompanyAddress = string.Empty;
-            Draft.CompanyEmail = string.Empty;
+            Draft.CompanyEmail = CurrentUserEmail;
             return;
         }
 
@@ -619,6 +583,7 @@
         Draft.CompanyName = company.TenDoanhNghiep;
         Draft.CompanyAddress = company.DiaChi;
         Draft.CompanyEmail = company.EmailDoanhNghiep;
+        EnsureCompanyEmailFallback();
     }
 
     private void OnPickupDateInput(ChangeEventArgs args)
@@ -642,17 +607,14 @@
     {
         Draft = new OnlineOrderDraft
         {
-            OrderDate = DateTime.Today
+            OrderDate = DateTime.Today,
         };
         InitializeEditContext();
+        ApplyQueryDefaultsToDraft(markApplied: false);
         SelectedTaxCode = string.Empty;
         PickupDateText = string.Empty;
         InfoMessage = null;
-
-        if (CustomerCompanies.Count == 1)
-        {
-            SelectCompany(CustomerCompanies[0]);
-        }
+        EnsureCompanyEmailFallback();
     }
 
     private void InitializeEditContext()
@@ -660,6 +622,58 @@
         EditContext = new EditContext(Draft);
         ValidationMessages = new ValidationMessageStore(EditContext);
         EditContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    private void EnsureCompanyEmailFallback()
+    {
+        if (string.IsNullOrWhiteSpace(Draft.CompanyEmail))
+        {
+            Draft.CompanyEmail = CurrentUserEmail;
+            EditContext?.NotifyFieldChanged(FieldIdentifier.Create(() => Draft.CompanyEmail));
+        }
+    }
+
+    private void ApplyQueryDefaultsToDraft(bool markApplied)
+    {
+        var houseBill = HouseBillFromQuery?.Trim();
+        var soCont = SoContFromQuery?.Trim();
+        var soVanDon = SoVanDonFromQuery?.Trim();
+        var soToKhai = SoToKhaiFromQuery?.Trim();
+        var idCtLenhNhapKhoHangNhapKhauChiTiet = IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(houseBill))
+        {
+            Draft.HouseBill = houseBill;
+        }
+
+        if (!string.IsNullOrWhiteSpace(soCont))
+        {
+            Draft.ContainerNumber = soCont;
+        }
+        else if (!string.IsNullOrWhiteSpace(soVanDon))
+        {
+            Draft.ContainerNumber = soVanDon;
+        }
+
+        if (!string.IsNullOrWhiteSpace(soToKhai))
+        {
+            Draft.DeclarationNumber = soToKhai;
+        }
+
+        if (long.TryParse(idCtLenhNhapKhoHangNhapKhauChiTiet, out var parsedIdCt) && parsedIdCt > 0)
+        {
+            Draft.IDctLenhNhapKhoHangNhapKhauChiTiet = parsedIdCt;
+        }
+
+        if (markApplied && (
+                !string.IsNullOrWhiteSpace(houseBill)
+                || !string.IsNullOrWhiteSpace(soCont)
+                || !string.IsNullOrWhiteSpace(soVanDon)
+                || !string.IsNullOrWhiteSpace(soToKhai)
+                || !string.IsNullOrWhiteSpace(idCtLenhNhapKhoHangNhapKhauChiTiet)))
+        {
+            AppliedQueryDefaults = true;
+        }
     }
 
     private async Task<long?> ResolveIdCtLenhNhapKhoHangNhapKhauChiTietAsync(string? soVanDon)

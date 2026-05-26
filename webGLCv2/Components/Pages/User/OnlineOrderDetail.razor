@@ -911,6 +911,10 @@
                                         </span>
                                     </div>
                                 }
+                                <div class="portal-alert portal-alert-warning" style="margin-top:12px;">
+                                    Vui lòng giữ nguyên mã giao dịch trong nội dung chuyển khoản. Nếu sai mã, hệ thống sẽ không thể xác thực giao dịch của bạn.
+                                </div>
+
                             }
                             else if (PaymentQrDetails is not null && !PaymentQrDetails.Success && !string.IsNullOrWhiteSpace(PaymentQrDetails.ErrorMessage))
                             {
@@ -964,6 +968,9 @@
                                     <div class="payment-qr-card">
                                         <img class="payment-qr-image" src="@GetQrCodeDataUrl(SelectedReceiptPaymentQrBase64)" alt="QR thanh toán biên nhận" />
                                         <p class="payment-qr-caption">Mở app ngân hàng và quét mã QR này để chuyển khoản.</p>
+                                        <div class="portal-alert portal-alert-warning" style="margin-top:12px;">
+                                            Quý khách hàng vui lòng không thay đổi nội dung chuyển khoản. Vui lòng giữ nguyên nội dung là mã thanh toán đã tạo.
+                                        </div>
                                     </div>
 
                                     <div class="payment-details">

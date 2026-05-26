@@ -126,6 +126,26 @@ window.paymentQr = (function () {
       .replace(/'/g, "&#39;");
   }
 
+  function formatVndAmount(value) {
+    if (value === null || value === undefined || value === "") {
+      return "";
+    }
+
+    const numericValue = typeof value === "number"
+      ? value
+      : Number(String(value).replace(/[^\d-]/g, ""));
+
+    if (!Number.isFinite(numericValue)) {
+      return String(value);
+    }
+
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0
+    }).format(numericValue);
+  }
+
   function downloadFile(fileName, contentType, base64Content) {
     if (!base64Content) {
       return;
@@ -260,7 +280,7 @@ window.paymentQr = (function () {
     const bankLabel = decoded.bankName || decoded.bankBin || "";
     rows.push({ label: "Ngân hàng", value: bankLabel });
     rows.push({ label: "Số tài khoản", value: decoded.accountNumber || "" });
-    rows.push({ label: "Số tiền", value: decoded.amount ? String(decoded.amount) : amountText || "" });
+    rows.push({ label: "Số tiền", value: formatVndAmount(decoded.amount ?? amountText) || amountText || "" });
     if (decoded.transferContent) {
       rows.push({ label: "Nội dung", value: decoded.transferContent });
     }
@@ -271,6 +291,12 @@ window.paymentQr = (function () {
         <strong>${escapeHtml(row.value)}</strong>
       </div>
     `).join("");
+
+    details.innerHTML += `
+        <div class="portal-alert portal-alert-warning" style="margin-top:12px;">
+            Vui lòng giữ nguyên mã giao dịch trong nội dung chuyển khoản. Nếu sai mã, hệ thống sẽ không thể xác thực giao dịch của bạn.
+        </div>
+    `;
   }
 
   async function decodeFromBase64Image(base64OrDataUrl) {

@@ -127,6 +127,8 @@ app.Use(async (context, next) =>
 
     await next();
 });
+//Dung de tai file trong wwwroot
+app.UseStaticFiles();
 
 app.MapStaticAssets();
 app.MapControllers();

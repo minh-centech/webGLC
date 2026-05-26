@@ -108,11 +108,11 @@
                         <InputText disabled class="portal-input" @bind-Value="Draft.ContainerNumber" />
                         <ValidationMessage For="@(() => Draft.ContainerNumber)" class="validation-message" />
                     </div>
-                    <div>
+                    @* <div>
                         <label class="portal-label">Ngày dự kiến lấy hàng</label>
                         <input id="pickupDateInput" class="portal-input" value="@PickupDateText" @oninput="OnPickupDateInput" @onchange="OnPickupDateInput" placeholder="dd/MM/yyyy" />
                         <ValidationMessage For="@(() => Draft.PickupDate)" class="validation-message" />
-                    </div>
+                    </div> *@
                     <div>
                         <label class="portal-label">Số tờ khai</label>
                         <InputText disabled class="portal-input" @bind-Value="Draft.DeclarationNumber" />
@@ -249,8 +249,7 @@
         {
             Draft.ContainerNumber = soCont;
         }
-
-        if (!string.IsNullOrWhiteSpace(soVanDon))
+        else if (!string.IsNullOrWhiteSpace(soVanDon))
         {
             Draft.ContainerNumber = soVanDon;
         }

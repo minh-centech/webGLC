@@ -126,25 +126,23 @@ window.paymentQr = (function () {
       .replace(/'/g, "&#39;");
   }
 
-  function formatVndAmount(value) {
-    if (value === null || value === undefined || value === "") {
-      return "";
+    function formatVndAmount(value) {
+        if (value === null || value === undefined || value === "") {
+            return "";
+        }
+
+        const numericValue = typeof value === "number"
+            ? value
+            : Number(String(value).replace(/[^\d-]/g, ""));
+
+        if (!Number.isFinite(numericValue)) {
+            return String(value);
+        }
+
+        return new Intl.NumberFormat("vi-VN", {
+            maximumFractionDigits: 0
+        }).format(numericValue);
     }
-
-    const numericValue = typeof value === "number"
-      ? value
-      : Number(String(value).replace(/[^\d-]/g, ""));
-
-    if (!Number.isFinite(numericValue)) {
-      return String(value);
-    }
-
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0
-    }).format(numericValue);
-  }
 
   function downloadFile(fileName, contentType, base64Content) {
     if (!base64Content) {
@@ -169,10 +167,14 @@ window.paymentQr = (function () {
     URL.revokeObjectURL(url);
   }
 
-  function hideReceiptPaymentPopup() {
+  function hideReceiptPaymentPopup(notifyBlazor = false, dotNetRef = null) {
     const existing = document.getElementById("receipt-payment-popup-overlay");
     if (existing) {
       existing.remove();
+    }
+
+    if (notifyBlazor && dotNetRef && typeof dotNetRef.invokeMethodAsync === "function") {
+      dotNetRef.invokeMethodAsync("OnReceiptPaymentPopupClosedFromJs").catch(() => {});
     }
   }
 
@@ -182,6 +184,7 @@ window.paymentQr = (function () {
     const base64 = options?.base64 || "";
     const receiptNo = options?.receiptNo || "";
     const amountText = options?.amountText || "";
+    const dotNetRef = options?.dotNetRef || null;
     const src = normalizeImageSource(base64);
     if (!src) {
       return;
@@ -208,7 +211,7 @@ window.paymentQr = (function () {
     closeButton.type = "button";
     closeButton.className = "payment-modal-close";
     closeButton.textContent = "×";
-    closeButton.addEventListener("click", hideReceiptPaymentPopup);
+    closeButton.addEventListener("click", () => hideReceiptPaymentPopup(true, dotNetRef));
 
     header.appendChild(closeButton);
 
@@ -255,14 +258,14 @@ window.paymentQr = (function () {
     footerClose.className = "portal-secondary-action";
     footerClose.style.padding = "0.85rem 1.2rem";
     footerClose.textContent = "Đóng";
-    footerClose.addEventListener("click", hideReceiptPaymentPopup);
+    footerClose.addEventListener("click", () => hideReceiptPaymentPopup(true, dotNetRef));
     footer.appendChild(footerClose);
 
     modal.appendChild(header);
     modal.appendChild(body);
     modal.appendChild(footer);
     overlay.appendChild(modal);
-    overlay.addEventListener("click", hideReceiptPaymentPopup);
+    overlay.addEventListener("click", () => hideReceiptPaymentPopup(true, dotNetRef));
     document.body.appendChild(overlay);
 
     const decoded = await decodeFromBase64Image(base64);

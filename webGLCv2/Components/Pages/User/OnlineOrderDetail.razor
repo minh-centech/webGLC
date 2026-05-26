@@ -84,10 +84,10 @@
                     <label class="portal-label">Số hiệu Container</label>
                     <input class="portal-input" value="@Order.ContainerNumber" readonly />
                 </div>
-                <div>
+                @* <div>
                     <label class="portal-label">Ngày dự kiến lấy hàng</label>
                     <input class="portal-input" value="@(Order.PickupDate?.ToString("dd/MM/yyyy") ?? string.Empty)" readonly />
-                </div>
+                </div> *@
                 <div>
                     <label class="portal-label">Số tờ khai hải quan</label>
                     <input class="portal-input" value="@Order.DeclarationNumber" readonly />
@@ -1137,6 +1137,7 @@
     private BienNhanThanhToanHangNhapKhauTempListItem? SelectedReceiptPaymentItem;
     private string? SelectedReceiptPaymentQrBase64;
     private PaymentQrDecodedInfo? SelectedReceiptPaymentQrDetails;
+    private DotNetObjectReference<OnlineOrderDetail>? _receiptPaymentPopupDotNetRef;
     private string? ReceiptPaymentPopupMessage;
     private string? ActiveReceiptActionSo;
     private string? ActiveReceiptActionKind;
@@ -2058,13 +2059,15 @@
         Console.WriteLine($"[ReceiptPaymentPopup] Opening JS popup for receipt {item.So} after delay");
         try
         {
+            _receiptPaymentPopupDotNetRef ??= DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync(
                 "paymentQr.showReceiptPaymentPopup",
                 new
                 {
                     base64 = item.QRCodeThanhToan,
                     receiptNo = item.So,
-                    amountText = FormatMoneyVnd(item.TongTien)
+                    amountText = FormatMoneyVnd(item.TongTien),
+                    dotNetRef = _receiptPaymentPopupDotNetRef
                 });
 
             IsReceiptPaymentPopupOpen = true;
@@ -2120,14 +2123,24 @@
         }
     }
 
+    [JSInvokable]
+    public Task OnReceiptPaymentPopupClosedFromJs()
+        => CloseReceiptPaymentPopupAsync(false);
+
     private Task CloseReceiptPaymentPopup()
+        => CloseReceiptPaymentPopupAsync(true);
+
+    private async Task CloseReceiptPaymentPopupAsync(bool hideJsPopup)
     {
-        try
+        if (hideJsPopup)
         {
-            _ = JSRuntime.InvokeVoidAsync("paymentQr.hideReceiptPaymentPopup");
-        }
-        catch
-        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("paymentQr.hideReceiptPaymentPopup");
+            }
+            catch
+            {
+            }
         }
 
         IsReceiptPaymentPopupOpen = false;
@@ -2138,11 +2151,13 @@
         ReceiptPaymentPopupMessage = null;
         ClearActiveReceiptAction("payment");
         _ = UpdateReceiptPollingStateAsync();
-        return Task.CompletedTask;
+        await InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()
     {
+        _receiptPaymentPopupDotNetRef?.Dispose();
+        _receiptPaymentPopupDotNetRef = null;
         await StopReceiptPollingAsync();
     }
 
@@ -2609,7 +2624,7 @@
         => amount.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
 
     private static string FormatMoneyVnd(decimal amount)
-        => $"{FormatMoney(amount)} đ";
+        => $"{FormatMoney(amount)} ";
 
     private static string FormatNumber(decimal value)
         => value.ToString("0.###", CultureInfo.GetCultureInfo("vi-VN"));

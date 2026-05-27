@@ -25,6 +25,8 @@ x86/
 [Aa][Rr][Mm]64/
 TestResults/
 artifacts/
+buildtmp/
+.buildtmp/
 
 # MSBuild / compiler caches
 obj/

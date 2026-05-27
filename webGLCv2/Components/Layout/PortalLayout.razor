@@ -18,7 +18,7 @@
                     </div>
                     <div>
                         <strong>Cổng everWareHouse</strong>
-                        <span>Everlink Company</span>
+                        <span>EVERLINK JSC</span>
                     </div>
                 </div>
 
@@ -69,6 +69,33 @@
                 <div class="portal-content">
                     @Body
                 </div>
+
+                @if (!isAdmin)
+                {
+                    <footer class="portal-footer" aria-label="Thông tin hỗ trợ">
+                        <div class="portal-footer-heading">
+                            <img class="portal-footer-logo login-brand-image" src="/images/glc-logo.png" alt="GLC logo" />
+                            <span class="portal-footer-kicker">Hỗ trợ khách hàng</span>
+                        </div>
+
+                        <div class="portal-footer-grid">
+                            <div class="portal-footer-item">
+                                <span>Điện thoại hỗ trợ</span>
+                                <strong>
+                                    <a class="portal-footer-link" href="tel:+842253979550">(84-225) 3979 550</a>
+                                    <a class="portal-footer-link" href="tel:+842253262156">(84-225) 3262 156</a>
+                                </strong>
+                            </div>
+
+                            <div class="portal-footer-item">
+                                <span>Email hỗ trợ</span>
+                                <strong>
+                                    <a class="portal-footer-link" href="mailto:info@glc.com.vn">info@glc.com.vn</a>
+                                </strong>
+                            </div>
+                        </div>
+                    </footer>
+                }
             </main>
         </div>
     </Authorized>

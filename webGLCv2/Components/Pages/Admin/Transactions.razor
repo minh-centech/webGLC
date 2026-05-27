@@ -70,6 +70,24 @@
             </div>
         </EditForm>
 
+        <div class="stats-grid docs-summary-grid" style="margin: 18px 0 6px;">
+            @if (ShouldShowPendingTotal)
+            {
+                <article class="stat-card">
+                    <span class="stat-label" style="font-weight:700;">Tổng tiền chờ xác nhận</span>
+                    <strong>@FormatMoney(GetPendingTotal()) VNĐ</strong>
+                </article>
+            }
+
+            @if (ShouldShowPaidTotal)
+            {
+                <article class="stat-card">
+                    <span class="stat-label" style="color:#15803d; font-weight:700;">Tổng tiền đã thanh toán</span>
+                    <strong style="color:#15803d;">@FormatMoney(GetPaidTotal()) VNĐ</strong>
+                </article>
+            }
+        </div>
+
         <div class="table-shell">
             <table class="portal-table dense">
                 <thead>
@@ -77,9 +95,9 @@
                         <th>Số biên nhận</th>
                         <th>Tên khách hàng</th>
                         <th>Ngày lập</th>
-                        <th>Nội dung thanh toán</th>
+                        <th style="width:320px; min-width:320px; max-width:320px;">Nội dung thanh toán</th>
                         <th>Thời gian thanh toán</th>
-                        <th class="text-end">Tổng tiền</th>
+                        <th class="text-end" style="font-weight:700; color:#15803d;">Số tiền</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
@@ -115,9 +133,15 @@
                                 </td>
                                 <td>@(string.IsNullOrWhiteSpace(item.TenDanhMucKhachHangDoiLenh) ? "-" : item.TenDanhMucKhachHangDoiLenh)</td>
                                 <td>@FormatDateTime(item.NgayLap)</td>
-                                <td class="transaction-content-cell">@FormatPaymentContent(item.NoiDungThanhToan)</td>
+                                <td class="transaction-content-cell"
+                                    style="width:320px; min-width:320px; max-width:320px; white-space:normal;"
+                                    title="@FormatPaymentContent(item.NoiDungThanhToan)">
+                                    <code style="display:block; white-space:pre-wrap; word-break:break-word; margin:0; padding:0.25rem 0.35rem; border-radius:6px; background:rgba(15, 23, 42, 0.04); color:#0f172a; font-size:0.92rem; line-height:1.5;">
+                                        @FormatPaymentContent(item.NoiDungThanhToan)
+                                    </code>
+                                </td>
                                 <td>@FormatDateTime(item.ThoiGianThanhToan)</td>
-                                <td class="text-end">@FormatMoney(item.TongTien)</td>
+                                <td class="text-end" style="font-weight:700; color:#15803d;">@FormatMoney(item.TongTien)</td>
                                 <td>
                                     @if (!item.DaThanhToan)
                                     {
@@ -161,8 +185,9 @@
                     <p style="margin:0; color:#7f1d1d; line-height:1.65; font-size:0.98rem;">
                         Bạn có chắc chắn muốn xác nhận biên nhận
                         <strong style="color:#b91c1c;">@SelectedReceiptForConfirm.So</strong>
-                        đã được thanh toán? Vui lòng kiểm tra kỹ số tiền,
-                        nội dung chuyển khoản và mã biên nhận trước khi tiếp tục.
+                        đã được thanh toán? Số tiền cần xác nhận là
+                        <strong style="color:#b91c1c;">@FormatMoney(SelectedReceiptForConfirm.TongTien) VNĐ</strong>.
+                        Vui lòng kiểm tra kỹ số tiền, nội dung chuyển khoản và mã biên nhận trước khi tiếp tục.
                         Thao tác này sẽ cập nhật trạng thái thanh toán trên hệ thống.
                     </p>
                 </div>
@@ -400,4 +425,18 @@
 
     private static string FormatMoney(decimal value)
         => value.ToString("N0", new CultureInfo("vi-VN"));
+
+    private bool ShouldShowPendingTotal
+        => string.IsNullOrWhiteSpace(TrangThaiThanhToanFilterValue)
+            || string.Equals(TrangThaiThanhToanFilterValue, "0", StringComparison.OrdinalIgnoreCase);
+
+    private bool ShouldShowPaidTotal
+        => string.IsNullOrWhiteSpace(TrangThaiThanhToanFilterValue)
+            || string.Equals(TrangThaiThanhToanFilterValue, "1", StringComparison.OrdinalIgnoreCase);
+
+    private decimal GetPendingTotal()
+        => Receipts.Where(item => !item.DaThanhToan).Sum(item => item.TongTien);
+
+    private decimal GetPaidTotal()
+        => Receipts.Where(item => item.DaThanhToan).Sum(item => item.TongTien);
 }

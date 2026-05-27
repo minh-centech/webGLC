@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using webGLCv2.Models;
+using System.Net;
 
 namespace webGLCv2.Services;
 
@@ -700,7 +701,47 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể tải file PDF lên hệ thống.");
 
         var result = JsonSerializer.Deserialize<LegacyUploadPdfResult>(envelope!.Data, JsonOptions);
+        if (result is not null)
+        {
+            result.ViewUrl = BuildPdfViewUrl(result.RelativePath);
+        }
+
         return result ?? new LegacyUploadPdfResult();
+    }
+
+    public async Task<Stream> ViewPdfAsync(string path, CancellationToken cancellationToken = default)
+    {
+        var trimmedPath = path?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmedPath))
+        {
+            throw new InvalidOperationException("Đường dẫn file PDF không hợp lệ.");
+        }
+
+        var response = await _httpClient.GetAsync(
+            $"api/TaiLieu/ViewPdf?path={Uri.EscapeDataString(trimmedPath)}",
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = string.IsNullOrWhiteSpace(errorMessage)
+                ? "Không thể tải file PDF."
+                : errorMessage;
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw new FileNotFoundException(message);
+            }
+
+            throw new InvalidOperationException(message);
+        }
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var memoryStream = new MemoryStream();
+        await responseStream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+        return memoryStream;
     }
 
     public async Task<LegacyCompanyProfile?> GetLatestEnterpriseProfileAsync(string accountId)
@@ -766,9 +807,14 @@ public sealed class LegacyCustomerPortalService
             RelativePath = trimmedPath,
             ViewUrl = string.IsNullOrWhiteSpace(trimmedPath)
                 ? string.Empty
-                : $"{_httpClient.BaseAddress}api/TaiLieu/ViewPdf?path={Uri.EscapeDataString(trimmedPath)}"
+                : BuildPdfViewUrl(trimmedPath)
         };
     }
+
+    private static string BuildPdfViewUrl(string relativePath)
+        => string.IsNullOrWhiteSpace(relativePath)
+            ? string.Empty
+            : $"/api/TaiLieu/ViewPdf?path={Uri.EscapeDataString(relativePath.Trim())}";
 
     private static string? NullIfEmpty(string value)
         => string.IsNullOrWhiteSpace(value) ? null : value;

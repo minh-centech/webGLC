@@ -27,8 +27,8 @@
 
     <section class="workspace-card">
         <div class="section-heading">
-            <h2>Thông tin tìm kiếm</h2>
-            <p>Nhập House Bill hoặc Số Cont để lọc dữ liệu hàng nhập.</p>
+            <h2>Kết quả tra cứu</h2>
+            <p>Nhập House Bill và Số tờ khai để lấy dữ liệu từ hải quan.</p>
         </div>
 
         <div class="field-grid">
@@ -100,29 +100,36 @@
     @if (DetailRows.Count > 0)
     {
         <section class="workspace-card">
-            <div class="section-heading">
-                <h2>Thông tin chi tiết House Bill</h2>
-                <p>Lấy dữ liệu thành công.</p>
+
+            <div class="section-heading" style="margin-bottom:14px;">
+                <h2 style="margin-bottom:4px;">Thông tin chi tiết House Bill</h2>
+                <p style="color:#6b7280;">Lấy dữ liệu thành công.</p>
             </div>
 
-            <div class="table-shell" style="max-height: 560px; overflow-y: auto;">
-                <table class="portal-table dense">
-                    <thead>
-                        <tr>
-                            <th>Trường</th>
-                            <th>Giá trị</th>
-                        </tr>
-                    </thead>
+            <div class="table-shell" style="max-height:560px; overflow-y:auto;">
+
+                <table style="width:100%; border-collapse:collapse; font-family:'Segoe UI',Arial,sans-serif; font-size:14px; background:#fff; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
                     <tbody>
-                        @foreach (var row in DetailRows)
+
+                        @for (int i = 0; i < DetailRows.Count; i++)
                         {
-                            <tr>
-                                <td>@row.Label</td>
-                                <td>@row.Value</td>
+                            var row = DetailRows[i];
+                            var bgColor = i % 2 == 0 ? "#f8fafc" : "#ffffff";
+
+                            <tr style="background:@bgColor;">
+                                <td style="padding:12px 16px; width:35%; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                    @row.Label
+                                </td>
+
+                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                    @row.Value
+                                </td>
                             </tr>
                         }
+
                     </tbody>
                 </table>
+
             </div>
         </section>
     }
@@ -595,34 +602,38 @@
             new DetailRow("Số House Bill", detail.SoHouseBill),
             new DetailRow("Số Cont", detail.SoCont),
             new DetailRow("Master Bill", detail.MasterBill),
-            //new DetailRow("Trạng thái khóa", FormatBool(!detail.TrangThaiKhoa)),
-            new DetailRow("Mô tả hàng hóa", detail.MoTaHangHoa),
+             new DetailRow("Số seal", detail.SoSeal),
+            new DetailRow("Mã đại lý", detail.MaDanhMucDaiLy),
             new DetailRow("Chủ hàng", detail.ChuHang),
-            new DetailRow("Đơn vị tính", detail.MaDanhMucDonViTinh),
+            new DetailRow("EDO", detail.EDO),
             new DetailRow("Số kiện nhập", FormatDecimal(detail.SoLuongKienNhap)),
-            new DetailRow("Khối lượng nhập", FormatDecimal(detail.KhoiLuongNhap)),
-            new DetailRow("CBM nhập", FormatDecimal(detail.CBMNhap)),
+             new DetailRow("CBM nhập", FormatDecimal(detail.CBMNhap)),
+             new DetailRow("Khối lượng nhập", FormatDecimal(detail.KhoiLuongNhap)),
+
+            //new DetailRow("Trạng thái khóa", FormatBool(!detail.TrangThaiKhoa)),
+            // new DetailRow("Mô tả hàng hóa", detail.MoTaHangHoa),
+            // new DetailRow("Đơn vị tính", detail.MaDanhMucDonViTinh),
+
             // new DetailRow("Đơn giá lưu kho", FormatMoney(detail.DonGiaLuuKho)),
             // new DetailRow("Đơn giá giao nhận", FormatMoney(detail.DonGiaGiaoNhan)),
             // new DetailRow("Đơn giá bốc xếp", FormatMoney(detail.DonGiaBocXep)),
             // new DetailRow("Đơn giá quản lý", FormatMoney(detail.DonGiaQuanLy)),
-            new DetailRow("Hàng nguy hiểm", FormatBool(detail.HangNguyHiem)),
-            new DetailRow("Hàng quá kho", FormatBool(detail.HangQuaKho)),
-            new DetailRow("Số lượng quá kho", FormatDecimal(detail.SoLuongQuaKho)),
-            new DetailRow("Hàng quá tải", FormatBool(detail.HangQuaTai)),
-            new DetailRow("Số lượng quá tải", FormatDecimal(detail.SoLuongQuaTai)),
-            new DetailRow("EDO", detail.EDO),
+            // new DetailRow("Hàng nguy hiểm", FormatBool(detail.HangNguyHiem)),
+            // new DetailRow("Hàng quá kho", FormatBool(detail.HangQuaKho)),
+            // new DetailRow("Số lượng quá kho", FormatDecimal(detail.SoLuongQuaKho)),
+            // new DetailRow("Hàng quá tải", FormatBool(detail.HangQuaTai)),
+            // new DetailRow("Số lượng quá tải", FormatDecimal(detail.SoLuongQuaTai)),
+            
             // new DetailRow("Mã cửa làm hàng", detail.MaDanhMucCuaLamHang),
-            new DetailRow("Ngày nhập kho", FormatDate(detail.NgayNhapKho)),
-            new DetailRow("Ngày gia hạn cuối", FormatDate(detail.NgayGiaHanCuoi)),
-            new DetailRow("Mã đại lý", detail.MaDanhMucDaiLy),
-            new DetailRow("Số seal", detail.SoSeal),
-            new DetailRow("Loại container", detail.MaDanhMucLoaiContainer),
-            new DetailRow("Mã hàng tàu", detail.MaDanhMucHangTau),
-            new DetailRow("Tên tàu", detail.TenTau),
-            new DetailRow("Số chuyến", detail.SoChuyen),
-            new DetailRow("Ngày tàu đến", FormatDate(detail.NgayTauDen)),
-            new DetailRow("Ghi chú", detail.GhiChu)
+            // new DetailRow("Ngày nhập kho", FormatDate(detail.NgayNhapKho)),
+            // new DetailRow("Ngày gia hạn cuối", FormatDate(detail.NgayGiaHanCuoi)),
+            
+            // new DetailRow("Loại container", detail.MaDanhMucLoaiContainer),
+            // new DetailRow("Mã hàng tàu", detail.MaDanhMucHangTau),
+            // new DetailRow("Tên tàu", detail.TenTau),
+            // new DetailRow("Số chuyến", detail.SoChuyen),
+            // new DetailRow("Ngày tàu đến", FormatDate(detail.NgayTauDen)),
+            // new DetailRow("Ghi chú", detail.GhiChu)
         ];
     }
 

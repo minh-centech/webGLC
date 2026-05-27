@@ -393,38 +393,121 @@
                                         }
                                         else
                                         {
-                                            <tr><td>Số vận đơn</td><td>@chiTiet.SoVanDon</td></tr>
-                                            @* <tr><td>Trạng thái khóa</td><td>@FormatYesNo(chiTiet.TrangThaiKhoa)</td></tr> *@
-                                            <tr><td>Số container</td><td>@chiTiet.SoContainer</td></tr>
-                                            <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
-                                            <tr><td>Tên chủ hàng</td><td>@chiTiet.TenChuHang</td></tr>
-                                            @* <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr> *@
-                                            <tr><td>Số lượng kiện nhập</td><td>@FormatNumber(chiTiet.SoLuongKienNhap)</td></tr>
-                                            <tr><td>Khối lượng nhập</td><td>@FormatNumber(chiTiet.KhoiLuongNhap)</td></tr>
-                                            <tr><td>CBM nhập</td><td>@FormatNumber(chiTiet.CBMNhap)</td></tr>
+                                            <tr style="background:#f8fafc;">
+                                                <td style="padding:12px 16px; width:35%; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Số vận đơn
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.SoVanDon
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Số container
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.SoContainer
+                                                </td>
+                                            </tr>
+
+                                            <tr style="background:#f8fafc;">
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Master Bill
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.MasterBill
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Số seal
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.SoSeal
+                                                </td>
+                                            </tr>
+
+                                            <tr style="background:#f8fafc;">
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Mã đại lý
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.MaDanhMucDaiLy
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Chủ hàng
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.TenChuHang
+                                                </td>
+                                            </tr>
+
+                                            <tr style="background:#f8fafc;">
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    EDO
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-bottom:1px solid #e5e7eb;">
+                                                    @chiTiet.EDO
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    Số lượng kiện nhập
+                                                </td>
+                                                <td style="padding:12px 16px; color:#059669; font-weight:600; border-bottom:1px solid #e5e7eb;">
+                                                    @FormatNumber(chiTiet.SoLuongKienNhap)
+                                                </td>
+                                            </tr>
+
+                                            <tr style="background:#f8fafc;">
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">
+                                                    CBM nhập
+                                                </td>
+                                                <td style="padding:12px 16px; color:#059669; font-weight:600; border-bottom:1px solid #e5e7eb;">
+                                                    @FormatNumber(chiTiet.CBMNhap)
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151;">
+                                                    Khối lượng nhập
+                                                </td>
+                                                <td style="padding:12px 16px; color:#dc2626; font-weight:700;">
+                                                    @FormatNumber(chiTiet.KhoiLuongNhap)
+                                                </td>
+                                            </tr>
+
+                                            
+                                            @* <tr><td>Mô tả hàng hóa</td><td>@chiTiet.MoTaHangHoa</td></tr>
+                                            <tr><td>Mã danh mục đơn vị tính</td><td>@chiTiet.MaDanhMucDonViTinh</td></tr> *@
                                             @*  <tr><td>Đơn giá luu kho</td><td>@FormatMoney(chiTiet.DonGiaLuuKho)</td></tr>
-                                    <tr><td>Đơn giá giao nh?n</td><td>@FormatMoney(chiTiet.DonGiaGiaoNhan)</td></tr>
-                                    <tr><td>Đơn giá b?c x?p</td><td>@FormatMoney(chiTiet.DonGiaBocXep)</td></tr>
-                                    <tr><td>Đơn giá qu?n l�</td><td>@FormatMoney(chiTiet.DonGiaQuanLy)</td></tr> *@
-                                            <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
+                                            <tr><td>Đơn giá giao nh?n</td><td>@FormatMoney(chiTiet.DonGiaGiaoNhan)</td></tr>
+                                            <tr><td>Đơn giá b?c x?p</td><td>@FormatMoney(chiTiet.DonGiaBocXep)</td></tr>
+                                            <tr><td>Đơn giá qu?n l�</td><td>@FormatMoney(chiTiet.DonGiaQuanLy)</td></tr> *@
+                                            @* <tr><td>Hàng nguy hiểm</td><td>@FormatYesNo(chiTiet.HangNguyHiem)</td></tr>
                                             <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
                                             <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
                                             <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
-                                            <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr>
-                                            <tr><td>EDO</td><td>@chiTiet.EDO</td></tr>
-                                            @* <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> *@
+                                            <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr> *@
+                                          
+                                            @* <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> 
                                             <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
                                             <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
-                                            <tr><td>Mã danh mục đại lý</td><td>@chiTiet.MaDanhMucDaiLy</td></tr>
-                                            @* <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
-                                            <tr><td>Số seal</td><td>@chiTiet.SoSeal</td></tr>
-                                            <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
-                                            <tr><td>Master Bill</td><td>@chiTiet.MasterBill</td></tr>
+                                            <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
+                                           
+                                            @* <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
+                                           
                                             <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
                                             <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
                                             <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
                                             <tr><td>Ngày tàu đến</td><td>@FormatDateTime(chiTiet.NgayTauDen)</td></tr>
-                                            <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr>
+                                            <tr><td>Ghi chú</td><td>@chiTiet.GhiChu</td></tr> *@
                                         }
                                     </tbody>
                                 </table>
@@ -1494,8 +1577,8 @@
 
     private string GetStorageActionPopupTitle()
         => StorageActionMode == StorageActionPopupMode.Extend
-            ? "Gia hạn phí lưu kho"
-            : "Thanh toán phí lưu kho";
+            ? "Gia hạn phí dịch vụ"
+            : "Thanh toán phí dịch vụ";
 
     private bool CanShowExtendAction
     {

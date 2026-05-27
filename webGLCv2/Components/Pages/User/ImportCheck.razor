@@ -16,7 +16,7 @@
         <div>
             <p class="page-kicker">User Workspace</p>
             <h1>Kiểm tra hàng nhập</h1>
-            <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo House Bill hoặc số container để theo dõi tiếp nhận và thông quan.</p>
+            <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo House Bill và Số tờ khai để theo dõi tiếp nhận và thông quan.</p>
         </div>
     </header>
 
@@ -27,7 +27,7 @@
 
     <section class="workspace-card">
         <div class="section-heading">
-            <h2>Kết quả tra cứu</h2>
+            <h2>Tra cứu thông tin thông quan</h2>
             <p>Nhập House Bill và Số tờ khai để lấy dữ liệu từ hải quan.</p>
         </div>
 
@@ -37,8 +37,13 @@
                 <input id="houseBill" class="portal-input" @bind="HouseBill" @bind:event="oninput" placeholder="Nhập House Bill" />
             </div>
             <div>
-                <label class="portal-label" for="containerNumber">Số Cont</label>
-                <input id="containerNumber" class="portal-input" @bind="ContainerNumber" @bind:event="oninput" placeholder="Nhập Số Cont" />
+                <label class="portal-label" for="declarationNumber">Số tờ khai <span style="color:red">(*)</span></label>
+                <input id="declarationNumber"
+                       class="portal-input"
+                       @bind="DeclarationNumber"
+                       @bind:event="oninput"
+                       placeholder="Nhập Số tờ khai"
+                       required />
             </div>
             <div class="search-actions-block">
                 <button type="button" class="portal-primary-action" @onclick="SearchAsync" disabled="@IsSearching">
@@ -48,7 +53,7 @@
         </div>
     </section>
 
-    @if (ThongQuanResult is not null || ChiTietResult is not null)
+    @if (!HasDeclarationMismatch && (ThongQuanResult is not null || ChiTietResult is not null))
     {
         @if (ChiTietResult?.Success == true && ChiTietResult.ParsedData is not null)
         {
@@ -240,13 +245,31 @@
     </div>
 }
 
+@if (IsDeclarationMismatchModalOpen)
+{
+    <div class="portal-modal-backdrop" @onclick="CloseDeclarationMismatchModal">
+        <div class="portal-modal" @onclick:stopPropagation="true">
+            <div>
+                <h3>Thông báo</h3>
+                <div class="portal-alert portal-alert-error" style="margin-top: 12px;">@DeclarationMismatchMessage</div>
+            </div>
+
+            <div class="portal-modal-actions">
+                <button type="button" class="portal-primary-action" @onclick="CloseDeclarationMismatchModal">Đóng lại</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [SupplyParameterFromQuery(Name = "houseBill")]
     private string? HouseBillFromQuery { get; set; }
-    [SupplyParameterFromQuery(Name = "soCont")]
-    private string? ContainerNumberFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "soToKhai")]
+    private string? DeclarationNumberFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "containerNumber")]
+    private string? LegacyDeclarationNumberFromQuery { get; set; }
     private string HouseBill { get; set; } = string.Empty;
-    private string ContainerNumber { get; set; } = string.Empty;
+    private string DeclarationNumber { get; set; } = string.Empty;
     private List<ImportCheckRecord> Results { get; set; } = [];
     private ThongQuanCheckResponse? ThongQuanResult { get; set; }
     private ChiTietHouseBillResponse? ChiTietResult { get; set; }
@@ -254,11 +277,14 @@
     private string SearchMessage { get; set; } = string.Empty;
     private string ErrorMessage { get; set; } = string.Empty;
     private string NoDataModalMessage { get; set; } = string.Empty;
+    private string DeclarationMismatchMessage { get; set; } = string.Empty;
     private long? ExistingOnlineOrderId { get; set; }
     private long CurrentUserId { get; set; }
     private bool AutoLoaded;
     private bool IsSearching;
     private bool IsNoDataModalOpen;
+    private bool IsDeclarationMismatchModalOpen;
+    private bool HasDeclarationMismatch;
     private bool HasExistingOnlineOrder => ExistingOnlineOrderId.HasValue;
     private bool CanShowExistingOnlineOrderButton
         => ExistingOnlineOrderId.HasValue
@@ -276,16 +302,18 @@
         }
 
         var queryHouseBill = HouseBillFromQuery?.Trim() ?? string.Empty;
-        var queryContainer = ContainerNumberFromQuery?.Trim() ?? string.Empty;
+        var queryDeclaration = DeclarationNumberFromQuery?.Trim()
+            ?? LegacyDeclarationNumberFromQuery?.Trim()
+            ?? string.Empty;
 
         if (!string.IsNullOrWhiteSpace(queryHouseBill))
         {
             HouseBill = queryHouseBill;
         }
 
-        if (!string.IsNullOrWhiteSpace(queryContainer))
+        if (!string.IsNullOrWhiteSpace(queryDeclaration))
         {
-            ContainerNumber = queryContainer;
+            DeclarationNumber = queryDeclaration;
         }
 
         if (string.IsNullOrWhiteSpace(queryHouseBill))
@@ -307,12 +335,15 @@
     private async Task SearchAsync()
     {
         var normalizedHouseBill = HouseBill.Trim();
-        var normalizedContainer = ContainerNumber.Trim();
+        var normalizedDeclarationNumber = DeclarationNumber.Trim();
 
         SearchMessage = string.Empty;
         ErrorMessage = string.Empty;
         NoDataModalMessage = string.Empty;
+        DeclarationMismatchMessage = string.Empty;
         IsNoDataModalOpen = false;
+        IsDeclarationMismatchModalOpen = false;
+        HasDeclarationMismatch = false;
         ThongQuanResult = null;
         ChiTietResult = null;
         DetailRows = [];
@@ -325,6 +356,12 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(normalizedDeclarationNumber))
+        {
+            ErrorMessage = "Vui lòng nhập Số tờ khai trước khi tìm kiếm.";
+            return;
+        }
+
         IsSearching = true;
 
         try
@@ -334,14 +371,14 @@
                 HouseBill = normalizedHouseBill;
             }
 
-            if (!string.IsNullOrWhiteSpace(normalizedContainer))
+            if (!string.IsNullOrWhiteSpace(normalizedDeclarationNumber))
             {
-                ContainerNumber = normalizedContainer;
+                DeclarationNumber = normalizedDeclarationNumber;
             }
 
             try
             {
-                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillValidAsync(normalizedHouseBill, normalizedContainer);
+                ChiTietResult = await OnlineOrderService.GetChiTietHouseBillValidAsync(normalizedHouseBill);
             }
             catch
             {
@@ -363,12 +400,28 @@
             {
                 ThongQuanResult = await OnlineOrderService.CheckThongQuanAsync(
                     normalizedHouseBill,
-                    normalizedContainer,
+                    ChiTietResult.ParsedData?.SoContainer ?? string.Empty,
                     ChiTietResult.ParsedData);
             }
             catch (Exception ex)
             {
                 ErrorMessage = AppendError(ErrorMessage, $"Không thể lấy tình trạng thông quan: {ex.Message}");
+            }
+
+            var customsDeclarationNumber = NormalizeComparisonValue(ThongQuanResult?.Data?.SoToKhai);
+            if (!string.IsNullOrWhiteSpace(customsDeclarationNumber)
+                && !string.Equals(customsDeclarationNumber, NormalizeComparisonValue(normalizedDeclarationNumber), StringComparison.OrdinalIgnoreCase))
+            {
+                HasDeclarationMismatch = true;
+                OpenDeclarationMismatchModal(
+                    "Số tờ khai nhập vào không khớp với số housebill. Vui lòng nhập chính xác và tra cứu lại.");
+                ThongQuanResult = null;
+                ChiTietResult = null;
+                DetailRows = [];
+                Results = [];
+                ExistingOnlineOrderId = null;
+                SearchMessage = string.Empty;
+                return;
             }
 
             try
@@ -381,7 +434,7 @@
             }
 
             DetailRows = BuildDetailRows(ChiTietResult.ParsedData);
-            Results = BuildSummaryRows(ThongQuanResult, ChiTietResult.ParsedData, normalizedHouseBill, normalizedContainer);
+            Results = BuildSummaryRows(ThongQuanResult, ChiTietResult.ParsedData, normalizedHouseBill, normalizedDeclarationNumber);
 
             if (string.IsNullOrWhiteSpace(ErrorMessage))
             {
@@ -407,6 +460,18 @@
     {
         IsNoDataModalOpen = false;
         NoDataModalMessage = string.Empty;
+    }
+
+    private void OpenDeclarationMismatchModal(string message)
+    {
+        DeclarationMismatchMessage = message;
+        IsDeclarationMismatchModalOpen = true;
+    }
+
+    private void CloseDeclarationMismatchModal()
+    {
+        IsDeclarationMismatchModalOpen = false;
+        DeclarationMismatchMessage = string.Empty;
     }
 
     private async Task OpenOnlineOrderAction()
@@ -451,9 +516,9 @@
         }
 
         var parsedData = ChiTietResult?.ParsedData;
-        var soContValue = parsedData?.SoContainer ?? ContainerNumber.Trim();
-        var soVanDonValue = parsedData?.SoVanDon ?? ContainerNumber.Trim();
-        var soToKhaiValue = ThongQuanResult?.Data?.SoToKhai ?? parsedData?.SoToKhai ?? string.Empty;
+        var soContValue = parsedData?.SoContainer ?? string.Empty;
+        var soVanDonValue = parsedData?.SoVanDon ?? HouseBill.Trim();
+        var soToKhaiValue = ThongQuanResult?.Data?.SoToKhai ?? parsedData?.SoToKhai ?? DeclarationNumber.Trim();
         long? idCtLenhNhapKhoHangNhapKhauChiTiet = parsedData?.ID > 0
             ? (long)parsedData.ID
             : null;
@@ -500,8 +565,8 @@
     private string GetResultSummary()
     {
         var houseBill = string.IsNullOrWhiteSpace(HouseBill) ? "-" : HouseBill;
-        var cont = string.IsNullOrWhiteSpace(ContainerNumber) ? "-" : ContainerNumber;
-        return $"House Bill: {houseBill} | Số Cont: {cont}";
+        var declarationNumber = string.IsNullOrWhiteSpace(DeclarationNumber) ? "-" : DeclarationNumber;
+        return $"House Bill: {houseBill} | Số tờ khai: {declarationNumber}";
     }
 
     private static string GetThongQuanClass(ThongQuanCheckResponse? result)
@@ -561,7 +626,7 @@
         ThongQuanCheckResponse? thongQuan,
         ChiTietHouseBillData? detail,
         string houseBill,
-        string containerNumber)
+        string declarationNumber)
     {
         if (detail is null)
         {
@@ -584,7 +649,7 @@
                     ? (thongQuan.Success ? (thongQuan.IsThongQuan ? "Đã thông quan" : "Chưa thông quan") : "Lỗi tra cứu")
                     : (detail.IsHoanThanh ? "Đã hoàn thành" : "Chưa hoàn thành"),
                 CustomsDeclaration = string.IsNullOrWhiteSpace(detail.EDO)
-                    ? (string.IsNullOrWhiteSpace(containerNumber) ? houseBill : containerNumber)
+                    ? (string.IsNullOrWhiteSpace(declarationNumber) ? houseBill : declarationNumber)
                     : detail.EDO
             }
         ];
@@ -630,9 +695,9 @@
             
             // new DetailRow("Loại container", detail.MaDanhMucLoaiContainer),
             // new DetailRow("Mã hàng tàu", detail.MaDanhMucHangTau),
-            // new DetailRow("Tên tàu", detail.TenTau),
-            // new DetailRow("Số chuyến", detail.SoChuyen),
-            // new DetailRow("Ngày tàu đến", FormatDate(detail.NgayTauDen)),
+            new DetailRow("Tên tàu", detail.TenTau),
+            new DetailRow("Số chuyến", detail.SoChuyen),
+            new DetailRow("Ngày tàu đến", FormatDate(detail.NgayTauDen)),
             // new DetailRow("Ghi chú", detail.GhiChu)
         ];
     }
@@ -648,6 +713,11 @@
 
     private static string FormatBool(bool value)
         => value ? "Có" : "Không";
+
+    private static string NormalizeComparisonValue(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : new string(value.Trim().Where(ch => !char.IsWhiteSpace(ch)).ToArray()).ToUpperInvariant();
 
     private sealed record DetailRow(string Label, string Value);
 

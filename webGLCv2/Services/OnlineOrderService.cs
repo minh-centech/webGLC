@@ -262,9 +262,7 @@ public sealed class OnlineOrderService
             // =========================
             if (isTest)
             {
-                string SoToKhai = Random.Shared
-                .NextInt64(100000000000, 999999999999)
-                .ToString();
+                string SoToKhai = "123456789";
                 //string maHaiQuan = string.Join("", SoToKhai);
                 responseBody = $$"""
             {

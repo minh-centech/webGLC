@@ -448,7 +448,7 @@
     {
         await ApplyTaxLookupResultToDraftAsync();
         await CloseTaxLookupPopup();
-        InfoMessage = "Đã tự động điền thông tin doanh nghiệp từ MST.";
+        InfoMessage = "Đã tự động điền thông tin doanh nghiệp từ MST. Vui lòng kiểm tra các thông tin trước khi lưu lệnh";
         await InvokeAsync(StateHasChanged);
     }
 

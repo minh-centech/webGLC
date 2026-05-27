@@ -36,7 +36,7 @@
         <section class="workspace-card">
             <div class="section-heading">
                 <h2>@Order!.OrderCode</h2>
-                <p>Trạng thái hiện tại: <span class="status-chip @GetStatusClass(Order.StatusCode)">@Order.Status</span></p>
+                <p>Trạng thái hiện tại: <span class="status-chip @GetStatusChipClass(Order.StatusCode)">@GetStatusLabel(Order.IsHoanThanh)</span></p>
             </div>
 
             <div class="field-grid">
@@ -478,8 +478,35 @@
                                                 <td style="padding:12px 16px; font-weight:600; color:#374151;">
                                                     Khối lượng nhập
                                                 </td>
-                                                <td style="padding:12px 16px; color:#dc2626; font-weight:700;">
+                                                <td style="padding:12px 16px; color:#059669; font-weight:700;">
                                                     @FormatNumber(chiTiet.KhoiLuongNhap)
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-top:1px solid #e5e7eb;">
+                                                    Tên tàu
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-top:1px solid #e5e7eb;">
+                                                    @chiTiet.TenTau
+                                                </td>
+                                            </tr>
+
+                                            <tr style="background:#f8fafc;">
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-top:1px solid #e5e7eb;">
+                                                    Số chuyến
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-top:1px solid #e5e7eb;">
+                                                    @chiTiet.SoChuyen
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="padding:12px 16px; font-weight:600; color:#374151; border-top:1px solid #e5e7eb;">
+                                                    Ngày tàu đến
+                                                </td>
+                                                <td style="padding:12px 16px; color:#111827; border-top:1px solid #e5e7eb;">
+                                                    @FormatDateTime(chiTiet.NgayTauDen)
                                                 </td>
                                             </tr>
 
@@ -494,15 +521,12 @@
                                             <tr><td>Hàng quá khổ</td><td>@FormatYesNo(chiTiet.HangQuaKho)</td></tr>
                                             <tr><td>Số lượng quá khổ</td><td>@FormatNumber(chiTiet.SoLuongQuaKho)</td></tr>
                                             <tr><td>Hàng quá tải</td><td>@FormatYesNo(chiTiet.HangQuaTai)</td></tr>
-                                            <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr> *@
-                                          
-                                            @* <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> 
+                                            <tr><td>Số lượng quá tải</td><td>@FormatNumber(chiTiet.SoLuongQuaTai)</td></tr> 
+                                            <tr><td>Mã danh mục cửa làm hàng</td><td>@chiTiet.MaDanhMucCuaLamHang</td></tr> 
                                             <tr><td>Ngày nhập kho</td><td>@FormatDateTime(chiTiet.NgayNhapKho)</td></tr>
                                             <tr><td>Ngày gia hạn cuối</td><td>@FormatDateTime(chiTiet.NgayGiaHanCuoi)</td></tr>
-                                            <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> *@
-                                           
-                                            @* <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
-                                           
+                                            <tr><td>ID k? ho?ch khai th�c h�ng nh?p kh?u</td><td>@chiTiet.IDctKeHoachKhaiThacHangNhapKhau</td></tr> 
+                                            <tr><td>Mã danh mục loại container</td><td>@chiTiet.MaDanhMucLoaiContainer</td></tr>
                                             <tr><td>Mã danh mục hãng tàu</td><td>@chiTiet.MaDanhMucHangTau</td></tr>
                                             <tr><td>Tên tàu</td><td>@chiTiet.TenTau</td></tr>
                                             <tr><td>Số chuyến</td><td>@chiTiet.SoChuyen</td></tr>
@@ -659,7 +683,7 @@
                                                 </td>
                                                 <td>@item.SoVanDon</td>
                                                 <td>
-                                                    <button type="button"
+                                                    <button type="button" title="Tải lệnh xuất kho Pdf"
                                                             class="portal-secondary-action"
                                                             style="display: inline-flex; align-items: center; gap: 6px; @GetLenhXuatDownloadButtonStyle(item.So)"
                                                             @onclick="() => DownloadLenhXuatPdfAsync(item)">
@@ -717,6 +741,7 @@
                                             <th>Tổng tiền</th>
                                             <th>Thanh toán</th>
                                             <th>Thời gian thanh toán</th>
+                                            <th>Mã tra cứu HDĐT</th>
                                             <th>Hành động</th>
                                         </tr>
                                     </thead>
@@ -742,12 +767,19 @@
                                                         </span>
                                                     }
                                                 </td>
-                                                <td>@FormatDateTime(item.ThoiGianThanhToan)</td>
+                                                <td>@FormatDateTimeFull(item.ThoiGianThanhToan)</td>
+                                                <td>
+                                                    <a title="Tra cứu hoá đơn điện tử" href="https://hpggreenlogistics-tt78.vnpt-invoice.com.vn/?strFkey=@item.FKey"
+                                                       target="_blank"
+                                                       style="color:#2563eb; font-weight:600; text-decoration:none;">
+                                                        @item.FKey
+                                                    </a>
+                                                </td>
                                                 <td>
                                                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                                         @if (!string.IsNullOrWhiteSpace(item.QRCodeThanhToan))
                                                         {
-                                                            <button type="button"
+                                                            <button type="button" title="Hiển thị mã QRCode thanh toán"
                                                                     class="portal-primary-action"
                                                                     style="@GetReceiptPaymentButtonStyle(item.So)"
                                                                     @onclick="() => OpenReceiptPaymentPopupAsync(item)">
@@ -757,7 +789,7 @@
 
                                                         @if (!string.IsNullOrWhiteSpace(item.So))
                                                         {
-                                                            <button type="button"
+                                                            <button type="button" title="Tải biên nhận pdf"
                                                                     class="portal-secondary-action"
                                                                     style="display: inline-flex; align-items: center; gap: 6px; @GetReceiptDownloadButtonStyle(item.So)"
                                                                     @onclick="() => DownloadBienNhanPdfAsync(item)">
@@ -770,7 +802,7 @@
 
                                                         @if (CanDownloadElectronicInvoice(item))
                                                         {
-                                                            <button type="button"
+                                                            <button type="button" title="Tải hoá đơn điện tử pdf"
                                                                     class="portal-primary-action"
                                                                     style="display: inline-flex; align-items: center; gap: 6px; @GetReceiptElectronicInvoiceButtonStyle(item.FKey)"
                                                                     @onclick="() => DownloadHoaDonDienTuAsync(item)">
@@ -865,10 +897,48 @@
 
                 @if (Workflow?.PhiLuuKho?.Data is not null)
                 {
-                    <div class="workflow-payment-row" style="margin-top:16px;">
-                        <span class="status-chip">
-                            Hướng dẫn: Thay đổi ngày hệ thống sẽ cập nhật lại bảng giá dịch vụ
-                        </span>
+                    <div class="workflow-payment-row" style="margin-top:16px; width:100%;">
+
+                        <div style="
+                            width:100%;
+                            display:flex;
+                            align-items:center;
+                            gap:12px;
+                            padding:14px 16px;
+                            border-radius:12px;
+                            background:linear-gradient(135deg,#fff7ed,#ffedd5);
+                            border:1px solid #fdba74;
+                            color:#9a3412;
+                            box-shadow:0 2px 8px rgba(249,115,22,0.08);
+                            white-space:nowrap;">
+
+                            <div style="
+                                min-width:22px;
+                                width:22px;
+                                height:22px;
+                                border-radius:50%;
+                                background:#f97316;
+                                color:#fff;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                font-size:14px;
+                                font-weight:800;">
+                                !
+                            </div>
+
+                            <div style="
+                                flex:1;
+                                font-size:0.95rem;
+                                overflow:hidden;
+                                text-overflow:ellipsis;">
+
+                                <strong>Lưu ý:</strong>
+                                Thay đổi ngày hệ thống sẽ tự động cập nhật lại bảng giá dịch vụ theo thời điểm mới.
+                            </div>
+
+                        </div>
+
                     </div>
 
                     <div class="table-shell compact-table query-table-scroll" style="margin-top:12px;">
@@ -914,7 +984,34 @@
 
                 @if (IsLoadingPaymentInfo)
                 {
-                    <div class="portal-empty-inline" style="margin-top:16px;">Đang lấy thông tin thanh toán...</div>
+                    <div style="
+                        margin-top:16px;
+                        display:flex;
+                        align-items:center;
+                        gap:12px;
+                        padding:14px 18px;
+                        border-radius:12px;
+                        background:linear-gradient(135deg,#eff6ff,#dbeafe);
+                        border:1px solid #bfdbfe;
+                        color:#1d4ed8;
+                        font-weight:700;
+                        font-size:15px;
+                        box-shadow:0 2px 10px rgba(59,130,246,0.12);">
+
+                        <div style="
+                            width:18px;
+                            height:18px;
+                            border:3px solid #86efac;
+                            border-top:3px solid #15803d;
+                            border-radius:50%;
+                            animation:spin 0.8s linear infinite;">
+                        </div>
+
+                        <span>
+                            Đang lấy thông tin thanh toán, vui lòng chờ...
+                        </span>
+                    </div>
+
                 }
                 else if (!string.IsNullOrWhiteSpace(PaymentPopupMessage))
                 {
@@ -1142,16 +1239,34 @@
                                 <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
                             </div>
                             <div style="flex:1 1 auto;">
-                                <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#7c2d12;">Xác nhận thanh toán</h4>
+                                <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#7c2d12;">
+                                    Xác nhận thanh toán
+                                </h4>
+
                                 <p style="margin:0; color:#7c2d12; line-height:1.65; font-size:0.98rem;">
-                                    Bạn đã chọn ngày lấy hàng là
+
+                                    @(StorageActionMode == StorageActionPopupMode.Extend
+                                        ? "Bạn đã chọn ngày gia hạn là "
+                                        : "Bạn đã chọn ngày lấy hàng là ")
+
                                     <strong style="color:#dc2626; font-size:1rem;">
                                         @FormatDateTime(StorageActionDate)
                                     </strong>.
-                                    Sau khi thực hiện thanh toán, bạn sẽ <strong style="color:#dc2626;">không thể thay đổi ngày lấy hàng</strong>.
-                                    Bạn có chắc chắn muốn tiếp tục thanh toán <strong style="color:#dc2626; font-size:1rem;">
-                                    @FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!)) VNĐ
-                                </strong> không?
+
+                                    Sau khi thực hiện thanh toán, bạn sẽ
+                                    <strong style="color:#dc2626;">
+                                        không thể thay đổi
+                                        @(StorageActionMode == StorageActionPopupMode.Extend
+                                            ? "ngày gia hạn"
+                                            : "ngày lấy hàng")
+                                    </strong>.
+
+                                    Bạn có chắc chắn muốn tiếp tục thanh toán
+                                    <strong style="color:#dc2626; font-size:1rem;">
+                                        @FormatMoney(GetPhiGrandTotal(Workflow.PhiLuuKho!)) VNĐ
+                                    </strong>
+                                    không?
+
                                 </p>
                             </div>
                         </div>
@@ -1344,8 +1459,8 @@
         }
 
         var houseBill = Uri.EscapeDataString(Order.HouseBill ?? string.Empty);
-        var containerNumber = Uri.EscapeDataString(Order.ContainerNumber ?? string.Empty);
-        NavigationManager.NavigateTo($"/user/import-check?houseBill={houseBill}&containerNumber={containerNumber}");
+        var declarationNumber = Uri.EscapeDataString(Order.DeclarationNumber ?? string.Empty);
+        NavigationManager.NavigateTo($"/user/import-check?houseBill={houseBill}&soToKhai={declarationNumber}");
     }
 
     private async Task RunWorkflowAsync(string source)
@@ -1453,7 +1568,7 @@
         await JSRuntime.InvokeVoidAsync("window.print");
     }
 
-    private static string GetStatusClass(int statusCode)
+    private static string GetStatusChipClass(int statusCode)
         => statusCode switch
         {
             5 => "success",
@@ -1464,6 +1579,9 @@
             0 => "neutral",
             _ => "neutral"
         };
+
+    private static string GetStatusLabel(bool? isHoanThanh)
+        => isHoanThanh == true ? "Hoàn thành" : "Đang khởi tạo";
 
     private static string GetThongQuanClass(ThongQuanCheckResponse? response)
         => response?.Success == true
@@ -1511,7 +1629,7 @@
 
         if (workflow.LenhXuatKhoHangNhapKhauTemps.Data.Count == 0)
         {
-            return "Chưa có lệnh xuất kho. Vui lòng chọn Tạo biên nhận thanh toán & lệnh xuất kho";
+            return "Chưa có lệnh xuất kho. Vui lòng chọn Tạo lệnh xuất kho";
         }
 
         return string.Empty;
@@ -1533,7 +1651,7 @@
 
         if (workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Count == 0)
         {
-            return "Chưa có biên nhận thanh toán. Vui lòng chọn Tạo biên nhận thanh toán & lệnh xuất kho";
+            return "Chưa có biên nhận thanh toán. Vui lòng chọn Tạo lệnh xuất kho";
         }
 
         return string.Empty;
@@ -2720,7 +2838,7 @@
                 : workflow.PhiLuuKhoQuaHan.Message;
         }
 
-        return "Chưa có dữ liệu ph� luu kho qu� h?n.";
+        return "Chưa có dữ liệu phiếu lưu kho quá hạn.";
     }
 
     private static string FormatVatPercent(decimal vat)
@@ -2738,6 +2856,9 @@
     private static string FormatDateTime(DateTime? value)
         => value.HasValue ? value.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
 
+    private static string FormatDateTimeFull(DateTime? value)
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:ss", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
+    
     private static string FormatYesNo(bool value)
         => value ? "Có" : "Không";
 

@@ -143,8 +143,8 @@
                             <input class="portal-input input-action-field" @bind="TaxLookupInput" @bind:event="oninput" placeholder="Nhập mã số thuế" />
                             
                         </div>
-                        <button type="button" class="portal-primary-action" disabled="@TaxLookupIsBusy" @onclick="SearchTaxLookupAsync">Tìm kiếm</button>
-                        <button type="button" class="portal-secondary-action lookup-clear-action" disabled="@TaxLookupIsBusy" @onclick="ClearTaxLookupAsync" title="Xóa mã số thuế" aria-label="Xóa mã số thuế">Xóa mã số thuế</button>
+                        <button type="button" class="portal-primary-action" disabled="@TaxLookupIsBusy" @onclick="SearchTaxLookupAsync">Tra cứu</button>
+                        <button type="button" class="portal-secondary-action lookup-clear-action" disabled="@TaxLookupIsBusy" @onclick="ClearTaxLookupAsync" title="Xóa thông tin" aria-label="Xóa mã số thuế">Xóa mã số thuế</button>
                     </div>
                 </div>
             </div>
@@ -210,7 +210,7 @@
     private bool TaxLookupIsWarning { get; set; }
     private string TaxLookupInput { get; set; } = string.Empty;
     private string? TaxLookupMessage { get; set; }
-    private List<KeyValuePair<string, string>> TaxLookupResult { get; set; } = new();
+    private List<TaxLookupRow> TaxLookupResult { get; set; } = new();
     private bool IsEnterprise => CurrentUserAccountType == 2;
 
     protected override async Task OnInitializedAsync()
@@ -378,32 +378,33 @@
                 return;
             }
 
-            TaxLookupResult.Add(new KeyValuePair<string, string>("Mã số thuế", result.MaSoThue));
-            TaxLookupResult.Add(new KeyValuePair<string, string>("Tên công ty", result.Ten));
-            TaxLookupResult.Add(new KeyValuePair<string, string>("Địa chỉ", result.DiaChi));
+            TaxLookupResult.Add(new TaxLookupRow("Mã số thuế", result.MaSoThue, result.CreateDate));
+            TaxLookupResult.Add(new TaxLookupRow("Tên công ty", result.Ten, result.CreateDate));
+            TaxLookupResult.Add(new TaxLookupRow("Địa chỉ", result.DiaChi, result.CreateDate));
 
             if (!string.IsNullOrWhiteSpace(result.Email))
             {
-                TaxLookupResult.Add(new KeyValuePair<string, string>("Email", result.Email));
+                TaxLookupResult.Add(new TaxLookupRow("Email", result.Email, result.CreateDate));
             }
 
             if (!string.IsNullOrWhiteSpace(result.SoDienThoai))
             {
-                TaxLookupResult.Add(new KeyValuePair<string, string>("Số điện thoại", result.SoDienThoai));
+                TaxLookupResult.Add(new TaxLookupRow("Số điện thoại", result.SoDienThoai, result.CreateDate));
             }
 
             if (!string.IsNullOrWhiteSpace(result.NguoiDaiDien))
             {
-                TaxLookupResult.Add(new KeyValuePair<string, string>("Người đại diện", result.NguoiDaiDien));
+                TaxLookupResult.Add(new TaxLookupRow("Người đại diện", result.NguoiDaiDien, result.CreateDate));
             }
 
             if (!string.IsNullOrWhiteSpace(result.ChucVuNguoiDaiDien))
             {
-                TaxLookupResult.Add(new KeyValuePair<string, string>("Chức vụ người đại diện", result.ChucVuNguoiDaiDien));
+                TaxLookupResult.Add(new TaxLookupRow("Chức vụ người đại diện", result.ChucVuNguoiDaiDien, result.CreateDate));
             }
 
-            await ApplyTaxLookupResultToDraftAsync();
-            TaxLookupMessage = "Chú ý: dữ liệu này sẽ được dùng để xuất hóa đơn điện tử, vui lòng kiểm tra thật kỹ các thông tin trước khi tiếp tục.";
+            TaxLookupResult.Add(new TaxLookupRow("Ngày cập nhật", FormatVietnameseDate(result.CreateDate), result.CreateDate));
+
+            TaxLookupMessage = "Quan trọng: Vui lòng kiểm tra kỹ thông tin bên dưới vì đây là dữ liệu dùng để xuất hóa đơn điện tử. Nếu có sai sót, xin vui lòng liên hệ với chúng tôi ngay lập tức để cập nhật.!";
             TaxLookupIsWarning = true;
             TaxLookupIsError = false;
             await InvokeAsync(StateHasChanged);
@@ -516,11 +517,25 @@
     {
         var normalizedKey = NormalizeKey(key);
         var item = TaxLookupResult.FirstOrDefault(x => string.Equals(NormalizeKey(x.Key), normalizedKey, StringComparison.OrdinalIgnoreCase));
-        return item.Value;
+        return item?.Value ?? string.Empty;
     }
 
     private static string NormalizeKey(string value)
         => value.Trim().ToLowerInvariant().Replace(" ", "_");
+
+    private sealed record TaxLookupRow(string Key, string Value, string UpdateDate);
+
+    private static string FormatVietnameseDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "-";
+        }
+
+        return DateTime.TryParse(value, CultureInfo.GetCultureInfo("vi-VN"), DateTimeStyles.None, out var parsed)
+            ? parsed.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))
+            : value.Trim();
+    }
 
     private async Task LoadCustomerCompaniesAsync()
     {

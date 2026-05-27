@@ -957,6 +957,82 @@ public sealed class OnlineOrderService
         }
     }
 
+    public async Task<BienNhanThanhToanHangNhapKhauTempListResponse> GetBienNhanThanhToanHangNhapKhauTempListAdminAsync(
+        DateTime? tuNgay = null,
+        DateTime? denNgay = null,
+        int? trangThaiThanhToan = 0,
+        string? soBienNhan = null)
+    {
+        try
+        {
+            var requestPayload = new
+            {
+                TuNgay = FormatApiDate(tuNgay),
+                DenNgay = FormatApiDate(denNgay),
+                TrangThaiThanhToan = trangThaiThanhToan,
+                SoBienNhan = NullIfEmpty(soBienNhan)
+            };
+
+            var requestUrl = BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTempAdmin");
+            Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/ListTempAdmin] POST {requestUrl}");
+            Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/ListTempAdmin] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
+
+            var response = await _httpClient.PostAsJsonAsync(
+                requestUrl,
+                requestPayload,
+                JsonOptions);
+
+            response.EnsureSuccessStatusCode();
+
+            var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+            EnsureSuccess(envelope, "Khong the tai danh sach bien nhan thanh toan admin.");
+
+            return new BienNhanThanhToanHangNhapKhauTempListResponse
+            {
+                Success = true,
+                Data = ParseBienNhanThanhToanHangNhapKhauTempItems(envelope?.Data)
+            };
+        }
+        catch (Exception ex)
+        {
+            return new BienNhanThanhToanHangNhapKhauTempListResponse
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task ConfirmBienNhanThanhToanHangNhapKhauTempAsync(long id, string soBienNhan, decimal tongTien)
+    {
+        if (id <= 0)
+        {
+            throw new InvalidOperationException("ID bien nhan khong hop le.");
+        }
+
+        if (string.IsNullOrWhiteSpace(soBienNhan))
+        {
+            throw new InvalidOperationException("So bien nhan khong duoc de trong.");
+        }
+
+        var tinNhanRaw = BuildTinNhanRawForPayment(soBienNhan, tongTien);
+        var hashResult = EverlinkChecksumHelper.CreateHash(tinNhanRaw);
+        var requestPayload = new
+        {
+            TinNhanRaw = tinNhanRaw
+        };
+
+        var requestUrl = $"{BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto")}?t={hashResult.t}&checksum={Uri.EscapeDataString(hashResult.hash)}";
+        Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto] POST {requestUrl}");
+        Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
+
+        var response = await _httpClient.PostAsJsonAsync(requestUrl, requestPayload, JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Khong the xac nhan thanh toan bien nhan.");
+    }
+
     public async Task<LenhXuatKhoHangNhapKhauTempInsertResponse> InsertLenhXuatKhoHangNhapKhauTempAsync(
         OnlineOrderRecord order,
         ChiTietHouseBillData chiTiet,
@@ -1894,6 +1970,18 @@ public sealed class OnlineOrderService
         }
 
         return string.Empty;
+    }
+
+    private static string? FormatApiDate(DateTime? date)
+        => date.HasValue
+            ? date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : null;
+
+    private static string BuildTinNhanRawForPayment(string soBienNhan, decimal tongTien)
+    {
+        var normalizedReceiptNo = soBienNhan.Trim();
+        var amountText = Math.Round(tongTien, 0, MidpointRounding.AwayFromZero).ToString("N0", new CultureInfo("vi-VN"));
+        return $"+{amountText}VND Ref:{normalizedReceiptNo}#AdminPortalVerify";
     }
 
     private static string GetInvoiceDownloadUrl(JsonElement item)

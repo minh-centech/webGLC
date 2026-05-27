@@ -456,6 +456,13 @@ public sealed class BienNhanThanhToanHangNhapKhauTempListItem
     [JsonPropertyName("NoiDungThanhToan")]
     public string? NoiDungThanhToan { get; set; }
 
+    [JsonPropertyName("IDDanhMucKhachHangDoiLenh")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public long IDDanhMucKhachHangDoiLenh { get; set; }
+
+    [JsonPropertyName("TenDanhMucKhachHangDoiLenh")]
+    public string? TenDanhMucKhachHangDoiLenh { get; set; }
+
     [JsonIgnore]
     public string DownloadUrl { get; set; } = string.Empty;
 }

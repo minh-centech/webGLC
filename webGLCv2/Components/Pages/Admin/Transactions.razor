@@ -1,0 +1,403 @@
+@page "/admin/transactions"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@inject OnlineOrderService OnlineOrderService
+@inject IJSRuntime JSRuntime
+
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Quản lý giao dịch</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Quản lý giao dịch</h1>
+            <p class="page-subtitle">Tra cứu biên nhận thanh toán hàng nhập khẩu tạm, lọc theo thời gian, trạng thái và số biên nhận.</p>
+        </div>
+        <button type="button" class="portal-secondary-action" @onclick="RefreshAsync">Làm mới dữ liệu</button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(StatusMessage))
+    {
+        <div class="portal-alert @(StatusMessageIsError ? "portal-alert-error" : "portal-alert-success")">@StatusMessage</div>
+    }
+
+    <section class="workspace-card">
+        <EditForm Model="@this" OnSubmit="HandleSearchSubmitAsync" FormName="admin-transactions-filter-form">
+            <div class="order-filter-panel">
+                <div class="order-filter-grid">
+                    <div class="order-filter-field">
+                        <label class="portal-label" for="receipt-no-filter">Số biên nhận</label>
+                        <input id="receipt-no-filter"
+                               class="portal-input order-filter-input"
+                               @bind="SoBienNhanFilter"
+                               @bind:event="oninput"
+                               placeholder="Nhập số biên nhận..." />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label" for="payment-status-filter">Trạng thái thanh toán</label>
+                        <select id="payment-status-filter"
+                                class="portal-input order-filter-input"
+                                value="@TrangThaiThanhToanFilterValue"
+                                @onchange="OnTrangThaiThanhToanFilterChanged">
+                            <option value="">Tất cả</option>
+                            <option value="0">Chưa thanh toán</option>
+                            <option value="1">Đã thanh toán</option>
+                        </select>
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label" for="from-date-input">Từ ngày</label>
+                        <input id="from-date-input"
+                               class="portal-input order-filter-input"
+                               @bind="FromDateText"
+                               @bind:event="oninput"
+                               placeholder="dd/MM/yyyy" />
+                    </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label" for="to-date-input">Đến ngày</label>
+                        <input id="to-date-input"
+                               class="portal-input order-filter-input"
+                               @bind="ToDateText"
+                               @bind:event="oninput"
+                               placeholder="dd/MM/yyyy" />
+                    </div>
+                    <div class="order-filter-actions">
+                        <button type="submit" class="portal-primary-action order-filter-button">Tìm kiếm</button>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+
+        <div class="table-shell">
+            <table class="portal-table dense">
+                <thead>
+                    <tr>
+                        <th>Số biên nhận</th>
+                        <th>Tên khách hàng</th>
+                        <th>Ngày lập</th>
+                        <th>Nội dung thanh toán</th>
+                        <th>Thời gian thanh toán</th>
+                        <th class="text-end">Tổng tiền</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (IsLoading)
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="portal-empty-inline">Đang tải dữ liệu...</div>
+                            </td>
+                        </tr>
+                    }
+                    else if (Receipts.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="portal-empty-inline">Không tìm thấy biên nhận phù hợp điều kiện lọc.</div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Receipts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="cell-title">@item.So</div>
+                                    <div class="cell-subtitle">
+                                        <span class="status-chip @(item.DaThanhToan ? "success" : "warning")">
+                                            @(item.DaThanhToan ? "Đã thanh toán" : "Chưa thanh toán")
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(item.TenDanhMucKhachHangDoiLenh) ? "-" : item.TenDanhMucKhachHangDoiLenh)</td>
+                                <td>@FormatDateTime(item.NgayLap)</td>
+                                <td class="transaction-content-cell">@FormatPaymentContent(item.NoiDungThanhToan)</td>
+                                <td>@FormatDateTime(item.ThoiGianThanhToan)</td>
+                                <td class="text-end">@FormatMoney(item.TongTien)</td>
+                                <td>
+                                    @if (!item.DaThanhToan)
+                                    {
+                                        <button type="button"
+                                                class="portal-primary-action"
+                                                disabled="@PendingConfirmIds.Contains(item.ID)"
+                                                @onclick="() => OpenConfirmPaymentDialog(item)">
+                                            @(PendingConfirmIds.Contains(item.ID) ? "Đang xử lý..." : "Xác nhận thanh toán")
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="portal-text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+
+@if (ShowConfirmDialog && SelectedReceiptForConfirm is not null)
+{
+    <div class="payment-confirm-backdrop"
+         style="position:fixed; inset:0; z-index:2600; background:rgba(127,29,29,0.72); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:24px; pointer-events:auto;"
+         @onclick="CloseConfirmPaymentDialog">
+        <div class="payment-confirm-modal"
+             style="position:relative; z-index:2601; pointer-events:auto; max-width:560px; width:min(100%, 560px); border-radius:20px; background:linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%); border:1px solid #fda4af; box-shadow:0 28px 70px rgba(127,29,29,0.35); padding:24px 24px 20px;"
+             @onclick:stopPropagation="true">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="flex:0 0 auto; width:44px; height:44px; border-radius:999px; background:#dc2626; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 18px rgba(220, 38, 38, 0.35);">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                </div>
+                <div style="flex:1 1 auto;">
+                    <h4 style="margin:0 0 10px; font-size:1.1rem; font-weight:800; color:#7f1d1d;">
+                        Xác nhận khách hàng đã thanh toán
+                    </h4>
+                    <p style="margin:0; color:#7f1d1d; line-height:1.65; font-size:0.98rem;">
+                        Bạn có chắc chắn muốn xác nhận biên nhận
+                        <strong style="color:#b91c1c;">@SelectedReceiptForConfirm.So</strong>
+                        đã được thanh toán? Vui lòng kiểm tra kỹ số tiền,
+                        nội dung chuyển khoản và mã biên nhận trước khi tiếp tục.
+                        Thao tác này sẽ cập nhật trạng thái thanh toán trên hệ thống.
+                    </p>
+                </div>
+            </div>
+            <div class="payment-confirm-actions" style="display:flex; justify-content:flex-end; gap:12px; margin-top:22px;">
+                <button type="button"
+                        class="portal-secondary-action"
+                        style="padding:0.85rem 1.15rem;"
+                        @onclick="CloseConfirmPaymentDialog"
+                        @onclick:stopPropagation="true">
+                    Hủy
+                </button>
+                <button type="button"
+                        class="portal-primary-action"
+                        style="padding:0.85rem 1.15rem; background:#dc2626; border-color:#dc2626;"
+                        @onclick="ConfirmSelectedPaymentAsync"
+                        @onclick:stopPropagation="true">
+                    Xác nhận thanh toán
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<BienNhanThanhToanHangNhapKhauTempListItem> Receipts = new();
+    private readonly HashSet<long> PendingConfirmIds = new();
+    private DateTime? FromDate = GetStartOfCurrentWeek(DateTime.Today);
+    private DateTime? ToDate = DateTime.Today;
+    private string FromDateText = FormatDateForInput(GetStartOfCurrentWeek(DateTime.Today));
+    private string ToDateText = FormatDateForInput(DateTime.Today);
+    private string SoBienNhanFilter = string.Empty;
+    private string TrangThaiThanhToanFilterValue = "0";
+    private string? StatusMessage;
+    private bool StatusMessageIsError;
+    private bool IsLoading;
+    private bool _shouldInitDatePickers = true;
+    private bool ShowConfirmDialog;
+    private BienNhanThanhToanHangNhapKhauTempListItem? SelectedReceiptForConfirm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReceiptsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_shouldInitDatePickers)
+        {
+            return;
+        }
+
+        _shouldInitDatePickers = false;
+        await JSRuntime.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "from-date-input");
+        await JSRuntime.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "to-date-input");
+    }
+
+    private async Task RefreshAsync()
+    {
+        await LoadReceiptsAsync();
+    }
+
+    private async Task HandleSearchSubmitAsync(EditContext _)
+    {
+        SyncDatesFromText();
+        await LoadReceiptsAsync();
+    }
+
+    private void OnTrangThaiThanhToanFilterChanged(ChangeEventArgs args)
+    {
+        TrangThaiThanhToanFilterValue = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task LoadReceiptsAsync()
+    {
+        SyncDatesFromText();
+        StatusMessage = null;
+        StatusMessageIsError = false;
+        IsLoading = true;
+
+        try
+        {
+            var trangThaiThanhToan = ParseTrangThaiThanhToanFilter();
+            var result = await OnlineOrderService.GetBienNhanThanhToanHangNhapKhauTempListAdminAsync(
+                FromDate,
+                ToDate,
+                trangThaiThanhToan,
+                SoBienNhanFilter);
+
+            if (!result.Success)
+            {
+                Receipts.Clear();
+                StatusMessage = result.Message;
+                StatusMessageIsError = true;
+                return;
+            }
+
+            Receipts.Clear();
+            Receipts.AddRange(result.Data
+                .OrderByDescending(item => item.NgayLap ?? DateTime.MinValue)
+                .ThenByDescending(item => item.ID));
+        }
+        catch (Exception ex)
+        {
+            Receipts.Clear();
+            StatusMessage = ex.Message;
+            StatusMessageIsError = true;
+        }
+        finally
+        {
+            IsLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OpenConfirmPaymentDialog(BienNhanThanhToanHangNhapKhauTempListItem item)
+    {
+        if (item.DaThanhToan)
+        {
+            return;
+        }
+
+        SelectedReceiptForConfirm = item;
+        ShowConfirmDialog = true;
+        StatusMessage = null;
+        StatusMessageIsError = false;
+    }
+
+    private void CloseConfirmPaymentDialog()
+    {
+        ShowConfirmDialog = false;
+        SelectedReceiptForConfirm = null;
+    }
+
+    private async Task ConfirmSelectedPaymentAsync()
+    {
+        var item = SelectedReceiptForConfirm;
+        if (item is null)
+        {
+            CloseConfirmPaymentDialog();
+            return;
+        }
+
+        CloseConfirmPaymentDialog();
+        PendingConfirmIds.Add(item.ID);
+
+        try
+        {
+            var successMessage = $"Đã xác nhận thanh toán cho biên nhận {item.So}.";
+            await OnlineOrderService.ConfirmBienNhanThanhToanHangNhapKhauTempAsync(item.ID, item.So, item.TongTien);
+            await LoadReceiptsAsync();
+            StatusMessage = successMessage;
+            StatusMessageIsError = false;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Không thể xác nhận thanh toán cho biên nhận {item.So}: {ex.Message}";
+            StatusMessageIsError = true;
+        }
+        finally
+        {
+            PendingConfirmIds.Remove(item.ID);
+            SelectedReceiptForConfirm = null;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void SyncDatesFromText()
+    {
+        FromDate = ParseDateInput(FromDateText) ?? FromDate;
+        ToDate = ParseDateInput(ToDateText) ?? ToDate;
+
+        if (FromDate.HasValue)
+        {
+            FromDateText = FormatDateForInput(FromDate.Value);
+        }
+
+        if (ToDate.HasValue)
+        {
+            ToDateText = FormatDateForInput(ToDate.Value);
+        }
+
+        if (FromDate.HasValue && ToDate.HasValue && ToDate.Value.Date < FromDate.Value.Date)
+        {
+            ToDate = FromDate;
+            ToDateText = FormatDateForInput(FromDate.Value);
+        }
+    }
+
+    private int? ParseTrangThaiThanhToanFilter()
+        => string.IsNullOrWhiteSpace(TrangThaiThanhToanFilterValue)
+            ? null
+            : int.TryParse(TrangThaiThanhToanFilterValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+                ? value
+                : 0;
+
+    private static DateTime? ParseDateInput(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return DateTime.TryParseExact(
+            value.Trim(),
+            "dd/MM/yyyy",
+            new CultureInfo("vi-VN"),
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed.Date
+            : null;
+    }
+
+    private static string FormatDateForInput(DateTime date)
+        => date.ToString("dd/MM/yyyy", new CultureInfo("vi-VN"));
+
+    private static DateTime GetStartOfCurrentWeek(DateTime date)
+    {
+        var offset = ((int)date.DayOfWeek + 6) % 7;
+        return date.Date.AddDays(-offset);
+    }
+
+    private static string FormatDate(DateTime? date)
+        => date.HasValue
+            ? date.Value.ToString("dd/MM/yyyy", new CultureInfo("vi-VN"))
+            : "-";
+
+    private static string FormatDateTime(DateTime? date)
+        => date.HasValue
+            ? date.Value.ToString("dd/MM/yyyy HH:mm", new CultureInfo("vi-VN"))
+            : "-";
+
+    private static string FormatPaymentContent(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
+
+    private static string FormatMoney(decimal value)
+        => value.ToString("N0", new CultureInfo("vi-VN"));
+}

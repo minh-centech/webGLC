@@ -2857,7 +2857,7 @@
         => value.HasValue ? value.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
 
     private static string FormatDateTimeFull(DateTime? value)
-        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:ss", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
     
     private static string FormatYesNo(bool value)
         => value ? "Có" : "Không";

@@ -319,16 +319,31 @@
                 var companyProfile = await LegacyCustomerPortalService.GetLatestEnterpriseProfileAsync(account.Id);
                 if (companyProfile is not null)
                 {
-                    var glcLookup = await OnlineOrderService.LookupCompanyByMaSoThueAsync(companyProfile.MaSoThue);
-                    var isUpdate = await OnlineOrderService.HasValidMaSoThueAsync(companyProfile.MaSoThue);
+                    var lookupStatus = await OnlineOrderService.GetMaSoThueLookupStatusAsync(companyProfile.MaSoThue);
+                    if (lookupStatus != 0 && lookupStatus != 1)
+                    {
+                        throw new InvalidOperationException($"Không xác định được trạng thái mã số thuế: {companyProfile.MaSoThue}");
+                    }
+
+                    var isUpdate = lookupStatus == 0;
+                    var glcLookup = isUpdate
+                        ? await OnlineOrderService.LookupCompanyByMaSoThueAsync(companyProfile.MaSoThue)
+                        : null;
+                    var companyAddress = glcLookup?.DiaChi
+                        ?? companyProfile.DiaChi
+                        ?? string.Empty;
+                    var invoiceEmail = glcLookup?.Email
+                        ?? companyProfile.EmailXuatHoaDon
+                        ?? companyProfile.EmailDoanhNghiep;
+
                     var upsertResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
                         companyProfile.MaSoThue,
                         glcLookup?.Ten ?? companyProfile.TenDoanhNghiep,
-                        glcLookup?.DiaChi ?? companyProfile.DiaChi,
+                        companyAddress,
                         companyProfile.MaSoThue,
                         glcLookup?.NguoiDaiDien ?? companyProfile.DaiDienCoThamQuyen,
                         glcLookup?.ChucVuNguoiDaiDien ?? companyProfile.ChucVu,
-                        glcLookup?.Email ?? companyProfile.EmailDoanhNghiep,
+                        invoiceEmail,
                         glcLookup?.SoDienThoai ?? companyProfile.SoDienThoaiDoanhNghiep,
                         string.Empty,
                         isUpdate);

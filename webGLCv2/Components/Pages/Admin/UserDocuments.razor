@@ -79,6 +79,10 @@
                         <strong>@DisplayValue(Details.BillingEmail)</strong>
                     </div>
                     <div class="docs-info-card">
+                        <span class="stat-label">Địa chỉ</span>
+                        <strong>@DisplayValue(Details.CompanyAddress)</strong>
+                    </div>
+                    <div class="docs-info-card">
                         <span class="stat-label">Số điện thoại doanh nghiệp</span>
                         <strong>@DisplayValue(Details.CompanyPhone)</strong>
                     </div>
@@ -318,23 +322,26 @@
                     throw new InvalidOperationException("Vui lòng bổ sung mã số thuế trước khi phê duyệt.");
                 }
 
-                var companyProfile = await LegacyCustomerPortalService.GetLatestEnterpriseProfileAsync(Details.Id);
-                if (companyProfile is null)
+                var lookupStatus = await OnlineOrderService.GetMaSoThueLookupStatusAsync(taxCode);
+                if (lookupStatus != 0 && lookupStatus != 1)
                 {
-                    throw new InvalidOperationException("Không tìm thấy hồ sơ doanh nghiệp trong bảng NguoiDungDoanhNghiep.");
+                    throw new InvalidOperationException($"Không xác định được trạng thái mã số thuế: {taxCode}");
                 }
 
-                var isUpdate = await OnlineOrderService.HasValidMaSoThueAsync(taxCode);
+                var isUpdate = lookupStatus == 0;
+                var invoiceEmail = Details.BillingEmail
+                    ?? Details.CompanyEmail
+                    ?? Details.Email;
 
                 var upsertResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
                     taxCode,
-                    companyProfile.TenDoanhNghiep ?? Details.CompanyName,
-                    companyProfile.DiaChi ?? Details.CompanyAddress,
+                    Details.CompanyName,
+                    Details.CompanyAddress,
                     taxCode,
-                    companyProfile.DaiDienCoThamQuyen ?? Details.AuthorizedRepresentative,
-                    companyProfile.ChucVu ?? Details.RepresentativeTitle,
-                    Details.BillingEmail ?? Details.Email ?? Details.CompanyEmail,
-                    companyProfile.SoDienThoaiDoanhNghiep ?? Details.CompanyPhone,
+                    Details.AuthorizedRepresentative,
+                    Details.RepresentativeTitle,
+                    invoiceEmail,
+                    Details.CompanyPhone,
                     string.Empty,
                     isUpdate);
 

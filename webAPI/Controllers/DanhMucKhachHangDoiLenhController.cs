@@ -1079,6 +1079,9 @@ namespace webAPI.Controllers
 
             try
             {
+                System.Diagnostics.Trace.WriteLine($"[DanhMucKhachHangDoiLenhController.SaveDoanhNghiep] Request={JsonConvert.SerializeObject(model)}");
+                Console.WriteLine($"[DanhMucKhachHangDoiLenhController.SaveDoanhNghiep] Request={JsonConvert.SerializeObject(model)}");
+
                 NormalizeNguoiDungDoanhNghiep(model);
                 ValidateNguoiDungDoanhNghiep(model);
 

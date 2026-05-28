@@ -75,6 +75,7 @@ applicationhost.config
 # SQL / local data files
 *.mdf
 *.ldf
+webAPI/App_Data/UploadedFiles/
 
 # OS generated files
 Thumbs.db

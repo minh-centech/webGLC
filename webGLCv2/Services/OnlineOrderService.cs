@@ -568,6 +568,30 @@ public sealed class OnlineOrderService
         }
     }
 
+    public async Task<int> GetMaSoThueLookupStatusAsync(string maSoThue)
+    {
+        var normalizedMaSoThue = NullIfEmpty(maSoThue);
+        if (string.IsNullOrWhiteSpace(normalizedMaSoThue))
+        {
+            throw new InvalidOperationException("Vui lòng nhập mã số thuế trước khi kiểm tra.");
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl(MaSoThueLookupApiPath),
+            new { MaSoThue = normalizedMaSoThue },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        if (envelope is null)
+        {
+            throw new InvalidOperationException("Không thể đọc kết quả kiểm tra mã số thuế.");
+        }
+
+        return envelope.Status;
+    }
+
     public async Task<UpsertDanhMucKhachHangResult> UpsertDanhMucKhachHangAsync(
         string ma,
         string ten,

@@ -1,24 +1,27 @@
-﻿@page "/admin/orders"
+@page "/admin/orders"
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @inject OnlineOrderService OnlineOrderService
-@inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using System.Globalization
 
-<PageTitle>Quản lý lệnh online</PageTitle>
+<PageTitle>Lệnh online</PageTitle>
 
 <section class="page-shell">
     <header class="page-header">
         <div>
             <p class="page-kicker">Admin Workspace</p>
-            <h1>Quản lý lệnh online</h1>
-            <p class="page-subtitle">Theo dõi toàn bộ lệnh online của tất cả người dùng, lọc theo thời gian và thông tin vận đơn.</p>
+            <h1>Lệnh online</h1>
+            <p class="page-subtitle">Theo dõi và quản lý tập trung các lệnh trực tuyến của toàn bộ người dùng. Dữ liệu không bị lọc theo tài khoản đăng nhập.</p>
         </div>
-        <button class="portal-secondary-action" @onclick="RefreshDataAsync">Làm mới dữ liệu</button>
+        <div class="header-actions">
+            <button type="button" class="portal-secondary-action" @onclick="RefreshDataAsync">Làm mới dữ liệu</button>
+        </div>
     </header>
 
     <section class="workspace-card">
-        <EditForm Model="@this" OnValidSubmit="SearchAsync" FormName="admin-orders-filter-form">
+        <form @formname="admin-orders-filter-form" @onsubmit="SearchAsync" @onsubmit:preventDefault="true">
             <div class="order-filter-panel">
                 <div class="order-filter-grid">
                     <div class="order-filter-field">
@@ -35,32 +38,43 @@
                     </div>
                     <div class="order-filter-field">
                         <label class="portal-label">Từ ngày</label>
-                        <InputDate class="portal-input order-filter-input" @bind-Value="FromDate" />
+                        <input class="portal-input order-filter-input"
+                               id="admin-orders-from-date-input"
+                               type="text"
+                               value="@FromDateText"
+                               placeholder="dd/MM/yyyy"
+                               @oninput="OnFromDateInput" />
                     </div>
                     <div class="order-filter-field">
                         <label class="portal-label">Đến ngày</label>
-                        <InputDate class="portal-input order-filter-input" @bind-Value="ToDate" />
+                        <input class="portal-input order-filter-input"
+                               id="admin-orders-to-date-input"
+                               type="text"
+                               value="@ToDateText"
+                               placeholder="dd/MM/yyyy"
+                               @oninput="OnToDateInput" />
                     </div>
                     <div class="order-filter-actions">
-                        <button type="submit" class="portal-primary-action order-filter-button">Tìm kiếm</button>
+                        <button type="submit" class="portal-primary-action order-filter-button">
+                            <i class="icon-search"></i> Tìm kiếm
+                        </button>
                     </div>
                 </div>
             </div>
-        </EditForm>
+        </form>
 
         <div class="table-shell">
             <table class="portal-table dense">
                 <thead>
                     <tr>
-                        <th>Người tạo</th>
-                        <th>Mã lệnh / Biển số</th>
+                        <th>Biển số/ Mã lệnh</th>
                         <th>Ngày lập lệnh</th>
+                        <th>Ngày dự kiến lấy</th>
                         <th>House Bill</th>
                         <th>Khách hàng</th>
-                        <th>Tên doanh nghiệp</th>
+                        <th>Mã ST/ Tên DN</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
-                        <th>Tải hóa đơn</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -68,8 +82,11 @@
                     @if (Orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="11">
-                                <div class="portal-empty-inline">Không tìm thấy lệnh online phù hợp điều kiện lọc.</div>
+                            <td colspan="9">
+                                <div class="portal-empty-inline">
+                                    Không tìm thấy lệnh trực tuyến nào trong khoảng thời gian đã chọn.
+                                    <br />Vui lòng điều chỉnh bộ lọc để xem dữ liệu.
+                                </div>
                             </td>
                         </tr>
                     }
@@ -79,37 +96,23 @@
                         {
                             <tr class="@GetRowClass(order)">
                                 <td>
-                                    <div class="cell-title">@GetCreatorName(order.CreatorUserId)</div>
-                                    <div class="cell-subtitle">@GetCreatorPhone(order.CreatorUserId)</div>
-                                </td>
-                                <td>
-                                    <div class="cell-title">@order.OrderCode</div>
-                                    <div class="cell-subtitle">@order.VehicleNumber</div>
+                                    <div class="cell-title">@order.VehicleNumber</div>
+                                    <div class="cell-subtitle">@order.OrderCode</div>
                                 </td>
                                 <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(order.PickupDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td>@order.HouseBill</td>
                                 <td>@order.CustomerName</td>
-                                <td>@order.CompanyName</td>
+                                <td>
+                                    <div class="cell-title">@order.TaxCode</div>
+                                    <div class="cell-subtitle">@order.CompanyName</div>
+                                </td>
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
                                 <td>
-                                    @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
-                                    {
-                                        <a class="invoice-download-link"
-                                           href="@order.InvoiceDownloadUrl"
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           title="Tải hóa đơn">
-                                            <i class="icon-download"></i>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="portal-text-muted">-</span>
-                                    }
-                                </td>
-                                <td>
-                                    <button class="portal-secondary-action" @onclick="() => ViewDetail(order.Id)">Xem chi tiết</button>
+                                    <button type="button" class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
+                                        Xem chi tiết
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -129,17 +132,19 @@
                 </select>
             </div>
             <div class="footer-pagination">
-                <button class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
+                <button type="button" class="portal-secondary-action pager-button" @onclick="PreviousPageAsync" disabled="@IsFirstPage">Trang trước</button>
                 <span>Trang <strong>@CurrentPage</strong> / @TotalPages</span>
-                <button class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
+                <button type="button" class="portal-secondary-action pager-button" @onclick="NextPageAsync" disabled="@IsLastPage">Trang sau</button>
             </div>
         </footer>
     </section>
 </section>
 
 @code {
-    private DateTime FromDate = DateTime.Today.AddDays(-7);
-    private DateTime ToDate = DateTime.Today;
+    private DateTime FromDate = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime ToDate = new(DateTime.Today.Year, DateTime.Today.Month, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month));
+    private string FromDateText = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).ToString("dd/MM/yyyy");
+    private string ToDateText = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month)).ToString("dd/MM/yyyy");
     private string HouseBillFilter = string.Empty;
     private string ContainerNumberFilter = string.Empty;
     private string TaxCodeFilter = string.Empty;
@@ -147,7 +152,7 @@
     private int TotalCount;
     private int PageSize = 10;
     private int CurrentPage = 1;
-    private readonly Dictionary<long, AccountListItem> UserCreators = new();
+    private bool _shouldInitDatePickers = true;
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
     private bool IsFirstPage => CurrentPage <= 1;
@@ -155,34 +160,31 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUserMapAsync();
         await LoadOrdersAsync();
     }
 
-    private async Task LoadUserMapAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var accounts = await LegacyCustomerPortalService.GetAccountsAsync();
-        UserCreators.Clear();
-        foreach (var account in accounts)
+        if (_shouldInitDatePickers)
         {
-            if (long.TryParse(account.Id, out var userId) && !UserCreators.ContainsKey(userId))
-            {
-                UserCreators[userId] = account;
-            }
+            _shouldInitDatePickers = false;
+            await JSRuntime.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "admin-orders-from-date-input");
+            await JSRuntime.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "admin-orders-to-date-input");
         }
     }
 
     private async Task RefreshDataAsync()
     {
-        await LoadUserMapAsync();
         await LoadOrdersAsync();
     }
 
     private async Task SearchAsync()
     {
+        SyncDatesFromText();
         if (ToDate < FromDate)
         {
             ToDate = FromDate;
+            ToDateText = FormatDate(ToDate);
         }
 
         CurrentPage = 1;
@@ -215,6 +217,8 @@
 
     private async Task LoadOrdersAsync()
     {
+        SyncDatesFromText();
+
         var result = await OnlineOrderService.GetOrdersForAdminAsync(
             FromDate,
             ToDate,
@@ -224,56 +228,50 @@
             CurrentPage,
             PageSize);
 
-        Orders = result.Items;
-        Orders = Orders
-            .OrderBy(GetSortPriority)
-            .ThenByDescending(order => order.PickupDate ?? DateTime.MinValue)
-            .ThenByDescending(order => order.OrderDate)
-            .ToList();
-
+        Orders = result.Items.ToList();
         TotalCount = result.TotalCount;
         CurrentPage = result.Page <= 0 ? 1 : result.Page;
     }
 
-    private static string GetStatusClass(int statusCode)
-        => statusCode switch
-        {
-            5 => "success",
-            3 => "success",
-            4 => "warning",
-            2 => "warning",
-            1 => "pending",
-            0 => "neutral",
-            _ => "neutral"
-        };
-
-    private static int GetSortPriority(OnlineOrderRecord order)
+    private void OnFromDateInput(ChangeEventArgs args)
     {
-        var today = DateTime.Today;
-        var pickupDate = order.PickupDate?.Date;
-
-        if (pickupDate.HasValue && pickupDate.Value < today)
-        {
-            return 0;
-        }
-
-        if (order.IsHoanThanh)
-        {
-            return 2;
-        }
-
-        return 1;
+        FromDateText = args.Value?.ToString() ?? string.Empty;
+        _shouldInitDatePickers = true;
     }
 
-    private string GetCreatorName(long creatorUserId)
-        => UserCreators.TryGetValue(creatorUserId, out var creator) && !string.IsNullOrWhiteSpace(creator.Name)
-            ? creator.Name
-            : $"User #{creatorUserId}";
+    private void OnToDateInput(ChangeEventArgs args)
+    {
+        ToDateText = args.Value?.ToString() ?? string.Empty;
+        _shouldInitDatePickers = true;
+    }
 
-    private string GetCreatorPhone(long creatorUserId)
-        => UserCreators.TryGetValue(creatorUserId, out var creator) && !string.IsNullOrWhiteSpace(creator.Phone)
-            ? creator.Phone
-            : "-";
+    private void SyncDatesFromText()
+    {
+        if (DateTime.TryParseExact(FromDateText, "dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"), DateTimeStyles.None, out var fromDate))
+        {
+            FromDate = fromDate;
+            FromDateText = FormatDate(FromDate);
+        }
+        else
+        {
+            FromDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            FromDateText = FormatDate(FromDate);
+        }
+
+        if (DateTime.TryParseExact(ToDateText, "dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"), DateTimeStyles.None, out var toDate))
+        {
+            ToDate = toDate;
+            ToDateText = FormatDate(ToDate);
+        }
+        else
+        {
+            ToDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month));
+            ToDateText = FormatDate(ToDate);
+        }
+    }
+
+    private static string FormatDate(DateTime value)
+        => value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"));
 
     private static string GetRowClass(OnlineOrderRecord order)
     {
@@ -294,5 +292,7 @@
     }
 
     private void ViewDetail(string orderId)
-        => NavigationManager.NavigateTo($"/admin/orders/{orderId}");
+    {
+        NavigationManager.NavigateTo($"/admin/orders/{orderId}");
+    }
 }

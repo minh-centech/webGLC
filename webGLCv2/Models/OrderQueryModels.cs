@@ -267,6 +267,9 @@ public sealed class LenhXuatKhoHangNhapKhauTempInsertData
     [JsonPropertyName("SoVanDon")]
     public string SoVanDon { get; set; } = string.Empty;
 
+    [JsonPropertyName("SoXe")]
+    public string SoXe { get; set; } = string.Empty;
+
     [JsonPropertyName("IDctLenhNhapKhoHangNhapKhauChiTiet")]
     public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
 

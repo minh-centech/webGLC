@@ -1059,6 +1059,7 @@ public sealed class OnlineOrderService
                 SoLuongQuaKho = chiTiet.SoLuongQuaKho,
                 SoLuongQuaTai = chiTiet.SoLuongQuaTai,
                 MaSoThue = order.TaxCode,
+                SoXe = order.VehicleNumber,
                 HoTenNguoiNhanHang = order.CustomerName,
                 SoCMND = order.IdentityNumber,
                 SoDienThoaiNguoiNhanHang = order.PhoneNumber,

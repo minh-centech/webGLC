@@ -908,18 +908,25 @@
                             @(StorageActionMode == StorageActionPopupMode.Extend ? "Chọn ngày gia hạn" : "Chọn ngày lấy hàng")
                             <span style="color:red">(*) Bắt buộc</span>
                         </label>
-                        <input class="portal-input"
-                               id="storageActionDateInput"
-                               value="@StorageActionDateText"
-                               @oninput="OnStorageActionDateInput"
-                               @onchange="OnStorageActionDateInput"
-                                placeholder="dd/MM/yyyy"
-                                inputmode="numeric" />
+                        <div style="position:relative;">
+                            <i class="fa-solid fa-calendar-days" aria-hidden="true"
+                               style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#6b7280; pointer-events:none;"></i>
+                            <input class="portal-input"
+                                   id="storageActionDateInput"
+                                   value="@StorageActionDateText"
+                                   @oninput="OnStorageActionDateInput"
+                                   @onchange="OnStorageActionDateInput"
+                                   placeholder="dd/MM/yyyy"
+                                   inputmode="numeric"
+                                   style="padding-left:42px;" />
+                        </div>
                     </div>
                     <div style="grid-column:3; justify-self:end; min-width:260px;">
-                        <label class="portal-label">Ngày nhập kho</label>
+                        <label class="portal-label">@(StorageActionMode == StorageActionPopupMode.Extend ? "Ngày gia hạn cuối" : "Ngày nhập kho")</label>
                         <div class="portal-input" style="display:flex; align-items:center; text-align:left;">
-                            @FormatDateTime(GetChiTietHouseBillFromApi()?.NgayNhapKho)
+                            @FormatDateTime(StorageActionMode == StorageActionPopupMode.Extend
+                                ? GetLenhXuatKhoTemp()?.NgayGiaHan
+                                : GetChiTietHouseBillFromApi()?.NgayNhapKho)
                         </div>
                     </div>
                 </div>

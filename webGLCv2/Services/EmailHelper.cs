@@ -10,6 +10,7 @@ public sealed class EmailHelper
 {
     public const string RegistrationSuccessTemplateId = "registration-success";
     public const string RegistrationPendingApprovalTemplateId = "registration-pending-approval";
+    public const string RegistrationPendingApprovalAdminNotificationTemplateId = "registration-pending-approval-admin-notification";
     public const string PasswordResetSuccessTemplateId = "password-reset-success";
     public const string PasswordResetGeneratedTemplateId = "password-reset-generated";
     public const string AccountApprovedSuccessTemplateId = "account-approved-success";
@@ -135,6 +136,41 @@ public sealed class EmailHelper
         }
     }
 
+    public async Task SendRegistrationPendingApprovalNotificationAsync(RegisterAccountModel model)
+    {
+        if (model is null)
+        {
+            throw new ArgumentNullException(nameof(model));
+        }
+
+        var recipients = _options.RegistrationPendingApprovalNotificationEmails
+            .Where(email => !string.IsNullOrWhiteSpace(email))
+            .Select(email => email.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (recipients.Count == 0)
+        {
+            _logger.LogWarning(
+                "EmailHelper.SendRegistrationPendingApprovalNotificationAsync skipped because no admin recipients are configured.");
+            return;
+        }
+
+        var subject = "Thông báo: Có người dùng đăng ký tài khoản chờ xác nhận";
+        var body = $@"<p>Có một yêu cầu đăng ký tài khoản mới trên hệ thống <strong>everWareHouse GLC</strong>.</p>
+<p><strong>Họ và tên:</strong> {WebUtility.HtmlEncode(model.Ten)}</p>
+<p><strong>Email:</strong> {WebUtility.HtmlEncode(model.Email)}</p>
+<p><strong>Số điện thoại:</strong> {WebUtility.HtmlEncode(model.SoDienThoai)}</p>
+<p><strong>Loại tài khoản:</strong> {model.LoaiTaiKhoan}</p>
+<p><strong>Tên đăng nhập:</strong> {WebUtility.HtmlEncode(model.TenDangNhap ?? model.Email)}</p>
+<p>Vui lòng đăng nhập hệ thống để xác nhận hoặc từ chối yêu cầu này.</p>";
+
+        foreach (var recipient in recipients)
+        {
+            await SendRawEmailAsync(recipient, subject, body, RegistrationPendingApprovalAdminNotificationTemplateId);
+        }
+    }
+
     private static EmailTemplate ResolveTemplate(string templateId)
         => templateId switch
         {
@@ -161,6 +197,51 @@ public sealed class EmailHelper
                 <strong>Ban quản trị cổng everWareHouse</strong></p>"),
             _ => throw new ArgumentOutOfRangeException(nameof(templateId), templateId, "Mẫu email không hợp lệ.")
         };
+
+    private async Task SendRawEmailAsync(string toEmail, string subject, string body, string templateId)
+    {
+        if (string.IsNullOrWhiteSpace(toEmail))
+        {
+            throw new ArgumentException("toEmail is required.", nameof(toEmail));
+        }
+
+        var normalizedToEmail = toEmail.Trim();
+        _logger.LogInformation(
+            "EmailHelper.SendRawEmailAsync start. TemplateId={TemplateId}, ToEmail={ToEmail}, Subject={Subject}, SmtpHost={SmtpHost}, SmtpPort={SmtpPort}, UseSsl={UseSsl}",
+            templateId,
+            normalizedToEmail,
+            subject,
+            _options.Host,
+            _options.Port,
+            _options.SSL);
+
+        using var message = new MailMessage
+        {
+            From = new MailAddress(_options.Username, _options.SenderName),
+            Subject = subject,
+            Body = body,
+            IsBodyHtml = true
+        };
+
+        message.To.Add(normalizedToEmail);
+
+        using var client = new SmtpClient(_options.Host, _options.Port)
+        {
+            EnableSsl = _options.SSL,
+            Credentials = new NetworkCredential(_options.Username, _options.Password)
+        };
+
+        try
+        {
+            await client.SendMailAsync(message);
+            _logger.LogInformation("EmailHelper.SendRawEmailAsync success. ToEmail={ToEmail}, TemplateId={TemplateId}", normalizedToEmail, templateId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "EmailHelper.SendRawEmailAsync failed. ToEmail={ToEmail}, TemplateId={TemplateId}", normalizedToEmail, templateId);
+            throw;
+        }
+    }
 
     private sealed record EmailTemplate(string Subject, string Body);
 }

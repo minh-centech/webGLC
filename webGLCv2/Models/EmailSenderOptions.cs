@@ -10,5 +10,5 @@ public sealed class EmailSenderOptions
     public int Port { get; set; } = 587;
     public string Host { get; set; } = string.Empty;
     public string SenderName { get; set; } = string.Empty;
-    
+    public List<string> RegistrationPendingApprovalNotificationEmails { get; set; } = [];
 }

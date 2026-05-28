@@ -6,6 +6,7 @@
 @inject OnlineOrderService OnlineOrderService
 @inject MaSoThueHelper MaSoThueHelper
 @inject EmailHelper EmailHelper
+@inject ILogger<Register> Logger
 @inject Microsoft.Extensions.Options.IOptions<webGLCv2.Models.TurnstileOptions> TurnstileConfiguration
 @inject TurnstileValidationService TurnstileValidationService
 @inject NavigationManager NavigationManager
@@ -369,7 +370,7 @@
                         </div>
 
                         <input type="hidden" id="register-turnstile-token" name="cf-turnstile-response" @bind="RegisterTurnstileToken" @bind:event="oninput" />
-                        <div id="register-turnstile" class="turnstile-host"></div>
+                        <div id="register-turnstile" class="turnstile-host" @key="TurnstileRenderKey"></div>
                     </section>
                 }
 
@@ -393,6 +394,7 @@
     private string? SuccessMessage { get; set; }
     private string? _lastTurnstileReloadToken;
     private bool _shouldRenderTurnstile = true;
+    private string _turnstileRenderSeed = Guid.NewGuid().ToString("N");
     private string? RegisterTurnstileToken { get; set; }
     private string CitizenCardStatus { get; set; } = "Chưa tải tài liệu.";
     private string BusinessLicenseStatus { get; set; } = "Chưa tải tài liệu.";
@@ -413,6 +415,7 @@
         TurnstileConfiguration.Value.EnableValidation
         && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SiteKey)
         && !string.IsNullOrWhiteSpace(TurnstileConfiguration.Value.SecretKey);
+    private string TurnstileRenderKey => $"register-{_turnstileRenderSeed}";
 
     protected override void OnParametersSet()
     {
@@ -420,6 +423,7 @@
         {
             _lastTurnstileReloadToken = RegisterTurnstileToken;
             _shouldRenderTurnstile = true;
+            _turnstileRenderSeed = Guid.NewGuid().ToString("N");
         }
     }
 
@@ -472,6 +476,7 @@
                         ? "Xác thực Turnstile không thành công. Vui lòng thử lại."
                         : $"Xác thực Turnstile không thành công: {turnstileResult.ErrorDetail}";
                     _shouldRenderTurnstile = true;
+                    _turnstileRenderSeed = Guid.NewGuid().ToString("N");
                     RegisterTurnstileToken = null;
                     return;
                 }
@@ -479,12 +484,13 @@
 
             Model.TenDangNhap = Model.Email;
             await LegacyCustomerPortalService.RegisterAccountAsync(Model);
-            await EmailHelper.SendEmailAsync(Model.Email, EmailHelper.RegistrationPendingApprovalTemplateId);
+            QueueRegistrationEmails(Model);
             SuccessMessage = "Hệ thống đã tiếp nhận yêu cầu đăng ký.";
             Model = new RegisterAccountModel();
             ResetUploadStatuses();
             RegisterTurnstileToken = null;
             _shouldRenderTurnstile = true;
+            _turnstileRenderSeed = Guid.NewGuid().ToString("N");
             NavigationManager.NavigateTo("/register-success", forceLoad: false);
         }
         catch (Exception ex)
@@ -494,6 +500,41 @@
         finally
         {
             IsSubmitting = false;
+        }
+    }
+
+    private void QueueRegistrationEmails(RegisterAccountModel model)
+    {
+        var emailSnapshot = new RegisterAccountModel
+        {
+            Ten = model.Ten,
+            Email = model.Email,
+            SoDienThoai = model.SoDienThoai,
+            LoaiTaiKhoan = model.LoaiTaiKhoan,
+            TenDangNhap = model.Email
+        };
+
+        _ = SendRegistrationEmailsAsync(emailSnapshot);
+    }
+
+    private async Task SendRegistrationEmailsAsync(RegisterAccountModel model)
+    {
+        try
+        {
+            await EmailHelper.SendEmailAsync(model.Email, EmailHelper.RegistrationPendingApprovalTemplateId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Không gửi được email xác nhận đăng ký cho người dùng {Email}.", model.Email);
+        }
+
+        try
+        {
+            await EmailHelper.SendRegistrationPendingApprovalNotificationAsync(model);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Không gửi được email thông báo đăng ký cho quản trị.");
         }
     }
 

@@ -2,9 +2,12 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.DependencyInjection
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject OnlineOrderService OnlineOrderService
 @inject NavigationManager NavigationManager
+@inject IServiceScopeFactory ServiceScopeFactory
+@inject ILogger<UserDocuments> Logger
 
 <PageTitle>Hồ sơ tài liệu</PageTitle>
 
@@ -341,11 +344,12 @@
                 }
             }
 
-            await LegacyCustomerPortalService.ApproveAccountAndNotifyAsync(Details.Id, Details.Email);
+            await LegacyCustomerPortalService.SetAccountStateAsync(Details.Id, true, false);
             Details.IsActive = true;
             Details.IsLockAccount = false;
             FeedbackMessage = "Đã phê duyệt và kích hoạt tài khoản thành công.";
             FeedbackIsError = false;
+            QueueApprovalEmail(Details.Email);
         }
         catch (Exception ex)
         {
@@ -392,10 +396,11 @@
 
         try
         {
-            await LegacyCustomerPortalService.ApproveEnterpriseAndNotifyAsync(company, Details?.Email ?? company.EmailDoanhNghiep);
+            await LegacyCustomerPortalService.SetEnterpriseApprovalAsync(company, true);
             company.IsActive = true;
             FeedbackMessage = $"Đã phê duyệt doanh nghiệp: {company.TenDoanhNghiep}.";
             FeedbackIsError = false;
+            QueueApprovalEmail(Details?.Email ?? company.EmailDoanhNghiep);
         }
         catch (Exception ex)
         {
@@ -414,5 +419,27 @@
         => UploadStatuses.TryGetValue(document.FieldKey, out var status)
             ? status
             : "Sẵn sàng bổ sung.";
-}
 
+    private void QueueApprovalEmail(string email)
+    {
+        var recipient = email?.Trim();
+        if (string.IsNullOrWhiteSpace(recipient))
+        {
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = ServiceScopeFactory.CreateScope();
+                var emailHelper = scope.ServiceProvider.GetRequiredService<EmailHelper>();
+                await emailHelper.SendEmailAsync(recipient, EmailHelper.AccountApprovedSuccessTemplateId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Không gửi được email phê duyệt tài khoản cho {Email}.", recipient);
+            }
+        });
+    }
+}

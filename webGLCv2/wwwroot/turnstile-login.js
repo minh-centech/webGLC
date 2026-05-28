@@ -10,18 +10,6 @@ window.glcTurnstile = (() => {
         tokenInput.dispatchEvent(new Event("input", { bubbles: true }));
     };
 
-    const getFreshHost = (elementId) => {
-        const currentHost = document.getElementById(elementId);
-        if (!currentHost) {
-            return null;
-        }
-
-        const freshHost = currentHost.cloneNode(false);
-        freshHost.innerHTML = "";
-        currentHost.replaceWith(freshHost);
-        return freshHost;
-    };
-
     const destroyExistingWidget = (elementId) => {
         if (!window.turnstile || !widgetIds.has(elementId)) {
             return;
@@ -54,8 +42,8 @@ window.glcTurnstile = (() => {
         const tokenInput = document.getElementById(tokenInputId);
         syncToken(tokenInput, "");
 
-        const freshHost = getFreshHost(elementId);
-        if (!freshHost || !siteKey) {
+        const host = document.getElementById(elementId);
+        if (!host || !siteKey) {
             return;
         }
 
@@ -66,10 +54,10 @@ window.glcTurnstile = (() => {
             }
 
             destroyExistingWidget(elementId);
-            freshHost.innerHTML = "";
+            host.innerHTML = "";
 
             try {
-                const widgetId = window.turnstile.render(freshHost, {
+                const widgetId = window.turnstile.render(host, {
                     sitekey: siteKey,
                     theme: "light",
                     language: "auto",

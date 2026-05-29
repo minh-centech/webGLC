@@ -1489,6 +1489,13 @@
                 return;
             }
 
+            if (Order.UserId != CurrentUserId)
+            {
+                ErrorMessage = "Bạn không có quyền xem lệnh này.";
+                Order = null;
+                return;
+            }
+
             await InvokeAsync(StateHasChanged);
             _ = InvokeAsync(() => RunWorkflowAsync("auto-init"));
         }
@@ -2739,6 +2746,13 @@
                     var refreshedOrder = await OnlineOrderService.GetOrderByIdAsync(CurrentUserId, OrderId);
                     if (refreshedOrder is not null)
                     {
+                        if (refreshedOrder.UserId != CurrentUserId)
+                        {
+                            ErrorMessage = "Bạn không có quyền xem lệnh này.";
+                            Order = null;
+                            return;
+                        }
+
                         Order = refreshedOrder;
                     }
                     else

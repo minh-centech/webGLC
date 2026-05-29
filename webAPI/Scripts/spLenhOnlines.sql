@@ -176,7 +176,7 @@ begin
 
 	if exists (select 1 from tblLenhOnlines where HouseBill = @HouseBill)
 	begin
-		raiserror(N'HouseBill da ton tai!', 16, 1);
+		raiserror(N'HouseBill đã tồn tại trong hệ thống! Vui lòng tạo lệnh với mã khác', 16, 1);
 		return;
 	end;
 
@@ -364,7 +364,7 @@ begin
 
 	if exists (select 1 from tblLenhOnlines where HouseBill = @HouseBill and ID <> @ID)
 	begin
-		raiserror(N'HouseBill da ton tai!', 16, 1);
+		raiserror(N'HouseBill đã tồn tại trong hệ thống! Vui lòng tạo lệnh với mã khác!', 16, 1);
 		return;
 	end;
 

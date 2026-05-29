@@ -24,7 +24,12 @@
 
     @if (!string.IsNullOrWhiteSpace(InfoMessage))
     {
-        <div class="portal-alert portal-alert-success">@InfoMessage</div>
+        <div class="portal-toast @(InfoIsError ? "portal-toast-error" : "portal-toast-success")"
+             role="@(InfoIsError ? "alert" : "status")"
+             aria-live="@(InfoIsError ? "assertive" : "polite")">
+            <div class="portal-toast-icon" aria-hidden="true">@(InfoIsError ? "!" : "✓")</div>
+            <div class="portal-toast-body">@InfoMessage</div>
+        </div>
     }
 
     <EditForm EditContext="@EditContext" OnValidSubmit="HandleSubmitAsync" FormName="new-online-order-form">
@@ -118,13 +123,15 @@
                         <InputText disabled class="portal-input" @bind-Value="Draft.DeclarationNumber" />
                     </div>
                 </div>
+                <div class="form-actions new-order-form-actions" style="margin-top:20px">
+                    <button type="submit" class="portal-primary-action">Lưu lệnh</button>
+                    <button type="button" class="portal-secondary-action" @onclick="ResetForm">Thiết lập lại thông tin</button>
+                </div>
             </section>
+            
         </div>
 
-        <div class="form-actions">
-            <button type="submit" class="portal-primary-action">Lưu lệnh</button>
-            <button type="button" class="portal-secondary-action" @onclick="ResetForm">Thiết lập lại thông tin</button>
-        </div>
+       
     </EditForm>
 </section>
 
@@ -192,6 +199,7 @@
     private readonly List<LegacyCompanyProfile> CustomerCompanies = new();
     private string SelectedTaxCode { get; set; } = string.Empty;
     private string? InfoMessage { get; set; }
+    private bool InfoIsError { get; set; }
     private string PickupDateText { get; set; } = string.Empty;
     [SupplyParameterFromQuery(Name = "houseBill")]
     private string? HouseBillFromQuery { get; set; }
@@ -254,6 +262,7 @@
         if (CurrentUserId <= 0)
         {
             InfoMessage = "Khong xac dinh duoc tai khoan dang nhap.";
+            InfoIsError = true;
             return;
         }
 
@@ -263,6 +272,7 @@
         if (Draft.PickupDate.HasValue && Draft.PickupDate.Value.Date < DateTime.Today)
         {
             InfoMessage = "Ngay lay hang phai tu ngay hien tai tro di.";
+            InfoIsError = true;
             return;
         }
 
@@ -276,6 +286,7 @@
         if (!Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.HasValue || Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.Value <= 0)
         {
             InfoMessage = "Khong tim thay IDctLenhNhapKhoHangNhapKhauChiTiet de luu lenh.";
+            InfoIsError = true;
             return;
         }
 
@@ -304,6 +315,7 @@
         catch (Exception ex)
         {
             InfoMessage = ex.Message;
+            InfoIsError = true;
         }
     }
 
@@ -311,6 +323,7 @@
     {
         var result = await OnlineOrderService.LookupCompanyAsync(Draft.TaxCode, CurrentUserEmail);
         InfoMessage = result.Message;
+        InfoIsError = !result.Success;
 
         if (result.Success)
         {
@@ -450,6 +463,7 @@
         await ApplyTaxLookupResultToDraftAsync();
         await CloseTaxLookupPopup();
         InfoMessage = "Đã tự động điền thông tin doanh nghiệp từ MST. Vui lòng kiểm tra các thông tin trước khi lưu lệnh";
+        InfoIsError = false;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -567,6 +581,7 @@
     {
         SelectedTaxCode = args.Value?.ToString() ?? string.Empty;
         InfoMessage = null;
+        InfoIsError = false;
 
         if (string.IsNullOrWhiteSpace(SelectedTaxCode))
         {
@@ -629,6 +644,7 @@
         SelectedTaxCode = string.Empty;
         PickupDateText = string.Empty;
         InfoMessage = null;
+        InfoIsError = false;
         EnsureCompanyEmailFallback();
     }
 
@@ -725,6 +741,7 @@
         ValidationMessages.Add(HouseBillFieldIdentifier, message);
         EditContext.NotifyValidationStateChanged();
         InfoMessage = null;
+        InfoIsError = false;
     }
 
     private void ClearHouseBillValidationError()

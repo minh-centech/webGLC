@@ -7,6 +7,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject OnlineOrderService OnlineOrderService
 
 <PageTitle>Quản lý thông tin</PageTitle>
 
@@ -136,16 +137,49 @@
                 </EditForm>
             }
         </section>
+
+        @if (CurrentCompany is not null)
+        {
+            <section class="workspace-card" style="margin-top: 16px;">
+                <div class="section-heading">
+                    <h2>Đổi mật khẩu doanh nghiệp</h2>
+                    <p>Nhập mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới để cập nhật ngay.</p>
+                </div>
+
+                <div class="field-grid">
+                    <div class="field-card">
+                        <label class="portal-label" for="EnterpriseCurrentPassword">Mật khẩu cũ</label>
+                        <InputText id="EnterpriseCurrentPassword" type="password" class="portal-input" @bind-Value="EnterpriseProfileModel.CurrentPassword" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="EnterpriseNewPassword">Mật khẩu mới</label>
+                        <InputText id="EnterpriseNewPassword" type="password" class="portal-input" @bind-Value="EnterpriseProfileModel.NewPassword" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="EnterpriseConfirmNewPassword">Nhập lại mật khẩu mới</label>
+                        <InputText id="EnterpriseConfirmNewPassword" type="password" class="portal-input" @bind-Value="EnterpriseProfileModel.ConfirmNewPassword" />
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 12px;">
+                    <button type="button" class="portal-secondary-action portal-password-action" disabled="@IsChangingEnterprisePassword" @onclick="UpdateEnterprisePasswordAsync">
+                        @(IsChangingEnterprisePassword ? "Đang đổi mật khẩu..." : "Đổi mật khẩu")
+                    </button>
+                </div>
+            </section>
+        }
     }
     else
     {
         <section class="workspace-card">
             <div class="section-heading">
                 <h2>Thông tin tài khoản cá nhân</h2>
-                <p>Cập nhật nhanh thông tin liên hệ và đổi mật khẩu bảo mật cho tài khoản.</p>
+                <p>Cập nhật họ và tên, số điện thoại và xem email cá nhân hiện tại.</p>
             </div>
 
-            <EditForm Model="PersonalProfileModel" OnValidSubmit="UpdatePersonalProfileAsync" FormName="personal-profile-form">
+            <EditForm Model="PersonalProfileModel" OnValidSubmit="UpdatePersonalInfoAsync" FormName="personal-profile-form">
                 <DataAnnotationsValidator />
                 <ValidationSummary class="portal-alert portal-alert-error" />
 
@@ -162,31 +196,50 @@
                         <ValidationMessage For="@(() => PersonalProfileModel.PhoneNumber)" class="validation-message" />
                     </div>
 
-                    @* <div class="field-card">
-                        <label class="portal-label" for="Email">Email cá nhân</label>
-                        <InputText id="BillingEmail" class="portal-input" @bind-Value="PersonalProfileModel.Email" />
-                        <ValidationMessage For="@(() => PersonalProfileModel.BillingEmail)" class="validation-message" />
-                    </div> *@
-
-                    <div class="field-card field-span-3">
-                        <label class="portal-label" for="CurrentPassword">Mật khẩu cũ</label>
-                        <InputText id="CurrentPassword" type="password" class="portal-input" @bind-Value="PersonalProfileModel.CurrentPassword" />
-                    </div>
-
                     <div class="field-card">
-                        <label class="portal-label" for="NewPassword">Mật khẩu mới</label>
-                        <InputText id="NewPassword" type="password" class="portal-input" @bind-Value="PersonalProfileModel.NewPassword" />
-                    </div>
-
-                    <div class="field-card">
-                        <label class="portal-label" for="ConfirmNewPassword">Nhập lại mật khẩu mới</label>
-                        <InputText id="ConfirmNewPassword" type="password" class="portal-input" @bind-Value="PersonalProfileModel.ConfirmNewPassword" />
+                        <label class="portal-label" for="PersonalEmail">Email cá nhân</label>
+                        <input id="PersonalEmail" class="portal-input" value="@AccountEmail" readonly />
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
-                        @(IsSubmitting ? "Đang cập nhật..." : "Lưu thông tin cá nhân")
+                        @(IsSubmitting ? "Đang cập nhật..." : "Cập nhật thông tin")
+                    </button>
+                </div>
+            </EditForm>
+        </section>
+
+        <section class="workspace-card" style="margin-top: 16px;">
+            <div class="section-heading">
+                <h2>Đổi mật khẩu</h2>
+                <p>Nhập mật khẩu cũ và mật khẩu mới để thay đổi mật khẩu đăng nhập.</p>
+            </div>
+
+            <EditForm Model="PersonalPasswordModel" OnValidSubmit="UpdatePersonalPasswordAsync" FormName="personal-password-form">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="portal-alert portal-alert-error" />
+
+                <div class="field-grid">
+                    <div class="field-card">
+                        <label class="portal-label" for="PersonalCurrentPassword">Mật khẩu cũ</label>
+                        <InputText id="PersonalCurrentPassword" type="password" class="portal-input" @bind-Value="PersonalPasswordModel.CurrentPassword" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="PersonalNewPassword">Mật khẩu mới</label>
+                        <InputText id="PersonalNewPassword" type="password" class="portal-input" @bind-Value="PersonalPasswordModel.NewPassword" />
+                    </div>
+
+                    <div class="field-card">
+                        <label class="portal-label" for="PersonalConfirmNewPassword">Nhập lại mật khẩu mới</label>
+                        <InputText id="PersonalConfirmNewPassword" type="password" class="portal-input" @bind-Value="PersonalPasswordModel.ConfirmNewPassword" />
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 12px;">
+                    <button type="submit" class="portal-secondary-action portal-password-action" disabled="@IsChangingPersonalPassword">
+                        @(IsChangingPersonalPassword ? "Đang đổi mật khẩu..." : "Đổi mật khẩu")
                     </button>
                 </div>
             </EditForm>
@@ -406,6 +459,7 @@
 @code {
     private readonly UserCompanyFormModel FormModel = new();
     private readonly PersonalProfileFormModel PersonalProfileModel = new();
+    private readonly PersonalPasswordFormModel PersonalPasswordModel = new();
     private readonly EnterpriseProfileFormModel EnterpriseProfileModel = new();
     private readonly List<LegacyCompanyProfile> Companies = new();
     private LegacyCompanyProfile? CurrentCompany;
@@ -416,6 +470,8 @@
     private string AccountEmail = string.Empty;
     private bool IsLoading = true;
     private bool IsSubmitting;
+    private bool IsChangingPersonalPassword;
+    private bool IsChangingEnterprisePassword;
     private bool IsCreateCompanyExpanded;
     private bool IsCompanyEditPopupOpen;
     private bool IsCompanySaving;
@@ -483,6 +539,13 @@
                 EnterpriseProfileModel.RepresentativeTitle = CurrentCompany.ChucVu ?? string.Empty;
                 EnterpriseProfileModel.BillingEmail = CurrentCompany.EmailXuatHoaDon ?? string.Empty;
             }
+
+            EnterpriseProfileModel.CurrentPassword = string.Empty;
+            EnterpriseProfileModel.NewPassword = string.Empty;
+            EnterpriseProfileModel.ConfirmNewPassword = string.Empty;
+            PersonalPasswordModel.CurrentPassword = string.Empty;
+            PersonalPasswordModel.NewPassword = string.Empty;
+            PersonalPasswordModel.ConfirmNewPassword = string.Empty;
         }
         catch (Exception ex)
         {
@@ -494,37 +557,13 @@
         }
     }
 
-    private async Task UpdatePersonalProfileAsync()
+    private async Task UpdatePersonalInfoAsync()
     {
         if (string.IsNullOrWhiteSpace(AccountId))
         {
             FeedbackMessage = "Không xác định được tài khoản hiện tại.";
             FeedbackIsError = true;
             return;
-        }
-
-        var hasAnyPasswordInput =
-            !string.IsNullOrWhiteSpace(PersonalProfileModel.CurrentPassword)
-            || !string.IsNullOrWhiteSpace(PersonalProfileModel.NewPassword)
-            || !string.IsNullOrWhiteSpace(PersonalProfileModel.ConfirmNewPassword);
-
-        if (hasAnyPasswordInput)
-        {
-            if (string.IsNullOrWhiteSpace(PersonalProfileModel.CurrentPassword)
-                || string.IsNullOrWhiteSpace(PersonalProfileModel.NewPassword)
-                || string.IsNullOrWhiteSpace(PersonalProfileModel.ConfirmNewPassword))
-            {
-                FeedbackMessage = "Vui lòng nhập đủ mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới.";
-                FeedbackIsError = true;
-                return;
-            }
-
-            if (!string.Equals(PersonalProfileModel.NewPassword, PersonalProfileModel.ConfirmNewPassword, StringComparison.Ordinal))
-            {
-                FeedbackMessage = "Mật khẩu mới và xác nhận mật khẩu mới không khớp.";
-                FeedbackIsError = true;
-                return;
-            }
         }
 
         IsSubmitting = true;
@@ -540,30 +579,8 @@
                 AccountEmail
             );
 
-            if (hasAnyPasswordInput)
-            {
-                if (string.IsNullOrWhiteSpace(AccountEmail))
-                {
-                    FeedbackMessage = "Không xác định được email tài khoản để đổi mật khẩu.";
-                    FeedbackIsError = true;
-                    return;
-                }
-
-                await LegacyCustomerPortalService.ChangePasswordAsync(
-                    AccountEmail,
-                    PersonalProfileModel.CurrentPassword,
-                    PersonalProfileModel.NewPassword,
-                    PersonalProfileModel.ConfirmNewPassword);
-            }
-
-            FeedbackMessage = hasAnyPasswordInput
-                ? "Đã cập nhật thông tin cá nhân và đổi mật khẩu thành công."
-                : "Đã cập nhật thông tin cá nhân thành công.";
+            FeedbackMessage = "Đã cập nhật thông tin cá nhân thành công.";
             FeedbackIsError = false;
-
-            PersonalProfileModel.CurrentPassword = string.Empty;
-            PersonalProfileModel.NewPassword = string.Empty;
-            PersonalProfileModel.ConfirmNewPassword = string.Empty;
 
             await LoadAsync();
         }
@@ -575,6 +592,60 @@
         finally
         {
             IsSubmitting = false;
+        }
+    }
+
+    private async Task UpdatePersonalPasswordAsync()
+    {
+        if (string.IsNullOrWhiteSpace(AccountEmail))
+        {
+            FeedbackMessage = "Không xác định được email tài khoản để đổi mật khẩu.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(PersonalPasswordModel.CurrentPassword)
+            || string.IsNullOrWhiteSpace(PersonalPasswordModel.NewPassword)
+            || string.IsNullOrWhiteSpace(PersonalPasswordModel.ConfirmNewPassword))
+        {
+            FeedbackMessage = "Vui lòng nhập đủ mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        if (!string.Equals(PersonalPasswordModel.NewPassword, PersonalPasswordModel.ConfirmNewPassword, StringComparison.Ordinal))
+        {
+            FeedbackMessage = "Mật khẩu mới và xác nhận mật khẩu mới không khớp.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        IsChangingPersonalPassword = true;
+        FeedbackMessage = null;
+
+        try
+        {
+            await LegacyCustomerPortalService.ChangePasswordAsync(
+                AccountEmail,
+                PersonalPasswordModel.CurrentPassword,
+                PersonalPasswordModel.NewPassword,
+                PersonalPasswordModel.ConfirmNewPassword);
+
+            FeedbackMessage = "Đã đổi mật khẩu cá nhân thành công.";
+            FeedbackIsError = false;
+
+            PersonalPasswordModel.CurrentPassword = string.Empty;
+            PersonalPasswordModel.NewPassword = string.Empty;
+            PersonalPasswordModel.ConfirmNewPassword = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsChangingPersonalPassword = false;
         }
     }
 
@@ -645,6 +716,26 @@
 
         try
         {
+            if (CurrentCompany is not null)
+            {
+                var syncResult = await OnlineOrderService.UpsertDanhMucKhachHangAsync(
+                    EnterpriseProfileModel.TaxCode,
+                    EnterpriseProfileModel.CompanyName,
+                    EnterpriseProfileModel.CompanyAddress,
+                    EnterpriseProfileModel.TaxCode,
+                    EnterpriseProfileModel.AuthorizedRepresentative,
+                    EnterpriseProfileModel.RepresentativeTitle,
+                    EnterpriseProfileModel.BillingEmail,
+                    EnterpriseProfileModel.CompanyPhone,
+                    string.Empty,
+                    true);
+
+                if (!syncResult.Success)
+                {
+                    throw new InvalidOperationException(syncResult.Message);
+                }
+            }
+
             await LegacyCustomerPortalService.UpdateEnterpriseProfileAsync(
                 AccountId,
                 EnterpriseProfileModel.CompanyName,
@@ -674,6 +765,61 @@
             IsSubmitting = false;
         }
     }
+
+    private async Task UpdateEnterprisePasswordAsync()
+    {
+        if (string.IsNullOrWhiteSpace(AccountEmail))
+        {
+            FeedbackMessage = "Không xác định được email tài khoản để đổi mật khẩu.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(EnterpriseProfileModel.CurrentPassword)
+            || string.IsNullOrWhiteSpace(EnterpriseProfileModel.NewPassword)
+            || string.IsNullOrWhiteSpace(EnterpriseProfileModel.ConfirmNewPassword))
+        {
+            FeedbackMessage = "Vui lòng nhập đủ mật khẩu cũ, mật khẩu mới và xác nhận mật khẩu mới.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        if (!string.Equals(EnterpriseProfileModel.NewPassword, EnterpriseProfileModel.ConfirmNewPassword, StringComparison.Ordinal))
+        {
+            FeedbackMessage = "Mật khẩu mới và xác nhận mật khẩu mới không khớp.";
+            FeedbackIsError = true;
+            return;
+        }
+
+        IsChangingEnterprisePassword = true;
+        FeedbackMessage = null;
+
+        try
+        {
+            await LegacyCustomerPortalService.ChangePasswordAsync(
+                AccountEmail,
+                EnterpriseProfileModel.CurrentPassword,
+                EnterpriseProfileModel.NewPassword,
+                EnterpriseProfileModel.ConfirmNewPassword);
+
+            FeedbackMessage = "Đã đổi mật khẩu doanh nghiệp thành công.";
+            FeedbackIsError = false;
+
+            EnterpriseProfileModel.CurrentPassword = string.Empty;
+            EnterpriseProfileModel.NewPassword = string.Empty;
+            EnterpriseProfileModel.ConfirmNewPassword = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsChangingEnterprisePassword = false;
+        }
+    }
+
     private async Task CreateCompanyAsync()
     {
         if (string.IsNullOrWhiteSpace(AccountId))
@@ -756,7 +902,12 @@
 
         [EmailAddress(ErrorMessage = "Email xuất hóa đơn không đúng định dạng.")]
         public string BillingEmail { get; set; } = string.Empty;
+
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmNewPassword { get; set; } = string.Empty;
     }
+
     private sealed class PersonalProfileFormModel
     {
         [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
@@ -767,14 +918,20 @@
 
         [EmailAddress(ErrorMessage = "Email xuất hóa đơn không đúng định dạng.")]
         public string BillingEmail { get; set; } = string.Empty;
+    }
 
-        //[EmailAddress(ErrorMessage = "Email cá nhân không đúng định dạng.")]
-        //public string Email { get; set; } = string.Empty;
-
+    private sealed class PersonalPasswordFormModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu cũ.")]
         public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
         public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu mới.")]
         public string ConfirmNewPassword { get; set; } = string.Empty;
     }
+
     private static string DisplayValue(string? value)
         => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
 

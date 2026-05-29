@@ -1940,12 +1940,22 @@ public sealed class OnlineOrderService
             soBienNhan,
             "BienNhanThanhToan");
 
-    public Task<PdfDownloadResult> DownloadHoaDonDienTuHangNhapKhauTempPdfAsync(string fKey)
-        => DownloadTempPdfAsync(
-            "/api/ctLenhXuatKhoHangNhapKhauTemp/TaiPDFHDDTAsync",
-            "FKey",
-            fKey,
-            "HoaDonDienTu");
+    public async Task<PdfDownloadResult> DownloadHoaDonDienTuHangNhapKhauTempPdfAsync(string fKey)
+    {
+        try
+        {
+            return await DownloadTempPdfAsync(
+                "/api/ctLenhXuatKhoHangNhapKhauTemp/TaiPDFHDDTAsync",
+                "FKey",
+                fKey,
+                "HoaDonDienTu");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DownloadHoaDonDienTu] {ex}");
+            throw new InvalidOperationException("Không thể tải hoá đơn điện tử từ dịch vụ.", ex);
+        }
+    }
 
     private async Task<PdfDownloadResult> DownloadTempPdfAsync(string relativePath, string queryName, string so, string filePrefix)
     {
@@ -1955,8 +1965,20 @@ public sealed class OnlineOrderService
         }
 
         var url = $"{BuildWorkflowUrl(relativePath)}?{queryName}={Uri.EscapeDataString(so.Trim())}";
+        Console.WriteLine($"[DownloadTempPdf] GET {url}");
         using var response = await _httpClient.GetAsync(url);
-        response.EnsureSuccessStatusCode();
+        var responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"[DownloadTempPdf] Response={(int)response.StatusCode} {response.ReasonPhrase}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var detail = string.IsNullOrWhiteSpace(responseBody)
+                ? string.Empty
+                : $" Body={responseBody}";
+
+            throw new HttpRequestException(
+                $"Không thể tải {filePrefix} từ endpoint PDF. HTTP {(int)response.StatusCode} ({response.ReasonPhrase}).{detail}");
+        }
 
         var content = await response.Content.ReadAsByteArrayAsync();
         var fileName = ExtractFileName(response) ?? $"{filePrefix}-{so.Trim()}.pdf";

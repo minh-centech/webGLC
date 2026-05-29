@@ -160,7 +160,7 @@ window.paymentQr = (function () {
 
   function downloadFile(fileName, contentType, base64Content) {
     if (!base64Content) {
-      return;
+      return false;
     }
 
     const binary = atob(String(base64Content));
@@ -179,6 +179,7 @@ window.paymentQr = (function () {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+    return true;
   }
 
   function hideReceiptPaymentPopup(notifyBlazor = false, dotNetRef = null) {

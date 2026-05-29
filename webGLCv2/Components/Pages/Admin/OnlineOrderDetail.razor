@@ -1,4 +1,4 @@
-@page "/admin/orders/{OrderId:long}"
+﻿@page "/admin/orders/{OrderId:long}"
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @inject OnlineOrderService OnlineOrderService
@@ -19,6 +19,14 @@
         </div>
         <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/admin/orders"))">Quay lại danh sách</button>
     </header>
+
+    @if (!string.IsNullOrWhiteSpace(DownloadToastMessage))
+    {
+        <div class="@GetDownloadToastClass()">
+            <span class="portal-toast-icon">@GetDownloadToastIcon()</span>
+            <span class="portal-toast-message">@DownloadToastMessage</span>
+        </div>
+    }
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
@@ -810,8 +818,13 @@
     private static string GetReceiptDownloadButtonStyle(string? receiptNo)
         => "padding:0.55rem 0.85rem; background:#d97706; border-color:#d97706; color:#fff;";
 
-    private static string GetReceiptElectronicInvoiceButtonStyle(string? fKey)
-        => "padding:0.55rem 0.85rem; background:#1d4ed8; border-color:#1d4ed8; color:#fff;";
+    private string GetReceiptElectronicInvoiceButtonStyle(string? fKey)
+    {
+        var active = IsReceiptActionActive(fKey, "invoice");
+        return active
+            ? "padding:0.55rem 0.85rem; background:#1d4ed8; border-color:#1d4ed8; color:#fff; opacity:0.82;"
+            : "padding:0.55rem 0.85rem; background:#1d4ed8; border-color:#1d4ed8; color:#fff;";
+    }
 
     private bool CanDownloadElectronicInvoice(BienNhanThanhToanHangNhapKhauTempListItem? item)
         => item?.DaThanhToan == true && !string.IsNullOrWhiteSpace(item.FKey);
@@ -889,19 +902,124 @@
             return;
         }
 
-        var file = await OnlineOrderService.DownloadHoaDonDienTuHangNhapKhauTempPdfAsync(item.FKey);
-        await DownloadPdfToBrowserAsync(file);
+        SetActiveReceiptAction(item.FKey, "invoice");
+        try
+        {
+            var file = await OnlineOrderService.DownloadHoaDonDienTuHangNhapKhauTempPdfAsync(item.FKey);
+            await DownloadPdfToBrowserAsync(file);
+        }
+                catch (Exception ex)
+        {
+            Console.WriteLine($"[DownloadHoaDonDienTu][Admin] {ex}");
+            await ShowDownloadToastAsync("Không thể tải hoá đơn điện tử từ dịch vụ.", true);
+        }
+        finally
+        {
+            _ = ClearActiveReceiptActionAfterDelayAsync(item.FKey, "invoice", 1200);
+        }
     }
 
     private async Task DownloadPdfToBrowserAsync(PdfDownloadResult file)
     {
         if (file.Content.Length == 0)
         {
+            await ShowDownloadToastAsync("Không thể tạo file PDF để tải xuống.", true);
             return;
         }
 
-        var base64 = Convert.ToBase64String(file.Content);
-        await JSRuntime.InvokeVoidAsync("downloadBase64File", base64, file.ContentType, file.FileName);
+        var started = await JSRuntime.InvokeAsync<bool>(
+            "paymentQr.downloadFile",
+            file.FileName,
+            file.ContentType,
+            Convert.ToBase64String(file.Content));
+
+        await ShowDownloadToastAsync(
+            started ? "Đã bắt đầu tải PDF." : "Không thể tạo file PDF để tải xuống.",
+            !started);
+    }
+
+    private async Task ShowDownloadToastAsync(string message, bool isError)
+    {
+        DownloadToastMessage = message;
+        DownloadToastIsError = isError;
+        _ = InvokeAsync(StateHasChanged);
+        if (DownloadToastCts is not null)
+        {
+            try
+            {
+                DownloadToastCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+
+            DownloadToastCts.Dispose();
+            DownloadToastCts = null;
+        }
+
+        DownloadToastCts = new CancellationTokenSource();
+        var token = DownloadToastCts.Token;
+
+        try
+        {
+            await Task.Delay(2400, token);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            DownloadToastMessage = null;
+            DownloadToastCts.Dispose();
+            DownloadToastCts = null;
+            _ = InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private string? DownloadToastMessage;
+    private bool DownloadToastIsError;
+    private CancellationTokenSource? DownloadToastCts;
+
+    private string GetDownloadToastClass()
+        => DownloadToastIsError ? "portal-toast portal-toast-error" : "portal-toast portal-toast-success";
+
+    private string GetDownloadToastIcon()
+        => DownloadToastIsError ? "!" : "✓";
+
+    private bool IsReceiptActionActive(string? receiptNo, string kind)
+        => !string.IsNullOrWhiteSpace(receiptNo)
+           && string.Equals(ActiveReceiptActionSo, receiptNo, StringComparison.Ordinal)
+           && string.Equals(ActiveReceiptActionKind, kind, StringComparison.Ordinal);
+
+    private void SetActiveReceiptAction(string receiptNo, string kind)
+    {
+        ActiveReceiptActionSo = receiptNo;
+        ActiveReceiptActionKind = kind;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearActiveReceiptActionAfterDelayAsync(string receiptNo, string kind, int delayMs)
+    {
+        try
+        {
+            await Task.Delay(delayMs);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (!string.Equals(ActiveReceiptActionSo, receiptNo, StringComparison.Ordinal) ||
+            !string.Equals(ActiveReceiptActionKind, kind, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        ActiveReceiptActionSo = null;
+        ActiveReceiptActionKind = null;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private async Task UpdateReceiptPollingStateAsync()

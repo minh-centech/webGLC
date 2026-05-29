@@ -23,6 +23,14 @@
         <button class="portal-secondary-action no-print" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lại danh sách</button>
     </header>
 
+    @if (!string.IsNullOrWhiteSpace(DownloadToastMessage))
+    {
+        <div class="@GetDownloadToastClass()">
+            <span class="portal-toast-icon">@GetDownloadToastIcon()</span>
+            <span class="portal-toast-message">@DownloadToastMessage</span>
+        </div>
+    }
+
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
         <div class="portal-alert portal-alert-error">@ErrorMessage</div>
@@ -1418,6 +1426,9 @@
     private string? StorageActionPopupMessage;
     private bool CanShowPaymentQrButton = true;
     private bool ShowLenhXuatPdfWarningDialog;
+    private string? DownloadToastMessage;
+    private bool DownloadToastIsError;
+    private CancellationTokenSource? DownloadToastCts;
 
     private enum StorageActionPopupMode
     {
@@ -2511,7 +2522,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[DownloadHoaDonDienTu] {ex.Message}");
+            Console.WriteLine($"[DownloadHoaDonDienTu][User] {ex}");
+            await ShowDownloadToastAsync("Không thể tải hoá đơn điện tử từ dịch vụ.", true);
         }
         finally
         {
@@ -2523,15 +2535,66 @@
     {
         if (file.Content.Length == 0)
         {
+            await ShowDownloadToastAsync("Không thể tạo file PDF để tải xuống.", true);
             return;
         }
 
-        await JSRuntime.InvokeVoidAsync(
+        var started = await JSRuntime.InvokeAsync<bool>(
             "paymentQr.downloadFile",
             file.FileName,
             file.ContentType,
             Convert.ToBase64String(file.Content));
+
+        await ShowDownloadToastAsync(
+            started ? "Đã bắt đầu tải PDF." : "Không thể tạo file PDF để tải xuống.",
+            !started);
     }
+
+    private async Task ShowDownloadToastAsync(string message, bool isError)
+    {
+        DownloadToastMessage = message;
+        DownloadToastIsError = isError;
+        _ = InvokeAsync(StateHasChanged);
+        if (DownloadToastCts is not null)
+        {
+            try
+            {
+                DownloadToastCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+
+            DownloadToastCts.Dispose();
+            DownloadToastCts = null;
+        }
+
+        DownloadToastCts = new CancellationTokenSource();
+        var token = DownloadToastCts.Token;
+
+        try
+        {
+            await Task.Delay(2400, token);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            DownloadToastMessage = null;
+            DownloadToastCts.Dispose();
+            DownloadToastCts = null;
+            _ = InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private string GetDownloadToastClass()
+        => DownloadToastIsError ? "portal-toast portal-toast-error" : "portal-toast portal-toast-success";
+
+    private string GetDownloadToastIcon()
+        => DownloadToastIsError ? "!" : "OK";
 
     private string GetReceiptPaymentButtonStyle(string? receiptNo)
     {

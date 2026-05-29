@@ -1978,6 +1978,18 @@ select {
     overflow: hidden;
 }
 
+.upload-inline-replace-label {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.upload-inline-replace-label:hover {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-color: #f87171;
+    color: #991b1b;
+}
+
 .upload-inline-label .admin-upload-input {
     position: absolute;
     inset: 0;

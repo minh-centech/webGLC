@@ -159,17 +159,23 @@
                             @if (file.HasFile)
                             {
                                 <a class="portal-primary-action docs-open-btn" href="@file.ViewUrl" target="_blank" rel="noopener">Xem PDF</a>
+                                <label class="portal-secondary-action upload-inline-label upload-inline-replace-label">
+                                    Thay thế tài liệu
+                                    <InputFile class="admin-upload-input"
+                                               OnChange="@(args => UploadDocumentAsync(file, args, true))"
+                                               accept=".pdf,application/pdf" />
+                                </label>
                             }
                             else
                             {
                                 <label class="portal-secondary-action upload-inline-label">
                                     Tải tài liệu bổ sung
                                     <InputFile class="admin-upload-input"
-                                               OnChange="@(args => UploadMissingDocumentAsync(file, args))"
+                                               OnChange="@(args => UploadDocumentAsync(file, args, false))"
                                                accept=".pdf,application/pdf" />
                                 </label>
-                                <span class="upload-status admin-upload-status">@GetUploadStatus(file)</span>
                             }
+                            <span class="upload-status admin-upload-status">@GetUploadStatus(file)</span>
                         </div>
                     </article>
                 }
@@ -248,7 +254,7 @@
     private static string DisplayValue(string value)
         => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
 
-    private async Task UploadMissingDocumentAsync(DocumentFileItem document, InputFileChangeEventArgs args)
+    private async Task UploadDocumentAsync(DocumentFileItem document, InputFileChangeEventArgs args, bool isReplace)
     {
         if (Details is null)
         {
@@ -266,7 +272,9 @@
         }
 
         IsSubmitting = true;
-        UploadStatuses[document.FieldKey] = "Đang tải và cập nhật...";
+        UploadStatuses[document.FieldKey] = isReplace
+            ? "Đang thay thế tài liệu..."
+            : "Đang tải và cập nhật...";
 
         try
         {
@@ -287,8 +295,12 @@
                     uploadResult.RelativePath);
             }
 
-            UploadStatuses[document.FieldKey] = "Đã bổ sung tài liệu thành công.";
-            FeedbackMessage = $"Đã bổ sung tài liệu: {document.Name}.";
+            UploadStatuses[document.FieldKey] = isReplace
+                ? "Đã thay thế tài liệu thành công."
+                : "Đã bổ sung tài liệu thành công.";
+            FeedbackMessage = isReplace
+                ? $"Đã thay thế tài liệu: {document.Name}."
+                : $"Đã bổ sung tài liệu: {document.Name}.";
             FeedbackIsError = false;
             await LoadAsync();
         }

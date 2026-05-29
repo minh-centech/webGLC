@@ -5,6 +5,8 @@ public sealed class OnlineOrderRecord
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public long UserId { get; set; }
     public long CreatorUserId { get; set; }
+    public string CreatorEmail { get; set; } = string.Empty;
+    public string CreatorName { get; set; } = string.Empty;
     public string UserEmail { get; set; } = string.Empty;
     public long SequenceNumber { get; set; }
     public string OrderCode { get; set; } = string.Empty;

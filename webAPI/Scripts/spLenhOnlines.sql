@@ -45,6 +45,8 @@ begin
 			lo.SoToKhai,
 			lo.TrangThai,
 			lo.IDDanhMucKhachHangDoiLenh,
+			kh.Email as EmailNguoiTao,
+			kh.Ten as TenNguoiTao,
 			lo.IDctLenhNhapKhoHangNhapKhauChiTiet,
 			ct.ID as ChiTietId,
 			ct.TrangThaiThanhToan,
@@ -57,6 +59,7 @@ begin
 			lo.CreateDate,
 			lo.EditDate
 		from tblLenhOnlines lo
+		left join DanhMucKhachHangDoiLenh kh on kh.ID = lo.IDDanhMucKhachHangDoiLenh
 		left join tblLenhOnlineChiTiet ct on ct.IDLenhOnline = lo.ID
 		where
 			(@ID is null or lo.ID = @ID)
@@ -85,6 +88,8 @@ begin
 		SoToKhai,
 		TrangThai,
 		IDDanhMucKhachHangDoiLenh,
+		EmailNguoiTao,
+		TenNguoiTao,
 		IDctLenhNhapKhoHangNhapKhauChiTiet,
 		ChiTietId,
 		TrangThaiThanhToan,

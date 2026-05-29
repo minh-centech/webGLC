@@ -102,7 +102,11 @@
                                 <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>@(order.PickupDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td>@order.HouseBill</td>
-                                <td>@order.CustomerName</td>
+                                <td>
+                                    <div class="cell-title">@order.CustomerName</div>
+                                    <div class="cell-subtitle">Tạo bởi: @order.CreatorName</div>
+                                    <div class="cell-subtitle">@order.CreatorEmail</div>
+                                </td>
                                 <td>
                                     <div class="cell-title">@order.TaxCode</div>
                                     <div class="cell-subtitle">@order.CompanyName</div>

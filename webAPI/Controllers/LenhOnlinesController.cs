@@ -58,6 +58,8 @@ namespace webAPI.Controllers
                         SoToKhai = coreCommon.coreCommon.stringParse(dataRow["SoToKhai"]),
                         TrangThai = coreCommon.coreCommon.intParse(dataRow["TrangThai"]),
                         IDDanhMucKhachHangDoiLenh = coreCommon.coreCommon.longParse(dataRow["IDDanhMucKhachHangDoiLenh"]),
+                        EmailNguoiTao = dataRow.Table.Columns.Contains("EmailNguoiTao") ? coreCommon.coreCommon.stringParse(dataRow["EmailNguoiTao"]) : string.Empty,
+                        TenNguoiTao = dataRow.Table.Columns.Contains("TenNguoiTao") ? coreCommon.coreCommon.stringParse(dataRow["TenNguoiTao"]) : string.Empty,
                         ChiTietId = dataRow["ChiTietId"] == DBNull.Value ? null : dataRow["ChiTietId"],
                         TrangThaiThanhToan = dataRow["TrangThaiThanhToan"] == DBNull.Value ? null : dataRow["TrangThaiThanhToan"],
                         IsHoanThanh = dataRow["IsHoanThanh"] == DBNull.Value ? null : dataRow["IsHoanThanh"],

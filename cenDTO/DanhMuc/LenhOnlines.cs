@@ -18,10 +18,12 @@ namespace cenDTO
         public object NgayLamLenh { get; set; }
         public object SoCont { get; set; }
         public object NgayLayHang { get; set; }
-        public object SoToKhai { get; set; }
-        public object TrangThai { get; set; }
-        public object IDDanhMucKhachHangDoiLenh { get; set; }
-        public object ChiTietId { get; set; }
+		public object SoToKhai { get; set; }
+		public object TrangThai { get; set; }
+		public object IDDanhMucKhachHangDoiLenh { get; set; }
+		public object EmailNguoiTao { get; set; }
+		public object TenNguoiTao { get; set; }
+		public object ChiTietId { get; set; }
         public object TrangThaiThanhToan { get; set; }
         public object IsHoanThanh { get; set; }
         public object LinkTaiHoaDon { get; set; }

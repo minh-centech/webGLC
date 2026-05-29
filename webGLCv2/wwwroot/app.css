@@ -83,35 +83,46 @@ select {
     margin-top: 4px;
 }
 
-.portal-toast {
+.new-order-toast-overlay {
     position: fixed;
-    top: 88px;
-    right: 24px;
-    z-index: 1100;
-    display: flex;
-    align-items: flex-start;
+    inset: 0;
+    z-index: 4000;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.new-order-toast-card {
     gap: 12px;
-    width: min(420px, calc(100vw - 32px));
-    padding: 12px 14px;
+    width: min(560px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    padding: 16px 18px;
     border-radius: 16px;
     border: 1px solid transparent;
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
     backdrop-filter: blur(14px);
+    overflow: auto;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
 }
 
-.portal-toast-success {
+.new-order-toast-success {
     background: rgba(236, 253, 245, 0.98);
     border-color: rgba(52, 211, 153, 0.28);
     color: #0f5132;
 }
 
-.portal-toast-error {
+.new-order-toast-error {
     background: rgba(254, 242, 242, 0.98);
     border-color: rgba(248, 113, 113, 0.28);
     color: #7f1d1d;
 }
 
-.portal-toast-icon {
+.new-order-toast-icon {
     flex: 0 0 28px;
     width: 28px;
     height: 28px;
@@ -123,26 +134,49 @@ select {
     line-height: 1;
 }
 
-.portal-toast-success .portal-toast-icon {
+.new-order-toast-success .new-order-toast-icon {
     background: rgba(16, 185, 129, 0.16);
     color: #047857;
 }
 
-.portal-toast-error .portal-toast-icon {
+.new-order-toast-error .new-order-toast-icon {
     background: rgba(239, 68, 68, 0.14);
     color: #b91c1c;
 }
 
-.portal-toast-body {
+.new-order-toast-body {
     flex: 1 1 auto;
+    min-width: 0;
     line-height: 1.45;
     font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.new-order-toast-close {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.new-order-toast-close:hover {
+    background: rgba(255, 255, 255, 0.16);
 }
 
 @media (max-width: 640px) {
-    .portal-toast {
-        top: 72px;
-        right: 16px;
+    .new-order-toast-overlay {
+        padding: 12px;
+    }
+
+    .new-order-toast-card {
+        width: min(560px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
     }
 }
 

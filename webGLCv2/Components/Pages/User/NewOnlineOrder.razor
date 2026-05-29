@@ -24,11 +24,14 @@
 
     @if (!string.IsNullOrWhiteSpace(InfoMessage))
     {
-        <div class="portal-toast @(InfoIsError ? "portal-toast-error" : "portal-toast-success")"
-             role="@(InfoIsError ? "alert" : "status")"
-             aria-live="@(InfoIsError ? "assertive" : "polite")">
-            <div class="portal-toast-icon" aria-hidden="true">@(InfoIsError ? "!" : "✓")</div>
-            <div class="portal-toast-body">@InfoMessage</div>
+        <div class="new-order-toast-overlay">
+            <div class="new-order-toast-card @(InfoIsError ? "new-order-toast-error" : "new-order-toast-success")"
+                 role="@(InfoIsError ? "alert" : "status")"
+                 aria-live="@(InfoIsError ? "assertive" : "polite")">
+                <div class="new-order-toast-icon" aria-hidden="true">@(InfoIsError ? "!" : "✓")</div>
+                <div class="new-order-toast-body">@InfoMessage</div>
+                <button type="button" class="new-order-toast-close" @onclick="DismissInfoMessage" aria-label="Đóng thông báo">Đóng</button>
+            </div>
         </div>
     }
 
@@ -200,6 +203,7 @@
     private string SelectedTaxCode { get; set; } = string.Empty;
     private string? InfoMessage { get; set; }
     private bool InfoIsError { get; set; }
+    private CancellationTokenSource? InfoToastAutoHideCts { get; set; }
     private string PickupDateText { get; set; } = string.Empty;
     [SupplyParameterFromQuery(Name = "houseBill")]
     private string? HouseBillFromQuery { get; set; }
@@ -212,6 +216,7 @@
     [SupplyParameterFromQuery(Name = "idCtLenhNhapKhoHangNhapKhauChiTiet")]
     private string? IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery { get; set; }
     private bool AppliedQueryDefaults { get; set; }
+    private bool HouseBillQueryChecked { get; set; }
     private bool IsTaxLookupPopupOpen { get; set; }
     private bool TaxLookupIsBusy { get; set; }
     private bool TaxLookupIsError { get; set; }
@@ -237,12 +242,15 @@
 
     protected override Task OnParametersSetAsync()
     {
-        if (AppliedQueryDefaults)
+        if (!AppliedQueryDefaults)
         {
-            return Task.CompletedTask;
+            ApplyQueryDefaultsToDraft(markApplied: true);
         }
 
-        ApplyQueryDefaultsToDraft(markApplied: true);
+        if (!HouseBillQueryChecked && !string.IsNullOrWhiteSpace(HouseBillFromQuery))
+        {
+            return CheckHouseBillFromQueryAsync();
+        }
 
         return Task.CompletedTask;
     }
@@ -261,8 +269,7 @@
     {
         if (CurrentUserId <= 0)
         {
-            InfoMessage = "Khong xac dinh duoc tai khoan dang nhap.";
-            InfoIsError = true;
+            ShowErrorInfoMessage("Khong xac dinh duoc tai khoan dang nhap.");
             return;
         }
 
@@ -271,8 +278,7 @@
 
         if (Draft.PickupDate.HasValue && Draft.PickupDate.Value.Date < DateTime.Today)
         {
-            InfoMessage = "Ngay lay hang phai tu ngay hien tai tro di.";
-            InfoIsError = true;
+            ShowErrorInfoMessage("Ngay lay hang phai tu ngay hien tai tro di.");
             return;
         }
 
@@ -285,8 +291,7 @@
 
         if (!Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.HasValue || Draft.IDctLenhNhapKhoHangNhapKhauChiTiet.Value <= 0)
         {
-            InfoMessage = "Khong tim thay IDctLenhNhapKhoHangNhapKhauChiTiet de luu lenh.";
-            InfoIsError = true;
+            ShowErrorInfoMessage("Khong tim thay IDctLenhNhapKhoHangNhapKhauChiTiet de luu lenh.");
             return;
         }
 
@@ -314,22 +319,22 @@
         }
         catch (Exception ex)
         {
-            InfoMessage = ex.Message;
-            InfoIsError = true;
+            ShowErrorInfoMessage(ex.Message);
         }
     }
 
     private async Task LookupCompanyAsync()
     {
         var result = await OnlineOrderService.LookupCompanyAsync(Draft.TaxCode, CurrentUserEmail);
-        InfoMessage = result.Message;
-        InfoIsError = !result.Success;
-
         if (result.Success)
         {
+            ShowSuccessInfoMessage(result.Message);
             Draft.CompanyName = result.CompanyName;
             Draft.CompanyAddress = result.CompanyAddress;
+            return;
         }
+
+        ShowErrorInfoMessage(result.Message);
     }
 
     private async Task OpenTaxLookupPopup()
@@ -462,8 +467,7 @@
     {
         await ApplyTaxLookupResultToDraftAsync();
         await CloseTaxLookupPopup();
-        InfoMessage = "Đã tự động điền thông tin doanh nghiệp từ MST. Vui lòng kiểm tra các thông tin trước khi lưu lệnh";
-        InfoIsError = false;
+        ShowSuccessInfoMessage("Đã tự động điền thông tin doanh nghiệp từ MST. Vui lòng kiểm tra các thông tin trước khi lưu lệnh");
         await InvokeAsync(StateHasChanged);
     }
 
@@ -580,8 +584,7 @@
     private async Task OnTaxCodeSelectionChanged(ChangeEventArgs args)
     {
         SelectedTaxCode = args.Value?.ToString() ?? string.Empty;
-        InfoMessage = null;
-        InfoIsError = false;
+        ClearInfoMessage();
 
         if (string.IsNullOrWhiteSpace(SelectedTaxCode))
         {
@@ -643,8 +646,7 @@
         ApplyQueryDefaultsToDraft(markApplied: false);
         SelectedTaxCode = string.Empty;
         PickupDateText = string.Empty;
-        InfoMessage = null;
-        InfoIsError = false;
+        ClearInfoMessage();
         EnsureCompanyEmailFallback();
     }
 
@@ -733,6 +735,12 @@
         }
 
         ClearHouseBillValidationError();
+        ClearInfoMessage();
+    }
+
+    private void DismissInfoMessage()
+    {
+        ClearInfoMessage();
     }
 
     private void SetHouseBillValidationError(string message)
@@ -740,8 +748,7 @@
         ValidationMessages.Clear(HouseBillFieldIdentifier);
         ValidationMessages.Add(HouseBillFieldIdentifier, message);
         EditContext.NotifyValidationStateChanged();
-        InfoMessage = null;
-        InfoIsError = false;
+        ClearInfoMessage();
     }
 
     private void ClearHouseBillValidationError()
@@ -753,6 +760,123 @@
 
         ValidationMessages.Clear(HouseBillFieldIdentifier);
         EditContext.NotifyValidationStateChanged();
+    }
+
+    private async Task CheckHouseBillFromQueryAsync()
+    {
+        HouseBillQueryChecked = true;
+
+        var houseBill = HouseBillFromQuery?.Trim();
+        if (string.IsNullOrWhiteSpace(houseBill))
+        {
+            return;
+        }
+
+        try
+        {
+            var exists = await LegacyCustomerPortalService.HouseBillExistsAsync(houseBill);
+            if (!exists)
+            {
+                return;
+            }
+
+            var message = $"House Bill {houseBill} đã được sử dụng cho một lệnh khác. Vui lòng chọn kiểm tra hàng nhập và thử lại với House Bill khác.";
+            InfoMessage = message;
+            InfoIsError = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[NewOnlineOrder][HouseBillCheck] {ex}");
+            ShowErrorInfoMessage("Khong the kiem tra House Bill tu he thong.");
+        }
+    }
+
+    private void ShowSuccessInfoMessage(string message)
+    {
+        CancelInfoToastAutoHide();
+        InfoMessage = message;
+        InfoIsError = false;
+
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            ScheduleInfoToastAutoHide();
+        }
+    }
+
+    private void ShowErrorInfoMessage(string message)
+    {
+        CancelInfoToastAutoHide();
+        InfoMessage = message;
+        InfoIsError = true;
+    }
+
+    private void ClearInfoMessage()
+    {
+        CancelInfoToastAutoHide();
+        InfoMessage = null;
+        InfoIsError = false;
+    }
+
+    private void ScheduleInfoToastAutoHide()
+    {
+        CancelInfoToastAutoHide();
+
+        var cts = new CancellationTokenSource();
+        InfoToastAutoHideCts = cts;
+        _ = AutoHideInfoMessageAsync(cts);
+    }
+
+    private async Task AutoHideInfoMessageAsync(CancellationTokenSource cts)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2), cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (cts.IsCancellationRequested)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            if (!ReferenceEquals(InfoToastAutoHideCts, cts))
+            {
+                return;
+            }
+
+            InfoMessage = null;
+            InfoIsError = false;
+            InfoToastAutoHideCts = null;
+            cts.Dispose();
+            StateHasChanged();
+        });
+    }
+
+    private void CancelInfoToastAutoHide()
+    {
+        if (InfoToastAutoHideCts is null)
+        {
+            return;
+        }
+
+        try
+        {
+            InfoToastAutoHideCts.Cancel();
+        }
+        catch
+        {
+            // Ignore cancellation races during component updates.
+        }
+        finally
+        {
+            InfoToastAutoHideCts.Dispose();
+            InfoToastAutoHideCts = null;
+        }
     }
 
     private FieldIdentifier HouseBillFieldIdentifier

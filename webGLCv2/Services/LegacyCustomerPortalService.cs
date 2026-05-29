@@ -194,6 +194,12 @@ public sealed class LegacyCustomerPortalService
         };
     }
 
+    public async Task<bool> HouseBillExistsAsync(string houseBill)
+    {
+        var order = await FindOnlineOrderByHouseBillAsync(houseBill);
+        return order is not null;
+    }
+
     public async Task<AccountDocumentDetails> GetAccountDocumentsAsync(string id)
     {
         var envelope = await _httpClient.GetFromJsonAsync<ApiEnvelope>(

@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DanhMuc\ConfigHDDTBUS.cs" />
     <Compile Include="DanhMuc\DanhMucKhachHangDoiLenhBUS.cs" />
     <Compile Include="DanhMuc\LenhOnlineChiTietBUS.cs" />
     <Compile Include="DanhMuc\LenhOnlinesBUS.cs" />

@@ -138,6 +138,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Code\Commons.cs" />
     <Compile Include="Code\DocumentStorageHelper.cs" />
+    <Compile Include="Controllers\ConfigHDDTController.cs" />
     <Compile Include="Controllers\DanhMucKhachHangDoiLenhController.cs" />
     <Compile Include="Controllers\HealthCheckController.cs" />
     <Compile Include="Controllers\StatusController.cs" />

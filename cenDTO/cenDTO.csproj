@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DanhMuc\ConfigHDDT.cs" />
     <Compile Include="DanhMuc\DanhMucKhachHangDoiLenh.cs" />
     <Compile Include="DanhMuc\LenhOnlineChiTiet.cs" />
     <Compile Include="DanhMuc\LenhOnlines.cs" />

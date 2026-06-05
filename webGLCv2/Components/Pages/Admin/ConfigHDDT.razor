@@ -1,0 +1,395 @@
+@page "/admin/config-hddt"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Cấu hình hóa đơn điện tử</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Cấu hình hóa đơn điện tử</h1>
+            <p class="page-subtitle">Quản lý danh sách cấu hình HĐĐT: xem, thêm mới, sửa và xoá trực tiếp trên một màn hình duy nhất.</p>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button type="button" class="portal-secondary-action" @onclick="ReloadAsync">Tải lại</button>
+            <button type="button" class="portal-primary-action" @onclick="PrepareCreateAsync">Thêm mới</button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="portal-alert @(FeedbackIsError ? "portal-alert-error" : "portal-alert-success")">@FeedbackMessage</div>
+    }
+
+    <div class="stats-grid">
+        <article class="stat-card">
+            <span class="stat-label">Tổng cấu hình</span>
+            <strong>@FilteredItems.Count</strong>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Năm mới nhất</span>
+            <strong>@(FilteredItems.Count == 0 ? "-" : FilteredItems.Max(x => x.Nam ?? 0).ToString())</strong>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Đang chọn</span>
+            <strong>@(EditModel.ID.HasValue ? EditModel.ID.Value.ToString() : "Thêm mới")</strong>
+        </article>
+    </div>
+
+    <section class="workspace-card">
+        <div class="toolbar-row" style="margin-bottom:16px; align-items:center; justify-content:space-between; gap:12px;">
+            <div>
+                <h2 style="margin:0 0 4px;">Danh sách cấu hình</h2>
+                <p class="page-subtitle" style="margin:0;">Chọn một dòng để chỉnh sửa hoặc xoá ngay tại đây.</p>
+            </div>
+            <div class="toolbar-search" style="min-width:min(100%, 420px);">
+                <div class="input-action-row">
+                    <div class="input-action-field">
+                        <input class="portal-input"
+                               @bind="SearchTerm"
+                               @bind:event="oninput"
+                               placeholder="Tìm theo năm, URL, tài khoản, serial..." />
+                    </div>
+                    <button type="button" class="portal-secondary-action" @onclick="ApplySearchAsync">Lọc</button>
+                    <button type="button" class="portal-secondary-action" @onclick="ClearSearchAsync">Xóa</button>
+                </div>
+            </div>
+        </div>
+
+        @if (IsLoading)
+        {
+            <div class="portal-empty-state compact">
+                <div class="portal-empty-icon">...</div>
+                <h2>Đang tải cấu hình</h2>
+                <p>Hệ thống đang lấy dữ liệu từ API ConfigHDDT.</p>
+            </div>
+        }
+        else if (FilteredItems.Count == 0)
+        {
+            <div class="portal-empty-state compact">
+                <div class="portal-empty-icon">0</div>
+                <h2>Không có dữ liệu phù hợp</h2>
+                <p>Thử tìm kiếm khác hoặc thêm mới cấu hình HĐĐT.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-shell">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>Năm</th>
+                            <th>Thông tin đăng nhập</th>
+                            <th>Đơn vị / Đối tượng</th>
+                            <th>Thời gian</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in FilteredItems.OrderByDescending(x => x.Nam ?? 0).ThenByDescending(x => x.ID))
+                        {
+                            <tr class="@(EditModel.ID == item.ID ? "is-active-row" : string.Empty)">
+                                <td>
+                                    <div class="cell-title">@item.Nam</div>
+                                    <div class="cell-subtitle">ID: @item.ID</div>
+                                </td>
+                                <td>
+                                    <div class="cell-title">@item.Account</div>
+                                    <div class="cell-subtitle">@item.UserName</div>
+                                </td>
+                                <td>
+                                    <div class="cell-title">ĐV: @item.IDDanhMucDonVi</div>
+                                    <div class="cell-subtitle">ĐT: @item.IDDanhMucLoaiDoiTuong</div>
+                                </td>
+                                <td>
+                                    <div class="cell-title">Tạo: @FormatDate(item.CreateDate)</div>
+                                    <div class="cell-subtitle">Sửa: @FormatDate(item.EditDate)</div>
+                                </td>
+                                <td class="text-end">
+                                    <button type="button"
+                                            class="portal-secondary-action table-link-btn me-1"
+                                            @onclick="() => SelectItemAsync(item)">
+                                        Sửa
+                                    </button>
+                                    <button type="button"
+                                            class="table-action danger"
+                                            @onclick="() => DeleteItemAsync(item)">
+                                        Xoá
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="workspace-card" style="margin-top:20px;">
+        <div class="toolbar-row" style="margin-bottom:16px; align-items:center; justify-content:space-between; gap:12px;">
+            <div>
+                <h2 style="margin:0 0 4px;">@(EditModel.ID.HasValue ? "Sửa cấu hình" : "Thêm cấu hình")</h2>
+                <p class="page-subtitle" style="margin:0;">Điền thông tin HĐĐT và lưu trực tiếp qua API `/api/ConfigHDDT`.</p>
+            </div>
+            <button type="button" class="portal-secondary-action" @onclick="ResetFormAsync">Làm mới form</button>
+        </div>
+
+        <EditForm Model="EditModel" OnValidSubmit="SaveAsync" FormName="config-hddt-form">
+            <div class="order-filter-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                <div class="order-filter-field">
+                    <label class="portal-label">Năm</label>
+                    <InputNumber class="portal-input order-filter-input" @bind-Value="EditModel.Nam" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Đơn vị</label>
+                    <InputNumber class="portal-input order-filter-input" @bind-Value="EditModel.IDDanhMucDonVi" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Đối tượng</label>
+                    <InputNumber class="portal-input order-filter-input" @bind-Value="EditModel.IDDanhMucLoaiDoiTuong" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">URL HĐĐT</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.URLHDDT" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Account</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.Account" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">ACPass</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.ACPass" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">UserName</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.UserName" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Pass</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.Pass" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Pattern</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.Pattern" />
+                </div>
+                <div class="order-filter-field">
+                    <label class="portal-label">Serial</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="EditModel.Serial" />
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;">
+                <button type="submit" class="portal-primary-action" disabled="@IsSaving">
+                    @(IsSaving ? "Đang lưu..." : (EditModel.ID.HasValue ? "Cập nhật" : "Thêm mới"))
+                </button>
+                <button type="button" class="portal-secondary-action" @onclick="ResetFormAsync">Hủy / làm mới</button>
+            </div>
+        </EditForm>
+    </section>
+</section>
+
+@code {
+    private readonly List<ConfigHDDTListItem> Items = new();
+    private readonly ConfigHDDTEditModel EditModel = new();
+    private string SearchTerm = string.Empty;
+    private string? FeedbackMessage;
+    private bool FeedbackIsError;
+    private bool IsLoading = true;
+    private bool IsSaving;
+
+    private List<ConfigHDDTListItem> FilteredItems =>
+        Items
+            .Where(item =>
+                string.IsNullOrWhiteSpace(SearchTerm) ||
+                item.Nam?.ToString()?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true ||
+                (item.URLHDDT ?? string.Empty).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (item.Account ?? string.Empty).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (item.UserName ?? string.Empty).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (item.Serial ?? string.Empty).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItemsAsync();
+    }
+
+    private async Task LoadItemsAsync()
+    {
+        IsLoading = true;
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+
+        try
+        {
+            Items.Clear();
+            Items.AddRange(await LegacyCustomerPortalService.GetConfigHDDTListAsync());
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        await LoadItemsAsync();
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearSearchAsync()
+    {
+        SearchTerm = string.Empty;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PrepareCreateAsync()
+    {
+        ResetModel();
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ResetFormAsync()
+    {
+        ResetModel();
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SelectItemAsync(ConfigHDDTListItem item)
+    {
+        SelectForEdit(item);
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SelectForEdit(ConfigHDDTListItem item)
+    {
+        EditModel.ID = item.ID;
+        EditModel.Nam = item.Nam ?? DateTime.Now.Year;
+        EditModel.URLHDDT = item.URLHDDT ?? string.Empty;
+        EditModel.Account = item.Account ?? string.Empty;
+        EditModel.ACPass = item.ACPass ?? string.Empty;
+        EditModel.UserName = item.UserName ?? string.Empty;
+        EditModel.Pass = item.Pass ?? string.Empty;
+        EditModel.Pattern = item.Pattern ?? string.Empty;
+        EditModel.Serial = item.Serial ?? string.Empty;
+        EditModel.IDDanhMucDonVi = item.IDDanhMucDonVi;
+        EditModel.IDDanhMucLoaiDoiTuong = item.IDDanhMucLoaiDoiTuong;
+    }
+
+    private void ResetModel()
+    {
+        EditModel.ID = null;
+        EditModel.Nam = DateTime.Now.Year;
+        EditModel.URLHDDT = string.Empty;
+        EditModel.Account = string.Empty;
+        EditModel.ACPass = string.Empty;
+        EditModel.UserName = string.Empty;
+        EditModel.Pass = string.Empty;
+        EditModel.Pattern = string.Empty;
+        EditModel.Serial = string.Empty;
+        EditModel.IDDanhMucDonVi = 1;
+        EditModel.IDDanhMucLoaiDoiTuong = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        IsSaving = true;
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+
+        try
+        {
+            var isUpdate = EditModel.ID.HasValue && EditModel.ID.Value > 0;
+            long? savedId = EditModel.ID;
+
+            if (isUpdate)
+            {
+                await LegacyCustomerPortalService.UpdateConfigHDDTAsync(new ConfigHDDTListItem
+                {
+                    ID = EditModel.ID!.Value,
+                    Nam = EditModel.Nam,
+                    URLHDDT = EditModel.URLHDDT?.Trim() ?? string.Empty,
+                    Account = EditModel.Account?.Trim() ?? string.Empty,
+                    ACPass = EditModel.ACPass?.Trim() ?? string.Empty,
+                    UserName = EditModel.UserName?.Trim() ?? string.Empty,
+                    Pass = EditModel.Pass?.Trim() ?? string.Empty,
+                    Pattern = EditModel.Pattern?.Trim() ?? string.Empty,
+                    Serial = EditModel.Serial?.Trim() ?? string.Empty,
+                    IDDanhMucDonVi = EditModel.IDDanhMucDonVi,
+                    IDDanhMucLoaiDoiTuong = EditModel.IDDanhMucLoaiDoiTuong
+                });
+            }
+            else
+            {
+                var newId = await LegacyCustomerPortalService.CreateConfigHDDTAsync(EditModel);
+                savedId = newId;
+            }
+
+            await LoadItemsAsync();
+            ResetModel();
+            FeedbackMessage = isUpdate
+                ? $"Đã cập nhật cấu hình #{savedId}."
+                : $"Đã thêm cấu hình mới với ID {savedId}.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteItemAsync(ConfigHDDTListItem item)
+    {
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>(
+                "confirm",
+                $"Bạn có chắc chắn muốn xoá cấu hình HĐĐT năm {item.Nam} (ID: {item.ID}) không?");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            await LegacyCustomerPortalService.DeleteConfigHDDTAsync(item.ID);
+            await LoadItemsAsync();
+            if (EditModel.ID == item.ID)
+            {
+                ResetModel();
+            }
+            FeedbackMessage = $"Đã xoá cấu hình HĐĐT ID {item.ID}.";
+            FeedbackIsError = false;
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+    }
+
+    private static string FormatDate(DateTime? value)
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm") : "-";
+}

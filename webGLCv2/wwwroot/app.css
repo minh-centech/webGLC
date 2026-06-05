@@ -1457,6 +1457,7 @@ select {
 
 .register-side-actions {
     margin-top: 8px;
+    padding-left: 20px;
 }
 
 .register-download-button {
@@ -1822,7 +1823,7 @@ select {
 }
 
 .portal-table tbody tr.order-row-pending td {
-    background: rgba(245, 158, 11, 0.10);
+    background: #ffffff;
 }
 
 .portal-table tbody tr.order-row-completed:hover td {
@@ -1834,7 +1835,7 @@ select {
 }
 
 .portal-table tbody tr.order-row-pending:hover td {
-    background: rgba(245, 158, 11, 0.15);
+    background: #ffffff;
 }
 
 .workflow-message {

@@ -84,6 +84,102 @@ public sealed class LegacyCustomerPortalService
         return result;
     }
 
+    public async Task<List<ConfigHDDTListItem>> GetConfigHDDTListAsync(
+        int? nam = null,
+        long? idDanhMucDonVi = null,
+        long? idDanhMucLoaiDoiTuong = null)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/ConfigHDDT/List",
+            new
+            {
+                Nam = nam,
+                IDDanhMucDonVi = idDanhMucDonVi,
+                IDDanhMucLoaiDoiTuong = idDanhMucLoaiDoiTuong
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể tải danh sách cấu hình hóa đơn điện tử.");
+
+        if (string.IsNullOrWhiteSpace(envelope!.Data))
+        {
+            return new List<ConfigHDDTListItem>();
+        }
+
+        return JsonSerializer.Deserialize<List<ConfigHDDTListItem>>(envelope.Data, JsonOptions)
+               ?? new List<ConfigHDDTListItem>();
+    }
+
+    public async Task<long> CreateConfigHDDTAsync(ConfigHDDTEditModel model)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/ConfigHDDT/Insert",
+            new
+            {
+                Nam = model.Nam,
+                URLHDDT = model.URLHDDT,
+                Account = model.Account,
+                ACPass = model.ACPass,
+                UserName = model.UserName,
+                Pass = model.Pass,
+                Pattern = model.Pattern,
+                Serial = model.Serial,
+                IDDanhMucDonVi = model.IDDanhMucDonVi,
+                IDDanhMucLoaiDoiTuong = model.IDDanhMucLoaiDoiTuong
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể thêm cấu hình hóa đơn điện tử.");
+
+        using var document = JsonDocument.Parse(envelope!.Data);
+        return GetLong(document.RootElement, "ID");
+    }
+
+    public async Task UpdateConfigHDDTAsync(ConfigHDDTListItem model)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/ConfigHDDT/Update",
+            new
+            {
+                ID = model.ID,
+                Nam = model.Nam,
+                URLHDDT = model.URLHDDT,
+                Account = model.Account,
+                ACPass = model.ACPass,
+                UserName = model.UserName,
+                Pass = model.Pass,
+                Pattern = model.Pattern,
+                Serial = model.Serial,
+                IDDanhMucDonVi = model.IDDanhMucDonVi,
+                IDDanhMucLoaiDoiTuong = model.IDDanhMucLoaiDoiTuong
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật cấu hình hóa đơn điện tử.");
+    }
+
+    public async Task DeleteConfigHDDTAsync(long id)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/ConfigHDDT/Delete",
+            new { ID = id },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể xoá cấu hình hóa đơn điện tử.");
+    }
+
     public async Task SetAccountStateAsync(string id, bool isActive, bool isLockAccount)
     {
         var response = await _httpClient.PostAsJsonAsync(

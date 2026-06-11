@@ -52,7 +52,7 @@ builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
     }
 
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromMinutes(1);
 });
 
 builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>

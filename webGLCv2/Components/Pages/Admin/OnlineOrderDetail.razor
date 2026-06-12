@@ -482,13 +482,6 @@
             </section>
 
             <div class="workflow-actions no-print">
-                @if (HasInvoiceDownload)
-                {
-                    <a class="portal-primary-action" href="@Order!.InvoiceDownloadUrl" target="_blank" rel="noopener noreferrer">
-                        Tải hóa đơn
-                    </a>
-                }
-
                 @if (Workflow?.PhiLuuKho?.Data?.TrangThaiThanhToan == 2)
                 {
                     <button class="portal-secondary-action" @onclick="PrintDeliverySlipAsync">In phiếu giao hàng</button>
@@ -622,16 +615,15 @@
 
         try
         {
-            Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
-                idLenhOnline: OrderId,
-                idDanhMucKhachHangDoiLenh: CurrentUserId,
-                houseBill: Order.HouseBill,
-                soCont: Order.ContainerNumber,
-                idCtLenhNhapKhoHangNhapKhauChiTiet: Order.IDctLenhNhapKhoHangNhapKhauChiTiet,
-                pickupDate: Order.PickupDate,
-                invoiceDownloadUrl: Order.InvoiceDownloadUrl,
-                pickupDateStr: Order.PickupDate?.ToString("yyyy/MM/dd"),
-                traceTag: traceTag);
+                Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
+                    idLenhOnline: OrderId,
+                    idDanhMucKhachHangDoiLenh: CurrentUserId,
+                    houseBill: Order.HouseBill,
+                    soCont: Order.ContainerNumber,
+                    idCtLenhNhapKhoHangNhapKhauChiTiet: Order.IDctLenhNhapKhoHangNhapKhauChiTiet,
+                    pickupDate: Order.PickupDate,
+                    pickupDateStr: Order.PickupDate?.ToString("yyyy/MM/dd"),
+                    traceTag: traceTag);
 
             _receiptTempDetailId = Workflow?.ChiTietHouseBill?.ParsedData?.ID ?? Order.IDctLenhNhapKhoHangNhapKhauChiTiet;
         }
@@ -723,9 +715,6 @@
         => Workflow?.PhiLuuKhoQuaHan?.Success == true
            && Workflow.PhiLuuKhoQuaHan.Data is not null
            && Workflow.PhiLuuKhoQuaHan.Data.ChiTietHoaDon.Count > 0;
-
-    private bool HasInvoiceDownload
-        => !string.IsNullOrWhiteSpace(Order?.InvoiceDownloadUrl);
 
     private static decimal GetPhiSubtotal(PhiLuuKhoResponse response)
         => response.Data?.ChiTietHoaDon.Sum(item => item.TienHangThucTe) ?? 0m;

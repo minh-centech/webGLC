@@ -78,7 +78,6 @@
                         <th>Mã ST/ Tên DN</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
-                        @* <th>Tải hóa đơn</th> *@
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -113,22 +112,6 @@
                                 </td>
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
-                                @* <td>
-                                    @if (!string.IsNullOrWhiteSpace(order.InvoiceDownloadUrl))
-                                    {
-                                        <a class="invoice-download-link"
-                                           href="@order.InvoiceDownloadUrl"
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           title="Tải hóa đơn">
-                                            <i class="icon-download"></i>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="portal-text-muted">-</span>
-                                    }
-                                </td> *@
                                 <td>
                                     <button type="button" class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
                                         Xem chi tiết

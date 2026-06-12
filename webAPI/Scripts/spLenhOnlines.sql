@@ -48,19 +48,14 @@ begin
 			kh.Email as EmailNguoiTao,
 			kh.Ten as TenNguoiTao,
 			lo.IDctLenhNhapKhoHangNhapKhauChiTiet,
-			ct.ID as ChiTietId,
-			ct.TrangThaiThanhToan,
 			case
-				when isnull(ct.IsHoanThanh, 0) = 1 then 1
+				when isnull(lo.TrangThai, 0) = 1 then 1
 				else 0
 			end as IsHoanThanh,
-			ct.LinkTaiHoaDon,
-			ct.DuongDanFileHoaDon,
 			lo.CreateDate,
 			lo.EditDate
 		from tblLenhOnlines lo
 		left join DanhMucKhachHangDoiLenh kh on kh.ID = lo.IDDanhMucKhachHangDoiLenh
-		left join tblLenhOnlineChiTiet ct on ct.IDLenhOnline = lo.ID
 		where
 			(@ID is null or lo.ID = @ID)
 			and (@IDDanhMucKhachHangDoiLenh is null or lo.IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh)
@@ -91,11 +86,7 @@ begin
 		EmailNguoiTao,
 		TenNguoiTao,
 		IDctLenhNhapKhoHangNhapKhauChiTiet,
-		ChiTietId,
-		TrangThaiThanhToan,
 		IsHoanThanh,
-		LinkTaiHoaDon,
-		DuongDanFileHoaDon,
 		CreateDate,
 		EditDate,
 		count(1) over() as TotalCount

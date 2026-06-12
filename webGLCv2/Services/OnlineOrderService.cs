@@ -1134,7 +1134,6 @@ public sealed class OnlineOrderService
         string soCont,
         long idCtLenhNhapKhoHangNhapKhauChiTiet,
         DateTime? pickupDate = null,
-        string? invoiceDownloadUrl = null,
         string? pickupDateStr = "",
         string? traceTag = null)
     {
@@ -1779,8 +1778,6 @@ public sealed class OnlineOrderService
         var id = GetLong(item, "ID");
         var soThuTuLenh = GetLong(item, "SoThuTuLenh");
         var trangThai = GetInt(item, "TrangThai");
-        var hasPaymentInfo = GetLong(item, "ChiTietId") > 0;
-        var paymentStatusCode = GetInt(item, "TrangThaiThanhToan");
 
         return new OnlineOrderRecord
         {
@@ -1808,11 +1805,7 @@ public sealed class OnlineOrderService
             IDctLenhNhapKhoHangNhapKhauChiTiet = GetLong(item, "IDctLenhNhapKhoHangNhapKhauChiTiet"),
             StatusCode = trangThai,
             Status = GetTrangThaiText(trangThai),
-            IsHoanThanh = trangThai == 1,
-            HasPaymentInfo = hasPaymentInfo,
-            PaymentStatusCode = paymentStatusCode,
-            PaymentStatus = hasPaymentInfo ? GetPaymentStatusText(paymentStatusCode) : string.Empty,
-            InvoiceDownloadUrl = hasPaymentInfo ? GetInvoiceDownloadUrl(item) : string.Empty
+            IsHoanThanh = trangThai == 1
         };
     }
 
@@ -1840,15 +1833,6 @@ public sealed class OnlineOrderService
           5 => "Đã thông quan",
           _ => "Không xác định"
       };
-
-    private static string GetPaymentStatusText(int trangThaiThanhToan)
-          => trangThaiThanhToan switch
-          {
-              0 => "Chưa thanh toán",
-              1 => "Đang kiểm tra",
-              2 => "Đã thanh toán",
-              _ => "Không xác định"
-          };
 
     private static List<LenhXuatKhoHangNhapKhauTempListItem> ParseLenhXuatKhoHangNhapKhauTempItems(string? json)
     {
@@ -2031,40 +2015,6 @@ public sealed class OnlineOrderService
         var normalizedReceiptNo = soBienNhan.Trim();
         var amountText = Math.Round(tongTien, 0, MidpointRounding.AwayFromZero).ToString("N0", new CultureInfo("vi-VN"));
         return $"+{amountText}VND Ref:{normalizedReceiptNo}#AdminPortalVerify";
-    }
-
-    private static string GetInvoiceDownloadUrl(JsonElement item)
-    {
-        var directLink = GetString(item, "LinkTaiHoaDon").Trim();
-        var filePath = GetString(item, "DuongDanFileHoaDon").Trim();
-        if (!string.IsNullOrWhiteSpace(directLink))
-        {
-            if (Uri.TryCreate(directLink, UriKind.Absolute, out var absoluteUri))
-            {
-                return absoluteUri.ToString();
-            }
-
-            return directLink.StartsWith("/")
-                ? directLink
-                : "/" + directLink;
-        }
-
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            return string.Empty;
-        }
-
-        if (Uri.TryCreate(filePath, UriKind.Absolute, out var fileUri))
-        {
-            return fileUri.ToString();
-        }
-
-        if (filePath.StartsWith("/"))
-        {
-            return filePath;
-        }
-
-        return $"/api/TaiLieu/ViewPdf?path={Uri.EscapeDataString(filePath)}";
     }
 
     private static List<OnlineOrderDraft> CreateSeedData()

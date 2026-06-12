@@ -60,11 +60,7 @@ namespace webAPI.Controllers
                         IDDanhMucKhachHangDoiLenh = coreCommon.coreCommon.longParse(dataRow["IDDanhMucKhachHangDoiLenh"]),
                         EmailNguoiTao = dataRow.Table.Columns.Contains("EmailNguoiTao") ? coreCommon.coreCommon.stringParse(dataRow["EmailNguoiTao"]) : string.Empty,
                         TenNguoiTao = dataRow.Table.Columns.Contains("TenNguoiTao") ? coreCommon.coreCommon.stringParse(dataRow["TenNguoiTao"]) : string.Empty,
-                        ChiTietId = dataRow["ChiTietId"] == DBNull.Value ? null : dataRow["ChiTietId"],
-                        TrangThaiThanhToan = dataRow["TrangThaiThanhToan"] == DBNull.Value ? null : dataRow["TrangThaiThanhToan"],
                         IsHoanThanh = dataRow["IsHoanThanh"] == DBNull.Value ? null : dataRow["IsHoanThanh"],
-                        LinkTaiHoaDon = dataRow["LinkTaiHoaDon"] == DBNull.Value ? null : dataRow["LinkTaiHoaDon"],
-                        DuongDanFileHoaDon = dataRow["DuongDanFileHoaDon"] == DBNull.Value ? null : dataRow["DuongDanFileHoaDon"],
                         CreateDate = dataRow["CreateDate"] == DBNull.Value ? null : dataRow["CreateDate"],
                         EditDate = dataRow["EditDate"] == DBNull.Value ? null : dataRow["EditDate"],
                         IDctLenhNhapKhoHangNhapKhauChiTiet =dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"] == DBNull.Value ? null : dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"]

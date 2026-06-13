@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
 using webGLCv2.Services;
 
 namespace webGLCv2.Controllers;
@@ -26,6 +25,7 @@ public sealed class CtBienNhanThanhToanHangNhapKhauTempController : ControllerBa
         {
             using var response = await _onlineOrderService.CheckThanhToanAutoRawAsync(t, checksum, request.TinNhanRaw);
             var body = await response.Content.ReadAsStringAsync();
+
             return new ContentResult
             {
                 StatusCode = (int)response.StatusCode,
@@ -39,7 +39,16 @@ public sealed class CtBienNhanThanhToanHangNhapKhauTempController : ControllerBa
             {
                 Status = 1,
                 Data = string.Empty,
-                ErrorMsg = "Lỗi không kết nối được dịch vụ nguồn!"
+                ErrorMsg = "Không kết nối được dịch vụ nguồn"
+            });
+        }
+        catch (TaskCanceledException)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                Status = 1,
+                Data = string.Empty,
+                ErrorMsg = "Không kết nối được dịch vụ nguồn"
             });
         }
         catch (InvalidOperationException)
@@ -48,7 +57,7 @@ public sealed class CtBienNhanThanhToanHangNhapKhauTempController : ControllerBa
             {
                 Status = 1,
                 Data = string.Empty,
-                ErrorMsg = "Lỗi không kết nối được dịch vụ nguồn!"
+                ErrorMsg = "Không kết nối được dịch vụ nguồn"
             });
         }
     }

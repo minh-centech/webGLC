@@ -155,6 +155,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <Content Include="Web-Debug.config" />
+    <Content Include="Web-Debug.Debug.config">
+      <DependentUpon>Web-Debug.config</DependentUpon>
+    </Content>
+    <Content Include="Web-Debug.Release.config">
+      <DependentUpon>Web-Debug.config</DependentUpon>
+    </Content>
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

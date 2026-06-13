@@ -66,10 +66,10 @@ end
 go
 
 
-ALTER TABLE tblLenhOnlines
-ADD TrangThaiHaiQuan TINYINT NOT NULL 
-    CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;
+--ALTER TABLE tblLenhOnlines
+--ADD TrangThaiHaiQuan TINYINT NOT NULL 
+--    CONSTRAINT DF_tblLenhOnlines_TrangThaiHaiQuan DEFAULT 0;
 
-ALTER TABLE tblLenhOnlines
-ADD HoanThanh BIT NOT NULL
-    CONSTRAINT DF_tblLenhOnlines_HoanThanh DEFAULT(0);
+--ALTER TABLE tblLenhOnlines
+--ADD HoanThanh BIT NOT NULL
+ --   CONSTRAINT DF_tblLenhOnlines_HoanThanh DEFAULT(0);

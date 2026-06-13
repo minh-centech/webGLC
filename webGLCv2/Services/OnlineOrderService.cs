@@ -1046,15 +1046,40 @@ public sealed class OnlineOrderService
             TinNhanRaw = tinNhanRaw
         };
 
-        var requestUrl = $"{BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto")}?t={hashResult.t}&checksum={Uri.EscapeDataString(hashResult.hash)}";
+        await CheckThanhToanAutoRawAsync(hashResult.t.ToString(CultureInfo.InvariantCulture), hashResult.hash, tinNhanRaw);
+    }
+
+    public async Task<HttpResponseMessage> CheckThanhToanAutoRawAsync(string t, string checksum, string tinNhanRaw)
+    {
+        var normalizedT = NullIfEmpty(t);
+        var normalizedChecksum = NullIfEmpty(checksum);
+        var normalizedTinNhanRaw = NullIfEmpty(tinNhanRaw);
+
+        if (string.IsNullOrWhiteSpace(normalizedT))
+        {
+            throw new InvalidOperationException("Tham so t khong hop le.");
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedChecksum))
+        {
+            throw new InvalidOperationException("Tham so checksum khong hop le.");
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedTinNhanRaw))
+        {
+            throw new InvalidOperationException("TinNhanRaw khong duoc de trong.");
+        }
+
+        var requestPayload = new
+        {
+            TinNhanRaw = normalizedTinNhanRaw
+        };
+
+        var requestUrl = $"{BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto")}?t={Uri.EscapeDataString(normalizedT)}&checksum={Uri.EscapeDataString(normalizedChecksum)}";
         Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto] POST {requestUrl}");
         Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
 
-        var response = await _httpClient.PostAsJsonAsync(requestUrl, requestPayload, JsonOptions);
-        response.EnsureSuccessStatusCode();
-
-        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
-        EnsureSuccess(envelope, "Khong the xac nhan thanh toan bien nhan.");
+        return await _httpClient.PostAsJsonAsync(requestUrl, requestPayload, JsonOptions);
     }
 
     public async Task<LenhXuatKhoHangNhapKhauTempInsertResponse> InsertLenhXuatKhoHangNhapKhauTempAsync(

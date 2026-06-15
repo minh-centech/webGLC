@@ -409,12 +409,26 @@
             }
 
             var customsDeclarationNumber = NormalizeComparisonValue(ThongQuanResult?.Data?.SoToKhai);
+            
             if (!string.IsNullOrWhiteSpace(customsDeclarationNumber)
                 && !string.Equals(customsDeclarationNumber, NormalizeComparisonValue(normalizedDeclarationNumber), StringComparison.OrdinalIgnoreCase))
             {
                 HasDeclarationMismatch = true;
                 OpenDeclarationMismatchModal(
                     "Số tờ khai nhập vào không khớp với số housebill. Vui lòng nhập chính xác và tra cứu lại.");
+                ThongQuanResult = null;
+                ChiTietResult = null;
+                DetailRows = [];
+                Results = [];
+                ExistingOnlineOrderId = null;
+                SearchMessage = string.Empty;
+                return;
+            }
+            //Kiem tra so to khai = 12 ky tu
+            if (!string.IsNullOrWhiteSpace(customsDeclarationNumber)
+                && customsDeclarationNumber.Length > 12)
+            {
+                ErrorMessage = "Không hỗ trợ số tờ khai này khi làm lệnh online trên eWareHouse.";
                 ThongQuanResult = null;
                 ChiTietResult = null;
                 DetailRows = [];

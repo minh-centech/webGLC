@@ -328,11 +328,11 @@ select {
     gap: 18px 28px;
     align-items: start;
     margin: auto 22px 22px;
+    margin-bottom: 96px !important;
     padding: 18px 20px;
     border: 1px solid rgba(183, 204, 182, 0.9);
     border-radius: 22px;
-    background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 246, 0.96) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 246, 0.96) 100%);
     box-shadow: 0 14px 34px rgba(16, 54, 32, 0.08);
     backdrop-filter: blur(12px);
 }
@@ -364,6 +364,30 @@ select {
     font-weight: 800;
 }
 
+.portal-footer-zalo-card {
+    display: block;
+    width: 100%;
+    max-width: 220px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(183, 204, 182, 0.72);
+    box-shadow: 0 10px 22px rgba(16, 54, 32, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.portal-footer-zalo-card:hover,
+.portal-footer-zalo-card:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(16, 54, 32, 0.12);
+    outline: none;
+}
+
+.portal-footer-zalo-image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
 .portal-footer-heading strong {
     color: var(--portal-text);
     font-size: 1rem;
@@ -377,9 +401,10 @@ select {
 }
 
 .portal-footer-item {
+    position: relative;
     display: grid;
     gap: 8px;
-    padding: 14px 15px;
+    padding: 14px 74px 14px 15px;
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(249, 252, 249, 0.98) 0%, rgba(241, 247, 241, 0.96) 100%);
     border: 1px solid rgba(183, 204, 182, 0.65);
@@ -407,6 +432,27 @@ select {
     font-size: 0.95rem;
     line-height: 1.5;
     font-weight: 600;
+}
+
+.portal-footer-item .portal-footer-link {
+    word-break: break-word;
+}
+
+.portal-footer-item .portal-footer-zalo-card {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 80px;
+    max-width: 84px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(16, 54, 32, 0.08);
+}
+
+.portal-footer-item .portal-footer-zalo-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    display: block;
 }
 
 .portal-footer-link {
@@ -534,7 +580,7 @@ select {
 }
 
 .workspace-card:last-of-type {
-    margin-bottom: 96px;
+    margin-bottom: 6px;
 }
 
 .stat-label {

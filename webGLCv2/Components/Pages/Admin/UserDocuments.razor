@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin")]
 @using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
 @using Microsoft.Extensions.DependencyInjection
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject OnlineOrderService OnlineOrderService
@@ -58,6 +59,50 @@
                     <div class="cell-subtitle">@(Details.IsActive ? "Tài khoản đang hoạt động" : "Tài khoản chưa kích hoạt")</div>
                 </article>
             </div>
+
+            <section class="workspace-card" style="margin-top:15px;">
+                <div class="section-heading">
+                    <h2>Cập nhật thông tin hiển thị</h2>
+                    <p>Admin có thể chỉnh sửa tên hiển thị, email và số điện thoại của tài khoản ngay tại đây.</p>
+                </div>
+
+                <EditForm Model="ProfileEditModel" OnValidSubmit="SaveProfileAsync" FormName="admin-profile-edit-form">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="portal-alert portal-alert-error" />
+
+                    <div class="field-grid">
+                        <div class="field-card">
+                            <label class="portal-label" for="DisplayName">
+                                @(Details.AccountType == 2 ? "Tên doanh nghiệp" : "Tên hiển thị")
+                            </label>
+                            <InputText id="DisplayName" class="portal-input" @bind-Value="ProfileEditModel.DisplayName" />
+                            <ValidationMessage For="@(() => ProfileEditModel.DisplayName)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="EmailAddress">
+                                @(Details.AccountType == 2 ? "Email doanh nghiệp" : "Email")
+                            </label>
+                            <InputText id="EmailAddress" class="portal-input" @bind-Value="ProfileEditModel.Email" />
+                            <ValidationMessage For="@(() => ProfileEditModel.Email)" class="validation-message" />
+                        </div>
+
+                        <div class="field-card">
+                            <label class="portal-label" for="AccountPhone">
+                                @(Details.AccountType == 2 ? "Số điện thoại doanh nghiệp" : "Số điện thoại người dùng")
+                            </label>
+                            <InputText id="AccountPhone" class="portal-input" @bind-Value="ProfileEditModel.PhoneNumber" />
+                            <ValidationMessage For="@(() => ProfileEditModel.PhoneNumber)" class="validation-message" />
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="portal-primary-action" disabled="@IsSubmitting">
+                            @(IsSubmitting ? "Đang lưu..." : "Lưu thông tin")
+                        </button>
+                    </div>
+                </EditForm>
+            </section>
 
             @if (Details.AccountType == 2)
             {
@@ -212,6 +257,7 @@
 
     private readonly Dictionary<string, string> UploadStatuses = new();
     private readonly List<LegacyCompanyProfile> EnterpriseCompanies = new();
+    private readonly ProfileEditFormModel ProfileEditModel = new();
     private AccountDocumentDetails? Details;
     private string? ErrorMessage;
     private string? FeedbackMessage;
@@ -234,6 +280,20 @@
             EnterpriseCompanies.Clear();
             if (Details is not null)
             {
+                if (Details.AccountType == 2)
+                {
+                    var latestProfile = await LegacyCustomerPortalService.GetLatestEnterpriseProfileAsync(Details.Id);
+                    ProfileEditModel.DisplayName = latestProfile?.TenDoanhNghiep ?? Details.CompanyName;
+                    ProfileEditModel.Email = latestProfile?.EmailDoanhNghiep ?? Details.CompanyEmail;
+                    ProfileEditModel.PhoneNumber = latestProfile?.SoDienThoaiDoanhNghiep ?? Details.CompanyPhone;
+                }
+                else
+                {
+                    ProfileEditModel.DisplayName = Details.Name;
+                    ProfileEditModel.Email = Details.Email;
+                    ProfileEditModel.PhoneNumber = Details.Phone;
+                }
+
                 foreach (var document in Details.Documents)
                 {
                     UploadStatuses[document.FieldKey] = document.HasFile ? "Đã có tài liệu." : "Sẵn sàng bổ sung.";
@@ -253,6 +313,73 @@
 
     private static string DisplayValue(string value)
         => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
+
+    private async Task SaveProfileAsync()
+    {
+        if (Details is null)
+        {
+            return;
+        }
+
+        var displayName = ProfileEditModel.DisplayName.Trim();
+        var email = ProfileEditModel.Email.Trim();
+        var phone = ProfileEditModel.PhoneNumber.Trim();
+
+        IsSubmitting = true;
+        FeedbackMessage = null;
+        ErrorMessage = null;
+
+        try
+        {
+            if (Details.AccountType == 2)
+            {
+                var profile = await LegacyCustomerPortalService.GetLatestEnterpriseProfileAsync(Details.Id);
+                if (profile is null)
+                {
+                    throw new InvalidOperationException("Không tìm thấy hồ sơ doanh nghiệp để cập nhật thông tin.");
+                }
+
+                await LegacyCustomerPortalService.UpdateCompanyProfileAsync(
+                    profile,
+                    displayName,
+                    email,
+                    profile.DiaChi,
+                    phone);
+            }
+            else
+            {
+                await LegacyCustomerPortalService.UpdatePersonalProfileAsync(
+                    Details.Id,
+                    displayName,
+                    phone,
+                    string.IsNullOrWhiteSpace(Details.BillingEmail) ? email : Details.BillingEmail,
+                    email);
+            }
+
+            Details.Name = displayName;
+            Details.Email = email;
+            Details.Phone = phone;
+            if (Details.AccountType == 2)
+            {
+                Details.CompanyName = displayName;
+                Details.CompanyEmail = email;
+                Details.CompanyPhone = phone;
+            }
+
+            FeedbackMessage = "Đã cập nhật thông tin hiển thị thành công.";
+            FeedbackIsError = false;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            FeedbackMessage = ex.Message;
+            FeedbackIsError = true;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
 
     private async Task UploadDocumentAsync(DocumentFileItem document, InputFileChangeEventArgs args, bool isReplace)
     {
@@ -460,5 +587,19 @@
                 Logger.LogWarning(ex, "Không gửi được email phê duyệt tài khoản cho {Email}.", recipient);
             }
         });
+    }
+
+    private sealed class ProfileEditFormModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập tên hiển thị.")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
+        [Phone(ErrorMessage = "Số điện thoại không đúng định dạng.")]
+        public string PhoneNumber { get; set; } = string.Empty;
     }
 }

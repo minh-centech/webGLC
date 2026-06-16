@@ -1,4 +1,4 @@
-@page "/register"
+﻿@page "/register"
 @rendermode InteractiveServer
 @layout EmptyLayout
 @attribute [AllowAnonymous]
@@ -11,6 +11,9 @@
 @inject TurnstileValidationService TurnstileValidationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@using System.Text
+@using PdfSharpCore.Drawing
+@using PdfSharpCore.Pdf
 @using System.Text.Json
 
 <HeadContent>
@@ -242,13 +245,14 @@
                         <div class="two-col-grid field-span-3">
                             <div class="field-card">
                                 <label class="portal-label" for="SoDienThoai">Số điện thoại</label>
-                                <InputText id="SoDienThoai" class="portal-input" @bind-Value="Model.SoDienThoai" />
+                                <InputText id="SoDienThoai" class="portal-input" @bind-Value="Model.SoDienThoai" inputmode="numeric" maxlength="10" pattern="\d{10}" />
                                 <ValidationMessage For="@(() => Model.SoDienThoai)" class="validation-message" />
                             </div>
 
                             <div class="field-card">
-                                <label class="portal-label" for="SoCMNDCanCuoc">Số CMND/CCCD</label>
-                                <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" />
+                                <label class="portal-label" for="SoCMNDCanCuoc">Số CCCD</label>
+                                <InputText id="SoCMNDCanCuoc" class="portal-input" @bind-Value="Model.SoCMNDCanCuoc" inputmode="numeric" maxlength="12" pattern="\d{12}" />
+                                <ValidationMessage For="@(() => Model.SoCMNDCanCuoc)" class="validation-message" />
                             </div>
                         </div>
 
@@ -293,7 +297,20 @@
                                            accept=".pdf,application/pdf"
                                            style="display:none;" />
 
+                                <label for="CitizenCard-image-upload" class="btn-select-file" style="margin-left:10px; background:#0f766e; border-color:#0f766e;">
+                                    Chọn hình ảnh
+                                </label>
+
+                                <InputFile id="CitizenCard-image-upload"
+                                           OnChange="@OnCitizenCardImagesChanged"
+                                           accept="image/*"
+                                           multiple
+                                           style="display:none;" />
+
                                 <span class="selected-file-name">@CitizenCardStatus</span>
+                            </div>
+                            <div class="upload-status" style="margin-top:8px;">
+                                Chọn nhiều hình ảnh để hệ thống tự nén và ghép thành 1 file PDF cho mục này.
                             </div>
                         </div>
 
@@ -315,10 +332,23 @@
 
                                     <InputFile id="BusinessLicense-upload"
                                                OnChange="@OnBusinessLicenseChanged"
-                                               accept=".pdf,application/pdf"
+                                           accept=".pdf,application/pdf"
+                                           style="display:none;" />
+
+                                    <label for="BusinessLicense-image-upload" class="btn-select-file" style="margin-left:10px; background:#0f766e; border-color:#0f766e;">
+                                        Chọn hình ảnh
+                                    </label>
+
+                                    <InputFile id="BusinessLicense-image-upload"
+                                               OnChange="@OnBusinessLicenseImagesChanged"
+                                               accept="image/*"
+                                               multiple
                                                style="display:none;" />
 
                                     <span class="selected-file-name">@BusinessLicenseStatus</span>
+                                </div>
+                                <div class="upload-status" style="margin-top:8px;">
+                                    Chọn nhiều hình ảnh để hệ thống tự nén và ghép thành 1 file PDF cho mục này.
                                 </div>
                             </div>
 
@@ -337,10 +367,23 @@
 
                                     <InputFile id="Eport-upload"
                                                OnChange="@OnEportFormChanged"
-                                               accept=".pdf,application/pdf"
+                                           accept=".pdf,application/pdf"
+                                           style="display:none;" />
+
+                                    <label for="Eport-image-upload" class="btn-select-file" style="margin-left:10px; background:#0f766e; border-color:#0f766e;">
+                                        Chọn hình ảnh
+                                    </label>
+
+                                    <InputFile id="Eport-image-upload"
+                                               OnChange="@OnEportImagesChanged"
+                                               accept="image/*"
+                                               multiple
                                                style="display:none;" />
 
                                     <span class="selected-file-name">@EportFormStatus</span>
+                                </div>
+                                <div class="upload-status" style="margin-top:8px;">
+                                    Chọn nhiều hình ảnh để hệ thống tự nén và ghép thành 1 file PDF cho mục này.
                                 </div>
                             </div>
                         }
@@ -361,10 +404,23 @@
 
                                     <InputFile id="Personal-upload"
                                                OnChange="@OnPersonalFormChanged"
-                                               accept=".pdf,application/pdf"
+                                           accept=".pdf,application/pdf"
+                                           style="display:none;" />
+
+                                    <label for="Personal-image-upload" class="btn-select-file" style="margin-left:10px; background:#0f766e; border-color:#0f766e;">
+                                        Chọn hình ảnh
+                                    </label>
+
+                                    <InputFile id="Personal-image-upload"
+                                               OnChange="@OnPersonalImagesChanged"
+                                               accept="image/*"
+                                               multiple
                                                style="display:none;" />
 
                                     <span class="selected-file-name">@PersonalFormStatus</span>
+                                </div>
+                                <div class="upload-status" style="margin-top:8px;">
+                                    Chọn nhiều hình ảnh để hệ thống tự nén và ghép thành 1 file PDF cho mục này.
                                 </div>
                             </div>
                         }
@@ -831,9 +887,37 @@
         Model.BanScanSoCMNDCanCuocPath = await UploadPdfAsync(args.File, "NguoiDungDoanhNghiep/CanCuoc", message => CitizenCardStatus = message);
     }
 
+    private async Task OnCitizenCardImagesChanged(InputFileChangeEventArgs args)
+    {
+        var pdfPath = await ConvertImagesToPdfAndUploadAsync(
+            args,
+            "NguoiDungDoanhNghiep/CanCuoc",
+            "can-cuoc",
+            message => CitizenCardStatus = message);
+
+        if (!string.IsNullOrWhiteSpace(pdfPath))
+        {
+            Model.BanScanSoCMNDCanCuocPath = pdfPath;
+        }
+    }
+
     private async Task OnBusinessLicenseChanged(InputFileChangeEventArgs args)
     {
         Model.BanScanGiayPhepKinhDoanhPath = await UploadPdfAsync(args.File, "NguoiDungDoanhNghiep/GiayPhepKinhDoanh", message => BusinessLicenseStatus = message);
+    }
+
+    private async Task OnBusinessLicenseImagesChanged(InputFileChangeEventArgs args)
+    {
+        var pdfPath = await ConvertImagesToPdfAndUploadAsync(
+            args,
+            "NguoiDungDoanhNghiep/GiayPhepKinhDoanh",
+            "giay-phep-kinh-doanh",
+            message => BusinessLicenseStatus = message);
+
+        if (!string.IsNullOrWhiteSpace(pdfPath))
+        {
+            Model.BanScanGiayPhepKinhDoanhPath = pdfPath;
+        }
     }
 
     private async Task OnEportFormChanged(InputFileChangeEventArgs args)
@@ -841,9 +925,98 @@
         Model.BanDangKyEPortChuKySoPath = await UploadPdfAsync(args.File, "NguoiDungDoanhNghiep/DangKyEPort", message => EportFormStatus = message);
     }
 
+    private async Task OnEportImagesChanged(InputFileChangeEventArgs args)
+    {
+        var pdfPath = await ConvertImagesToPdfAndUploadAsync(
+            args,
+            "NguoiDungDoanhNghiep/DangKyEPort",
+            "dang-ky-everwarehouse",
+            message => EportFormStatus = message);
+
+        if (!string.IsNullOrWhiteSpace(pdfPath))
+        {
+            Model.BanDangKyEPortChuKySoPath = pdfPath;
+        }
+    }
+
     private async Task OnPersonalFormChanged(InputFileChangeEventArgs args)
     {
         Model.BanDangKyCaNhanCoChuKyPath = await UploadPdfAsync(args.File, "KhachHangCaNhan/DangKy", message => PersonalFormStatus = message);
+    }
+
+    private async Task OnPersonalImagesChanged(InputFileChangeEventArgs args)
+    {
+        var pdfPath = await ConvertImagesToPdfAndUploadAsync(
+            args,
+            "KhachHangCaNhan/DangKy",
+            "dang-ky-ca-nhan",
+            message => PersonalFormStatus = message);
+
+        if (!string.IsNullOrWhiteSpace(pdfPath))
+        {
+            Model.BanDangKyCaNhanCoChuKyPath = pdfPath;
+        }
+    }
+
+    private async Task<string?> ConvertImagesToPdfAndUploadAsync(
+        InputFileChangeEventArgs args,
+        string folder,
+        string filePrefix,
+        Action<string> setStatus)
+    {
+        ErrorMessage = null;
+
+        var files = args.GetMultipleFiles(12).ToList();
+        if (files.Count == 0)
+        {
+            setStatus("Chưa chọn hình ảnh.");
+            return null;
+        }
+
+        var invalidFile = files.FirstOrDefault(file => !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase));
+        if (invalidFile is not null)
+        {
+            setStatus("Chỉ chấp nhận hình ảnh.");
+            ErrorMessage = $"File {invalidFile.Name} không phải hình ảnh.";
+            return null;
+        }
+
+        try
+        {
+            setStatus("Đang xử lý hình ảnh...");
+            var images = new List<string>();
+            foreach (var file in files)
+            {
+                await using var stream = file.OpenReadStream(8 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                images.Add(Convert.ToBase64String(memoryStream.ToArray()));
+            }
+
+            var pdfBytes = BuildPdfFromImages(images, filePrefix);
+            if (pdfBytes.Length == 0)
+            {
+                setStatus("Không tạo được file PDF.");
+                ErrorMessage = "Không tạo được file PDF từ hình ảnh.";
+                return null;
+            }
+
+            await using var pdfStream = new MemoryStream(pdfBytes);
+            var uploadResult = await LegacyCustomerPortalService.UploadPdfAsync(
+                pdfStream,
+                $"{filePrefix}-{DateTime.Now:yyyyMMddHHmmss}.pdf",
+                folder,
+                CancellationToken.None);
+
+            setStatus($"{files.Count} hình ảnh đã chuyển sang PDF và tải lên thành công.");
+            return uploadResult.RelativePath;
+        }
+        catch (Exception ex)
+        {
+            setStatus("Tải ảnh thất bại.");
+            ErrorMessage = ex.Message;
+            return null;
+        }
     }
 
     private async Task<string?> UploadPdfAsync(IBrowserFile file, string folder, Action<string> setStatus)
@@ -887,6 +1060,43 @@
         EportFormStatus = "Chưa tải tài liệu.";
         PersonalFormStatus = "Chưa tải tài liệu.";
         LookupStatus = string.Empty;
+    }
+
+    private static byte[] BuildPdfFromImages(IReadOnlyList<string> base64Images, string title)
+    {
+        if (base64Images.Count == 0)
+        {
+            return Array.Empty<byte>();
+        }
+
+        using var document = new PdfDocument();
+        document.Info.Title = title;
+
+        for (var index = 0; index < base64Images.Count; index++)
+        {
+            var bytes = Convert.FromBase64String(base64Images[index]);
+            using var imageStream = new MemoryStream(bytes);
+            using var xImage = XImage.FromStream(() => imageStream);
+
+            var page = document.AddPage();
+            page.Size = PdfSharpCore.PageSize.A4;
+            using var gfx = XGraphics.FromPdfPage(page);
+
+            const double margin = 24;
+            var maxWidth = page.Width - margin * 2;
+            var maxHeight = page.Height - margin * 2;
+            var scale = Math.Min(maxWidth / xImage.PixelWidth, maxHeight / xImage.PixelHeight);
+            var drawWidth = xImage.PixelWidth * scale;
+            var drawHeight = xImage.PixelHeight * scale;
+            var x = (page.Width - drawWidth) / 2;
+            var y = (page.Height - drawHeight) / 2;
+
+            gfx.DrawImage(xImage, x, y, drawWidth, drawHeight);
+        }
+
+        using var output = new MemoryStream();
+        document.Save(output, false);
+        return output.ToArray();
     }
 }
 

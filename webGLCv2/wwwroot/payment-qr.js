@@ -182,6 +182,211 @@ window.paymentQr = (function () {
     return true;
   }
 
+  async function createPdfFromImages(imageSources, options = {}) {
+    console.log("[paymentQr.createPdfFromImages] start", Array.isArray(imageSources) ? imageSources.length : 0);
+    const sources = Array.isArray(imageSources)
+      ? imageSources.map(normalizeImageSource).filter(Boolean)
+      : [];
+
+    if (sources.length === 0) {
+      throw new Error("Không có hình ảnh hợp lệ để tạo PDF.");
+    }
+
+    const title = String(options.title || "register-attachments").trim() || "register-attachments";
+    const maxWidth = Number.isFinite(options.maxWidth) && options.maxWidth > 0 ? options.maxWidth : 1600;
+    const jpegQuality = Number.isFinite(options.jpegQuality) && options.jpegQuality > 0 && options.jpegQuality <= 1
+      ? options.jpegQuality
+      : 0.82;
+
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const margin = 24;
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2;
+
+    const imageEntries = [];
+    for (let index = 0; index < sources.length; index++) {
+      const src = sources[index];
+      console.log("[paymentQr.createPdfFromImages] compress", index + 1, "/", sources.length);
+      const { jpegBytes, width, height } = await withTimeout(
+        compressImageToJpegBytes(src, maxWidth, jpegQuality),
+        15000,
+        `Không thể nén ảnh số ${index + 1}.`
+      );
+      imageEntries.push({ jpegBytes, width, height });
+    }
+
+    const pdfBytes = buildPdfFromJpegImages(imageEntries, pageWidth, pageHeight, margin, contentWidth, contentHeight);
+    console.log("[paymentQr.createPdfFromImages] done");
+    return {
+      fileName: `${title}.pdf`,
+      contentType: "application/pdf",
+      base64Content: bytesToBase64(pdfBytes)
+    };
+  }
+
+  async function withTimeout(promise, timeoutMs, message) {
+    let timeoutId = null;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
+
+  async function compressImageToJpegBytes(src, maxWidth, jpegQuality) {
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Không tải được hình ảnh."));
+      img.src = src;
+    });
+
+    const originalWidth = image.naturalWidth || image.width;
+    const originalHeight = image.naturalHeight || image.height;
+    const scale = originalWidth > maxWidth ? maxWidth / originalWidth : 1;
+    const targetWidth = Math.max(1, Math.round(originalWidth * scale));
+    const targetHeight = Math.max(1, Math.round(originalHeight * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Không tạo được canvas để nén hình ảnh.");
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, targetWidth, targetHeight);
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(result => {
+        if (!result) {
+          reject(new Error("Không nén được hình ảnh."));
+          return;
+        }
+        resolve(result);
+      }, "image/jpeg", jpegQuality);
+    });
+
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    return {
+      jpegBytes: bytes,
+      width: targetWidth,
+      height: targetHeight
+    };
+  }
+
+  function buildPdfFromJpegImages(entries, pageWidth, pageHeight, margin, contentWidth, contentHeight) {
+    const encoder = new TextEncoder();
+    const chunks = [];
+    const offsets = [0];
+    let byteLength = 0;
+
+    const addChunk = value => {
+      const chunk = typeof value === "string" ? encoder.encode(value) : value;
+      chunks.push(chunk);
+      byteLength += chunk.length;
+    };
+
+    const addObject = body => {
+      offsets.push(byteLength);
+      addChunk(`${offsets.length - 1} 0 obj\n${body}\nendobj\n`);
+    };
+
+    addChunk("%PDF-1.4\n");
+    addChunk("%âãÏÓ\n");
+
+    const fontId = 3;
+    const pagesId = 2;
+    const catalogId = 1;
+    const firstImageObjectId = 4;
+    const imageObjectIds = entries.map((_, index) => firstImageObjectId + index * 3);
+    const contentObjectIds = entries.map((_, index) => firstImageObjectId + index * 3 + 1);
+    const pageObjectIds = entries.map((_, index) => firstImageObjectId + index * 3 + 2);
+
+    const kids = pageObjectIds.map(id => `${id} 0 R`).join(" ");
+
+    addObject(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+    addObject(`<< /Type /Pages /Kids [ ${kids} ] /Count ${entries.length} >>`);
+    addObject(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);
+
+    entries.forEach((entry, index) => {
+      addObject(`<< /Type /XObject /Subtype /Image /Width ${entry.width} /Height ${entry.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${entry.jpegBytes.length} >>\nstream\n`);
+      chunks.push(entry.jpegBytes);
+      byteLength += entry.jpegBytes.length;
+      addChunk("\nendstream\nendobj\n");
+
+      const draw = fitImageIntoPage(entry.width, entry.height, contentWidth, contentHeight, pageWidth, pageHeight, margin);
+      const content = `BT /F1 12 Tf 1 0 0 1 ${margin} ${pageHeight - margin + 2} Tm (${escapePdfText(`Tài liệu ${index + 1}`)}) Tj ET\nq\n${draw.width.toFixed(2)} 0 0 ${draw.height.toFixed(2)} ${draw.x.toFixed(2)} ${draw.y.toFixed(2)} cm\n/Im${index + 1} Do\nQ`;
+      const contentBytes = encoder.encode(content);
+      addObject(`<< /Length ${contentBytes.length} >>\nstream\n`);
+      chunks.push(contentBytes);
+      byteLength += contentBytes.length;
+      addChunk("\nendstream\nendobj\n");
+    });
+
+    entries.forEach((entry, index) => {
+      const xObjectName = `/Im${index + 1}`;
+      const resources = `<< /Font << /F1 ${fontId} 0 R >> /XObject << ${xObjectName} ${imageObjectIds[index]} 0 R >> >>`;
+      addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources ${resources} /Contents ${contentObjectIds[index]} 0 R >>`);
+    });
+
+    const xrefOffset = byteLength;
+    addChunk(`xref\n0 ${offsets.length}\n`);
+    addChunk("0000000000 65535 f \n");
+    for (let i = 1; i < offsets.length; i++) {
+      addChunk(`${String(offsets[i]).padStart(10, "0")} 00000 n \n`);
+    }
+    addChunk(`trailer << /Size ${offsets.length} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+
+    return concatUint8Arrays(chunks);
+  }
+
+  function fitImageIntoPage(imageWidth, imageHeight, contentWidth, contentHeight, pageWidth, pageHeight, margin) {
+    const scale = Math.min(contentWidth / imageWidth, contentHeight / imageHeight);
+    const width = imageWidth * scale;
+    const height = imageHeight * scale;
+    const x = (pageWidth - width) / 2;
+    const y = (pageHeight - height) / 2 - 12;
+    return { width, height, x, y };
+  }
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    return btoa(binary);
+  }
+
+  function concatUint8Arrays(chunks) {
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return result;
+  }
+
+  function escapePdfText(text) {
+    return String(text || "")
+      .replace(/\\/g, "\\\\")
+      .replace(/\(/g, "\\(")
+      .replace(/\)/g, "\\)");
+  }
+
   function hideReceiptPaymentPopup(notifyBlazor = false, dotNetRef = null) {
     const existing = document.getElementById("receipt-payment-popup-overlay");
     if (existing) {
@@ -416,6 +621,7 @@ window.paymentQr = (function () {
     showReceiptPaymentPopup,
     hideReceiptPaymentPopup,
     downloadFile,
+    createPdfFromImages,
     copyText: async function (text) {
       if (!text) {
         return;

@@ -14,6 +14,7 @@ public sealed class RegisterAccountModel
     public string Ten { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
+    [RegularExpression(@"^\d{10}$", ErrorMessage = "Số điện thoại phải gồm đúng 10 chữ số.")]
     public string SoDienThoai { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập email.")]
@@ -27,6 +28,7 @@ public sealed class RegisterAccountModel
     public string PasswordConfirm { get; set; } = string.Empty;
 
     public string? EmailXuatHoaDon { get; set; }
+    [RegularExpression(@"^\d{12}$", ErrorMessage = "Số CCCD phải gồm đúng 12 chữ số.")]
     public string? SoCMNDCanCuoc { get; set; }
     public string? BanScanSoCMNDCanCuocPath { get; set; }
     public string? BanDangKyCaNhanCoChuKyPath { get; set; }

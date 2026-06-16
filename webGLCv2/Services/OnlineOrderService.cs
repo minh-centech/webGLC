@@ -285,7 +285,7 @@ public sealed class OnlineOrderService
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return BuildThongQuanFailureResponse("Không kết nối được đến Hải quan.");
+                    return BuildThongQuanFailureResponse("Lỗi! Không kết nối được đến dịch vụ Hải quan.");
                 }
             }
 

@@ -16,7 +16,7 @@
     {
         var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authenticationState.User;
-        var target = user.IsInRole("Admin") ? "/admin/users" : "/user/orders";
+        var target = user.IsInRole("Admin") ? "/admin/users" : "/user/import-check";
         NavigationManager.NavigateTo(target, forceLoad: false);
     }
 }

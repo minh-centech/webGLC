@@ -130,7 +130,7 @@ public sealed class AuthController : Controller
     private static string GetDefaultRoute(string roleName)
         => string.Equals(roleName, "Admin", StringComparison.OrdinalIgnoreCase)
             ? "/admin/users"
-            : "/user/orders";
+            : "/user/import-check";
 }
 
 

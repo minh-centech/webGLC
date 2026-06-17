@@ -30,7 +30,9 @@ public sealed class TraCuuToKhaiData
     public string MaHaiQuanDangKyToKhai { get; set; } = string.Empty;
     public string MaLoaiHinh { get; set; } = string.Empty;
     public string MaHaiQuanGiamSat { get; set; } = string.Empty;
-    public string SoLuong { get; set; } = string.Empty;
+    [JsonPropertyName("SoLuong")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public decimal? SoLuong { get; set; }
     public string DonViTinh { get; set; } = string.Empty;
     public string ViTriKho { get; set; } = string.Empty;
     public string MoTaHangHoa { get; set; } = string.Empty;

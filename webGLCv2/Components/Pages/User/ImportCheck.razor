@@ -293,7 +293,8 @@
     private bool CanShowCreateOnlineOrderButton
         => ChiTietResult?.Success == true
            && ChiTietResult.ParsedData is not null
-           && ThongQuanResult?.Success == true;
+           && ThongQuanResult?.Success == true
+           && !string.IsNullOrWhiteSpace(ThongQuanResult.Data?.SoToKhai);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -409,14 +410,9 @@
                 ErrorMessage = AppendError(ErrorMessage, $"Không thể lấy tình trạng thông quan: {ex.Message}");
             }
 
-            var customsDeclarationNumber = NormalizeComparisonValue(ThongQuanResult?.Data?.SoToKhai);
-            
-            if (!string.IsNullOrWhiteSpace(customsDeclarationNumber)
-                && !string.Equals(customsDeclarationNumber, NormalizeComparisonValue(normalizedDeclarationNumber), StringComparison.OrdinalIgnoreCase))
+            if (ThongQuanResult is null)
             {
-                HasDeclarationMismatch = true;
-                OpenDeclarationMismatchModal(
-                    "Số tờ khai nhập vào không khớp với số housebill. Vui lòng nhập chính xác và tra cứu lại.");
+                ErrorMessage = AppendError(ErrorMessage, "Không thể lấy tình trạng thông quan.");
                 ThongQuanResult = null;
                 ChiTietResult = null;
                 DetailRows = [];
@@ -425,11 +421,39 @@
                 SearchMessage = string.Empty;
                 return;
             }
-            //Kiem tra so to khai = 12 ky tu
-            if (!string.IsNullOrWhiteSpace(customsDeclarationNumber)
-                && customsDeclarationNumber.Length > 12)
+
+            if (!ThongQuanResult.Success)
             {
-                ErrorMessage = "Không hỗ trợ số tờ khai này khi làm lệnh online trên eWareHouse.";
+                ErrorMessage = AppendError(ErrorMessage, string.IsNullOrWhiteSpace(ThongQuanResult.Message)
+                    ? "Không thể lấy tình trạng thông quan."
+                    : ThongQuanResult.Message);
+                ThongQuanResult = null;
+                ChiTietResult = null;
+                DetailRows = [];
+                Results = [];
+                ExistingOnlineOrderId = null;
+                SearchMessage = string.Empty;
+                return;
+            }
+
+            var customsDeclarationNumber = NormalizeComparisonValue(ThongQuanResult.Data?.SoToKhai);
+            if (string.IsNullOrWhiteSpace(customsDeclarationNumber))
+            {
+                ErrorMessage = "Không lấy được số tờ khai từ Hải quan.";
+                ThongQuanResult = null;
+                ChiTietResult = null;
+                DetailRows = [];
+                Results = [];
+                ExistingOnlineOrderId = null;
+                SearchMessage = string.Empty;
+                return;
+            }
+
+            if (!string.Equals(customsDeclarationNumber, NormalizeComparisonValue(normalizedDeclarationNumber), StringComparison.OrdinalIgnoreCase))
+            {
+                HasDeclarationMismatch = true;
+                OpenDeclarationMismatchModal(
+                    "Lỗi! Số tờ khai House Bill không khớp với dữ liệu Hải quan. Vui lòng kiểm tra và thử lại.");
                 ThongQuanResult = null;
                 ChiTietResult = null;
                 DetailRows = [];

@@ -1518,6 +1518,7 @@ select {
 .register-form {
     display: grid;
     gap: 14px;
+    margin-bottom:40px;
 }
 
 .register-section-card {

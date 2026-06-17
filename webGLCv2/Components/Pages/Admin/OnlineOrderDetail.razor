@@ -468,7 +468,7 @@
                                                         </button>
                                                     }
 
-                                                    @if (CanDownloadElectronicInvoice(item))
+                                                    @* @if (CanDownloadElectronicInvoice(item))
                                                     {
                                                         <button type="button" title="Tải hoá đơn điện tử pdf"
                                                                 class="portal-primary-action"
@@ -476,7 +476,7 @@
                                                                 @onclick="() => DownloadHoaDonDienTuAsync(item)">
                                                             Tải Hoá đơn ĐT
                                                         </button>
-                                                    }
+                                                    } *@
                                                 </div>
                                             </td>
                                         </tr>

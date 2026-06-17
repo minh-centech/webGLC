@@ -549,9 +549,32 @@
         var soVanDon = Uri.EscapeDataString(soVanDonValue);
         var soToKhai = Uri.EscapeDataString(soToKhaiValue);
         var idCt = Uri.EscapeDataString(idCtLenhNhapKhoHangNhapKhauChiTiet.Value.ToString(CultureInfo.InvariantCulture));
+        var checksumPayload = BuildOrderLinkChecksumPayload(
+            HouseBill.Trim(),
+            soContValue,
+            soVanDonValue,
+            soToKhaiValue,
+            idCtLenhNhapKhoHangNhapKhauChiTiet.Value);
+        var hashResult = EverlinkChecksumHelper.CreateHash(checksumPayload);
 
-        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}&soToKhai={soToKhai}&idCtLenhNhapKhoHangNhapKhauChiTiet={idCt}");
+        NavigationManager.NavigateTo($"/user/orders/new?houseBill={houseBill}&soCont={soCont}&soVanDon={soVanDon}&soToKhai={soToKhai}&idCtLenhNhapKhoHangNhapKhauChiTiet={idCt}&t={hashResult.t}&checksum={Uri.EscapeDataString(hashResult.hash)}");
     }
+
+    private static string BuildOrderLinkChecksumPayload(
+        string houseBill,
+        string soCont,
+        string soVanDon,
+        string soToKhai,
+        long idCtLenhNhapKhoHangNhapKhauChiTiet)
+        => string.Join("|",
+            NormalizeChecksumValue(houseBill),
+            NormalizeChecksumValue(soCont),
+            NormalizeChecksumValue(soVanDon),
+            NormalizeChecksumValue(soToKhai),
+            idCtLenhNhapKhoHangNhapKhauChiTiet.ToString(CultureInfo.InvariantCulture));
+
+    private static string NormalizeChecksumValue(string? value)
+        => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
 
     private async Task<long?> ResolveIdCtLenhNhapKhoHangNhapKhauChiTietAsync(string? soVanDon)
     {
@@ -724,7 +747,7 @@
         => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
 
     private static string FormatDecimal(decimal value)
-        => value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
+        => value.ToString(CultureInfo.GetCultureInfo("vi-VN"));
 
     private static string FormatBool(bool value)
         => value ? "Có" : "Không";

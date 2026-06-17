@@ -254,6 +254,11 @@ namespace webAPI.Controllers
                 throw new Exception("HoVaTen khong duoc bo trong.");
             }
 
+            if (!isUpdate && string.IsNullOrWhiteSpace(model.SoToKhai))
+            {
+                throw new Exception("SoToKhai khong duoc bo trong.");
+            }
+
             if (model.IDDanhMucKhachHangDoiLenh <= 0)
             {
                 throw new Exception("IDDanhMucKhachHangDoiLenh khong hop le.");

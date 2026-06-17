@@ -35,5 +35,6 @@ public sealed class OnlineOrderDraft
     //[Required(ErrorMessage = "Vui lòng chọn ngày lấy hàng.")]
     public DateTime? PickupDate { get; set; }
 
+    //[Required(ErrorMessage = "Số tờ khai là bắt buộc.")]
     public string DeclarationNumber { get; set; } = string.Empty;
 }

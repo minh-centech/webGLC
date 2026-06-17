@@ -22,6 +22,11 @@
         <button class="portal-secondary-action" @onclick="@(() => NavigationManager.NavigateTo("/user/orders"))">Quay lại danh sách</button>
     </header>
 
+    @if (!IsQueryIntegrityValid && !string.IsNullOrWhiteSpace(QueryIntegrityErrorMessage))
+    {
+        <div class="portal-alert portal-alert-error" style="margin-bottom:16px;">@QueryIntegrityErrorMessage</div>
+    }
+
     @if (!string.IsNullOrWhiteSpace(InfoMessage))
     {
         <div class="new-order-toast-overlay">
@@ -127,7 +132,7 @@
                     </div>
                 </div>
                 <div class="form-actions new-order-form-actions" style="margin-top:20px">
-                    <button type="submit" class="portal-primary-action">Lưu lệnh</button>
+                    <button type="submit" class="portal-primary-action" disabled="@(!IsQueryIntegrityValid && HasOrderLinkQueryData())">Lưu lệnh</button>
                     <button type="button" class="portal-secondary-action" @onclick="ResetForm">Thiết lập lại thông tin</button>
                 </div>
             </section>
@@ -215,8 +220,14 @@
     private string? SoToKhaiFromQuery { get; set; }
     [SupplyParameterFromQuery(Name = "idCtLenhNhapKhoHangNhapKhauChiTiet")]
     private string? IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "t")]
+    private string? ChecksumTimestampFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "checksum")]
+    private string? ChecksumFromQuery { get; set; }
     private bool AppliedQueryDefaults { get; set; }
     private bool HouseBillQueryChecked { get; set; }
+    private bool IsQueryIntegrityValid { get; set; } = true;
+    private string? QueryIntegrityErrorMessage { get; set; }
     private bool IsTaxLookupPopupOpen { get; set; }
     private bool TaxLookupIsBusy { get; set; }
     private bool TaxLookupIsError { get; set; }
@@ -242,6 +253,8 @@
 
     protected override Task OnParametersSetAsync()
     {
+        ValidateQueryIntegrity();
+
         if (!AppliedQueryDefaults)
         {
             ApplyQueryDefaultsToDraft(markApplied: true);
@@ -269,7 +282,7 @@
     {
         if (CurrentUserId <= 0)
         {
-            ShowErrorInfoMessage("Khong xac dinh duoc tai khoan dang nhap.");
+            ShowErrorInfoMessage("Lỗi! Không xác định được tài khoản đăng nhập.");
             return;
         }
 
@@ -278,9 +291,24 @@
 
         if (Draft.PickupDate.HasValue && Draft.PickupDate.Value.Date < DateTime.Today)
         {
-            ShowErrorInfoMessage("Ngay lay hang phai tu ngay hien tai tro di.");
+            ShowErrorInfoMessage("Lỗi! Ngày lấy hàng không được nhỏ hơn ngày hiện tại.");
             return;
         }
+
+        if (!IsQueryIntegrityValid && HasOrderLinkQueryData())
+        {
+            ShowErrorInfoMessage(QueryIntegrityErrorMessage ?? "Liên kết không hợp lệ.");
+            return;
+        }
+
+        var normalizedDeclarationNumber = Draft.DeclarationNumber?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedDeclarationNumber))
+        {
+            ShowErrorInfoMessage("Lỗi! Số tờ khai là bắt buộc.");
+            return;
+        }
+
+        Draft.DeclarationNumber = normalizedDeclarationNumber;
 
         var normalizedHouseBill = Draft.HouseBill?.Trim();
         var normalizedSoVanDon = SoVanDonFromQuery?.Trim();
@@ -708,6 +736,71 @@
             AppliedQueryDefaults = true;
         }
     }
+
+    private void ValidateQueryIntegrity()
+    {
+        if (!HasOrderLinkQueryData())
+        {
+            IsQueryIntegrityValid = true;
+            QueryIntegrityErrorMessage = null;
+            return;
+        }
+
+        var houseBill = HouseBillFromQuery?.Trim() ?? string.Empty;
+        var soCont = SoContFromQuery?.Trim() ?? string.Empty;
+        var soVanDon = SoVanDonFromQuery?.Trim() ?? string.Empty;
+        var soToKhai = SoToKhaiFromQuery?.Trim() ?? string.Empty;
+        var idCtText = IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery?.Trim() ?? string.Empty;
+
+        if (!long.TryParse(idCtText, out var idCt) || idCt <= 0)
+        {
+            IsQueryIntegrityValid = false;
+            QueryIntegrityErrorMessage = "Đường dẫn truy cập không hợp lệ, hãy quay lại màn kiểm tra hàng nhập.";
+            return;
+        }
+
+        if (!long.TryParse(ChecksumTimestampFromQuery?.Trim(), out var timestamp) || timestamp <= 0)
+        {
+            IsQueryIntegrityValid = false;
+            QueryIntegrityErrorMessage = "Đường dẫn truy cập không hợp lệ, hãy quay lại màn kiểm tra hàng nhập.";
+            return;
+        }
+
+        var payload = BuildOrderLinkChecksumPayload(houseBill, soCont, soVanDon, soToKhai, idCt);
+        var checksum = ChecksumFromQuery?.Trim() ?? string.Empty;
+        var isChecksumValid = EverlinkChecksumHelper.VerifyChecksum(payload, checksum, timestamp);
+        var isFreshEnough = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - timestamp <= (long)TimeSpan.FromMinutes(15).TotalSeconds;
+
+        IsQueryIntegrityValid = isChecksumValid && isFreshEnough;
+        QueryIntegrityErrorMessage = IsQueryIntegrityValid
+            ? null
+            : "Đường dẫn truy cập không hợp lệ, hãy quay lại màn kiểm tra hàng nhập.";
+    }
+
+    private bool HasOrderLinkQueryData()
+        => !string.IsNullOrWhiteSpace(HouseBillFromQuery)
+           || !string.IsNullOrWhiteSpace(SoContFromQuery)
+           || !string.IsNullOrWhiteSpace(SoVanDonFromQuery)
+           || !string.IsNullOrWhiteSpace(SoToKhaiFromQuery)
+           || !string.IsNullOrWhiteSpace(IdCtLenhNhapKhoHangNhapKhauChiTietFromQuery)
+           || !string.IsNullOrWhiteSpace(ChecksumTimestampFromQuery)
+           || !string.IsNullOrWhiteSpace(ChecksumFromQuery);
+
+    private static string BuildOrderLinkChecksumPayload(
+        string houseBill,
+        string soCont,
+        string soVanDon,
+        string soToKhai,
+        long idCtLenhNhapKhoHangNhapKhauChiTiet)
+        => string.Join("|",
+            NormalizeChecksumValue(houseBill),
+            NormalizeChecksumValue(soCont),
+            NormalizeChecksumValue(soVanDon),
+            NormalizeChecksumValue(soToKhai),
+            idCtLenhNhapKhoHangNhapKhauChiTiet.ToString(CultureInfo.InvariantCulture));
+
+    private static string NormalizeChecksumValue(string? value)
+        => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
 
     private async Task<long?> ResolveIdCtLenhNhapKhoHangNhapKhauChiTietAsync(string? soVanDon)
     {

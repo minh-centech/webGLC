@@ -719,16 +719,24 @@
                                                 </td>
                                                 <td>@item.SoVanDon</td>
                                                 <td>
-                                                    <button type="button" title="Tải lệnh xuất kho Pdf"
-                                                            class="portal-secondary-action"
-                                                            style="display: inline-flex; align-items: center; gap: 6px; @GetLenhXuatDownloadButtonStyle(item.So)"
-                                                            @onclick="() => DownloadLenhXuatPdfAsync(item)">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
-                                                            <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293z" />
-                                                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 1A1.5 1.5 0 0 0 11 2.5V3h2.5L9.5 1zM4 2h4v1H4zM4 4h2v1H4zm0 3h7v1H4zm0 2h7v1H4z" />
-                                                        </svg>
-                                                        Tải Lệnh PDF
-                                                    </button>
+                                                    @{
+                                                        var canDownloadLenhXuatPdf = CanDownloadLenhXuatPdf;
+                                                    }
+                                                    <span class="pdf-action-wrapper"
+                                                          title="@(canDownloadLenhXuatPdf ? "Tải lệnh xuất kho Pdf" : "Không thể tải PDF khi chưa thanh toán hết các biên nhận")">
+                                                        <button type="button"
+                                                                class="portal-secondary-action pdf-action-button"
+                                                                disabled="@(!canDownloadLenhXuatPdf)"
+                                                                aria-disabled="@(!canDownloadLenhXuatPdf)"
+                                                                style="display: inline-flex; align-items: center; gap: 6px; @GetLenhXuatDownloadButtonStyle(item.So, canDownloadLenhXuatPdf)"
+                                                                @onclick="() => DownloadLenhXuatPdfAsync(item)">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
+                                                                <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293z" />
+                                                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 1A1.5 1.5 0 0 0 11 2.5V3h2.5L9.5 1zM4 2h4v1H4zM4 4h2v1H4zm0 3h7v1H4zm0 2h7v1H4z" />
+                                                            </svg>
+                                                            Tải Lệnh PDF
+                                                        </button>
+                                                    </span>
                                                 </td>
                                             </tr>
                                         }
@@ -782,7 +790,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var item in Workflow!.BienNhanThanhToanHangNhapKhauTemps!.Data)
+                                        @foreach (var item in GetOrderedReceiptPayments())
                                         {
                                             <tr>
                                                 <td>@item.So</td>
@@ -825,15 +833,21 @@
 
                                                         @if (!string.IsNullOrWhiteSpace(item.So))
                                                         {
-                                                            <button type="button" title="Tải biên nhận pdf"
-                                                                    class="portal-secondary-action"
-                                                                    style="display: inline-flex; align-items: center; gap: 6px; @GetReceiptDownloadButtonStyle(item.So)"
-                                                                    @onclick="() => DownloadBienNhanPdfAsync(item)">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
-                                                                    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 1A1.5 1.5 0 0 0 11 2.5V3h2.5L9.5 1zM4.5 9.5c0-.83.655-1.5 1.45-1.5.57 0 1.05.347 1.253.844-.143.196-.396.483-.733.824-.42.42-.767.652-1.043.766-.234-.236-.374-.553-.374-.935zm.789 2.215c.245-.075.58-.287 1.006-.714.282-.282.522-.544.717-.773a14.1 14.1 0 0 0 2.053.447c.18.577.29 1.154.29 1.637 0 .84-.336 1.343-.883 1.343-.466 0-.742-.315-.815-.715-.054-.3-.005-.675.14-1.122zm-.114-4.856c0-.525.102-.915.263-1.15.16-.237.382-.357.66-.357.288 0 .506.12.651.357.144.235.217.625.217 1.15 0 .53-.073.922-.217 1.16-.145.237-.363.357-.651.357-.278 0-.5-.12-.66-.357-.16-.238-.263-.63-.263-1.16zm5.834 5.2c-.37-.09-.766-.235-1.173-.424a14.2 14.2 0 0 0 1.657-.272c.11-.03.208-.053.292-.072.072.247.111.492.111.727 0 .393-.165.59-.444.59-.14 0-.294-.06-.443-.223z" />
-                                                                </svg>
-                                                                Tải PDF
-                                                            </button>
+                                                            var canDownloadReceiptPdf = item.DaThanhToan;
+                                                            <span class="pdf-action-wrapper"
+                                                                  title="@(canDownloadReceiptPdf ? "Tải biên nhận pdf" : "Không thể tải PDF khi biên nhận chưa thanh toán")">
+                                                                <button type="button"
+                                                                        class="portal-secondary-action pdf-action-button"
+                                                                        disabled="@(!canDownloadReceiptPdf)"
+                                                                        aria-disabled="@(!canDownloadReceiptPdf)"
+                                                                        style="display: inline-flex; align-items: center; gap: 6px; @GetReceiptDownloadButtonStyle(item.So, canDownloadReceiptPdf)"
+                                                                        @onclick="() => DownloadBienNhanPdfAsync(item)">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
+                                                                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 1A1.5 1.5 0 0 0 11 2.5V3h2.5L9.5 1zM4.5 9.5c0-.83.655-1.5 1.45-1.5.57 0 1.05.347 1.253.844-.143.196-.396.483-.733.824-.42.42-.767.652-1.043.766-.234-.236-.374-.553-.374-.935zm.789 2.215c.245-.075.58-.287 1.006-.714.282-.282.522-.544.717-.773a14.1 14.1 0 0 0 2.053.447c.18.577.29 1.154.29 1.637 0 .84-.336 1.343-.883 1.343-.466 0-.742-.315-.815-.715-.054-.3-.005-.675.14-1.122zm-.114-4.856c0-.525.102-.915.263-1.15.16-.237.382-.357.66-.357.288 0 .506.12.651.357.144.235.217.625.217 1.15 0 .53-.073.922-.217 1.16-.145.237-.363.357-.651.357-.278 0-.5-.12-.66-.357-.16-.238-.263-.63-.263-1.16zm5.834 5.2c-.37-.09-.766-.235-1.173-.424a14.2 14.2 0 0 0 1.657-.272c.11-.03.208-.053.292-.072.072.247.111.492.111.727 0 .393-.165.59-.444.59-.14 0-.294-.06-.443-.223z" />
+                                                                    </svg>
+                                                                    Tải PDF
+                                                                </button>
+                                                            </span>
                                                         }
 
                                                         @* @if (CanDownloadElectronicInvoice(item))
@@ -1764,7 +1778,7 @@
                 return false;
             }
 
-            return IsExtendAction(lenhXuatKhoTemp);
+            return IsExtendAction(lenhXuatKhoTemp) && CanShowExtendActionByReceiptPayments();
         }
     }
 
@@ -1803,6 +1817,12 @@
             ? Workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Count
             : 0;
 
+    private IEnumerable<BienNhanThanhToanHangNhapKhauTempListItem> GetOrderedReceiptPayments()
+        => Workflow?.BienNhanThanhToanHangNhapKhauTemps?.Success == true
+            ? Workflow.BienNhanThanhToanHangNhapKhauTemps.Data
+                .OrderBy(item => item.NgayLap ?? DateTime.MinValue)
+            : Enumerable.Empty<BienNhanThanhToanHangNhapKhauTempListItem>();
+
     private bool CanDownloadLenhXuatPdf
     {
         get
@@ -1815,6 +1835,12 @@
 
             return receipts.Data.All(item => item.DaThanhToan);
         }
+    }
+
+    private bool CanShowExtendActionByReceiptPayments()
+    {
+        var firstReceipt = GetOrderedReceiptPayments().FirstOrDefault();
+        return firstReceipt?.DaThanhToan == true;
     }
 
     private LenhXuatKhoHangNhapKhauTempListItem? GetLenhXuatKhoTemp()
@@ -2600,12 +2626,16 @@
             : "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#22c55e; border-color:#22c55e; color:#fff;";
     }
 
-    private string GetReceiptDownloadButtonStyle(string? receiptNo)
+    private string GetReceiptDownloadButtonStyle(string? receiptNo, bool canDownload)
     {
         var active = IsReceiptActionActive(receiptNo, "download");
-        return active
+        var baseStyle = active
             ? "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#c26b12; border-color:#c26b12; color:#fff;"
             : "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#d97706; border-color:#d97706; color:#fff;";
+
+        return canDownload
+            ? baseStyle
+            : $"{baseStyle} opacity:0.45; filter:saturate(0.65); cursor:not-allowed; pointer-events:none;";
     }
 
     private string GetReceiptElectronicInvoiceButtonStyle(string? fKey)
@@ -2616,12 +2646,16 @@
             : "padding:0.35rem 0.65rem; min-height:32px; font-size:0.84rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; background:#2563eb; border-color:#2563eb; color:#fff;";
     }
 
-    private string GetLenhXuatDownloadButtonStyle(string? receiptNo)
+    private string GetLenhXuatDownloadButtonStyle(string? receiptNo, bool canDownload)
     {
         var active = IsReceiptActionActive(receiptNo, "lenhxuat-download");
-        return active
+        var baseStyle = active
             ? "padding:0.55rem 0.85rem; background:#c26b12; border-color:#c26b12; color:#fff;"
             : "padding:0.55rem 0.85rem; background:#d97706; border-color:#d97706; color:#fff;";
+
+        return canDownload
+            ? baseStyle
+            : $"{baseStyle} opacity:0.45; filter:saturate(0.65); cursor:not-allowed; pointer-events:none;";
     }
 
     private bool IsReceiptActionActive(string? receiptNo, string kind)

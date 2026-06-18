@@ -266,8 +266,8 @@ public sealed class OnlineOrderService
                 //string maHaiQuan = string.Join("", SoToKhai);
                 responseBody = $$"""
             {
-                "Status": 1,
-                "Data": "{\"ID\":\"0\",\"IDDonVi\":null,\"IDChungTu\":null,\"IDDanhMucChungTu\":\"001.020\",\"SoHieuPhuongTienVanTai\":\"HF FORTUNE\",\"SoChuyen\":\"2616S\",\"NgayTauDen\":\"2026-06-12T00:00:00\",\"SoVanDon\":\"VTRS2606E029\",\"SoDinhDanhHangHoa\":\"VTRS2606E029\",\"SoLuong\":2.0,\"DonViTinh\":\"PP\",\"ViTriKho\":\"\",\"MoTaHangHoa\":\"HÀNG BÁCH HOÁ\",\"GhiChu\":\"Container rút hàng\",\"SoToKhai\":\"108340657132\",\"NgayToKhai\":\"2026-06-15 00:00:00\",\"MaHaiQuanDangKyToKhai\":\"03YY\",\"MaLoaiHinh\":\"A12\",\"MaHaiQuanGiamSat\":\"03TG\",\"ThoiGianKetXuatDuLieu\":\"2026-06-17T16:24:19\",\"LuongToKhai\":\"2\",\"TrangThaiToKhai\":\"TQ\",\"MaDoanhNghiepXuatKhau\":\"0200168458\",\"TenDoanhNghiepXuatKhau\":\"CôNG TY Cổ PHầN ắC QUY TIA SáNG\",\"CUS_reference\":null,\"CUS_customsReference\":null,\"CUS_acceptance\":null,\"CUS_message\":null,\"IDDanhMucNguoiSuDungCreate\":null,\"CreateDate\":null}",
+                "Status": 0,
+                "Data": "{\"ID\":\"0\",\"IDDonVi\":null,\"IDChungTu\":null,\"IDDanhMucChungTu\":\"001.020\",\"SoHieuPhuongTienVanTai\":\"HF FORTUNE\",\"SoChuyen\":\"2616S\",\"NgayTauDen\":\"2026-06-12T00:00:00\",\"SoVanDon\":\"VTRS2606E029\",\"SoDinhDanhHangHoa\":\"VTRS2606E029\",\"SoLuong\":2.0,\"DonViTinh\":\"PP\",\"ViTriKho\":\"\",\"MoTaHangHoa\":\"HÀNG BÁCH HOÁ\",\"GhiChu\":\"Container rút hàng\",\"SoToKhai\":\"012345678910\",\"NgayToKhai\":\"2026-06-15 00:00:00\",\"MaHaiQuanDangKyToKhai\":\"03YY\",\"MaLoaiHinh\":\"A12\",\"MaHaiQuanGiamSat\":\"03TG\",\"ThoiGianKetXuatDuLieu\":\"2026-06-17T16:24:19\",\"LuongToKhai\":\"2\",\"TrangThaiToKhai\":\"TQ\",\"MaDoanhNghiepXuatKhau\":\"0200168458\",\"TenDoanhNghiepXuatKhau\":\"CôNG TY Cổ PHầN ắC QUY TIA SáNG\",\"CUS_reference\":null,\"CUS_customsReference\":null,\"CUS_acceptance\":null,\"CUS_message\":null,\"IDDanhMucNguoiSuDungCreate\":null,\"CreateDate\":null}",
                 "ErrorMsg": "Loi 12 thu lai sau 10 giay"
             }
             """;

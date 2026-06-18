@@ -2530,6 +2530,24 @@ select {
 }
 
 /*Đang lấy thông tin thanh toán */
+.pdf-action-wrapper {
+    display: inline-flex;
+}
+
+.pdf-action-wrapper:has(.pdf-action-button:disabled) {
+    cursor: not-allowed;
+}
+
+.pdf-action-button:disabled {
+    opacity: 0.45;
+    filter: saturate(0.65);
+}
+
+.pdf-action-button:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 @@keyframes spin {
     0% {
         transform: rotate(0deg);

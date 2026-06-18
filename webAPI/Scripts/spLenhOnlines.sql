@@ -48,10 +48,7 @@ begin
 			kh.Email as EmailNguoiTao,
 			kh.Ten as TenNguoiTao,
 			lo.IDctLenhNhapKhoHangNhapKhauChiTiet,
-			case
-				when isnull(lo.TrangThai, 0) = 1 then 1
-				else 0
-			end as IsHoanThanh,
+			isnull(cast(lo.HoanThanh as int), 0) as IsHoanThanh,
 			lo.CreateDate,
 			lo.EditDate
 		from tblLenhOnlines lo

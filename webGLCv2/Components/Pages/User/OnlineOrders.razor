@@ -320,14 +320,14 @@
         var today = DateTime.Today;
         var pickupDate = order.PickupDate?.Date;
 
-        if (pickupDate.HasValue && pickupDate.Value < today && order.StatusCode == 0)
-        {
-            return "order-row-overdue";
-        }
-
         if (order.IsHoanThanh)
         {
             return "order-row-completed";
+        }
+
+        if (pickupDate.HasValue && pickupDate.Value < today && order.StatusCode == 0)
+        {
+            return "order-row-overdue";
         }
 
         return "order-row-pending";

@@ -26,6 +26,7 @@ public sealed class OnlineOrderRecord
     public int StatusCode { get; set; }
     public string Status { get; set; } = string.Empty;
     public bool IsHoanThanh { get; set; }
+    //public bool HoanThanh { get; set; }
 
     public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
 }

@@ -1805,7 +1805,8 @@ public sealed class OnlineOrderService
         var id = GetLong(item, "ID");
         var soThuTuLenh = GetLong(item, "SoThuTuLenh");
         var trangThai = GetInt(item, "TrangThai");
-
+        var hoanThanh = GetInt(item, "IsHoanThanh");
+      
         return new OnlineOrderRecord
         {
             Id = id.ToString(),
@@ -1832,7 +1833,7 @@ public sealed class OnlineOrderService
             IDctLenhNhapKhoHangNhapKhauChiTiet = GetLong(item, "IDctLenhNhapKhoHangNhapKhauChiTiet"),
             StatusCode = trangThai,
             Status = GetTrangThaiText(trangThai),
-            IsHoanThanh = trangThai == 1
+            IsHoanThanh = hoanThanh ==1
         };
     }
 

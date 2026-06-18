@@ -1862,27 +1862,27 @@ select {
 }
 
 .portal-table tbody tr.order-row-completed td {
-    background: rgba(34, 197, 94, 0.10);
+    background: rgba(34, 197, 94, 0.20) !important;
 }
 
 .portal-table tbody tr.order-row-overdue td {
-    background: rgba(207, 90, 77, 0.10);
+    background: rgba(207, 90, 77, 0.20);
 }
 
 .portal-table tbody tr.order-row-pending td {
-    background: #ffffff;
+    background: #ffffff !important;
 }
 
 .portal-table tbody tr.order-row-completed:hover td {
-    background: rgba(34, 197, 94, 0.14);
+    background: rgba(34, 197, 94, 0.25) !important;
 }
 
 .portal-table tbody tr.order-row-overdue:hover td {
-    background: rgba(207, 90, 77, 0.14);
+    background: rgba(207, 90, 77, 0.25);
 }
 
 .portal-table tbody tr.order-row-pending:hover td {
-    background: #ffffff;
+    background: #ffffff !important;
 }
 
 .workflow-message {

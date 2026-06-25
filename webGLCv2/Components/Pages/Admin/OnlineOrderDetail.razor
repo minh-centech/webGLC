@@ -105,7 +105,137 @@
                     <label class="portal-label">Số tờ khai</label>
                     <input class="portal-input" value="@Order.DeclarationNumber" readonly />
                 </div>
+
+                @if (CanShowOrderInfoUpdate)
+                {
+                    <div class="field-span-3" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <button type="button"
+                                class="portal-primary-action"
+                                @onclick="ToggleOrderInfoEditor">
+                            @(ShowOrderInfoEditor ? "Ẩn cập nhật thông tin" : "Cập nhật thông tin lệnh online")
+                        </button>
+                        <span class="portal-text-muted">
+                            Cho phép cập nhật khi chưa tạo lệnh xuất kho và biên nhận thanh toán.
+                        </span>
+                    </div>
+                }
             </div>
+
+            @if (ShowOrderInfoEditor && CanShowOrderInfoUpdate)
+            {
+                <div class="workspace-card" style="margin-top:18px; padding:18px;">
+                    <div class="section-heading">
+                        <h2>Cập nhật thông tin lệnh</h2>
+                        <p>Chọn mã số thuế để tra cứu và tự điền tên công ty, địa chỉ DN trước khi lưu.</p>
+                    </div>
+
+                    <div class="field-grid">
+                        <div>
+                            <label class="portal-label">Mã số thuế</label>
+                            <div class="input-action-row">
+                                <div class="input-action-field">
+                                    <input class="portal-input" value="@SelectedCompanyTaxCode" readonly />
+                                </div>
+                                <button type="button" class="portal-secondary-action" @onclick="OpenTaxLookupPopup">Tra cứu MST</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="portal-label">Họ và tên</label>
+                            <input class="portal-input" @bind="EditableCustomerName" />
+                        </div>
+                        <div>
+                            <label class="portal-label">Số điện thoại</label>
+                            <input class="portal-input" @bind="EditablePhoneNumber" />
+                        </div>
+                        <div>
+                            <label class="portal-label">Số CMND/CCCD</label>
+                            <input class="portal-input" @bind="EditableIdentityNumber" />
+                        </div>
+                        <div>
+                            <label class="portal-label">Biển số xe</label>
+                            <input class="portal-input" @bind="EditableVehicleNumber" />
+                        </div>
+                        <div>
+                            <label class="portal-label">Tên công ty</label>
+                            <input class="portal-input" value="@EditableCompanyName" readonly />
+                        </div>
+                        <div class="field-span-3">
+                            <label class="portal-label">Địa chỉ DN</label>
+                            <input class="portal-input" value="@EditableCompanyAddress" readonly />
+                        </div>
+                        <div>
+                            <label class="portal-label">Mã số thuế hiện tại</label>
+                            <input class="portal-input" value="@Order.TaxCode" readonly />
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:16px; flex-wrap:wrap;">
+                        <button type="button" class="portal-secondary-action" @onclick="ReloadOrderInfoEditorAsync">Làm mới dữ liệu</button>
+                        <button type="button"
+                                class="portal-primary-action"
+                                disabled="@IsSavingOrderInfo"
+                                @onclick="SaveOrderInfoAsync">
+                            @(IsSavingOrderInfo ? "Đang lưu..." : "Lưu cập nhật")
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (IsTaxLookupPopupOpen)
+            {
+                <div class="portal-modal-backdrop" @onclick="CloseTaxLookupPopup">
+                    <div class="portal-modal" @onclick:stopPropagation="true" style="max-width:760px; width:min(100%, 760px);">
+                        <h3>Tra cứu mã số thuế</h3>
+                        <p>Nhập mã số thuế, bấm tìm kiếm và hệ thống sẽ hiển thị dữ liệu doanh nghiệp để bạn dùng cho lệnh này.</p>
+
+                        <div class="field-grid">
+                            <div class="field-card wide">
+                                <label class="portal-label">Mã số thuế</label>
+                                <div class="input-action-row" style="align-items:flex-end;">
+                                    <div class="input-action-row input-action-field" style="gap:8px; align-items:flex-end;">
+                                        <input class="portal-input input-action-field"
+                                               @bind="TaxLookupInput"
+                                               @bind:event="oninput"
+                                               placeholder="Nhập mã số thuế" />
+                                    </div>
+                                    <button type="button" class="portal-primary-action" disabled="@TaxLookupIsBusy" @onclick="SearchTaxLookupAsync">Tra cứu</button>
+                                    <button type="button" class="portal-secondary-action lookup-clear-action" disabled="@TaxLookupIsBusy" @onclick="ClearTaxLookupAsync" title="Xóa thông tin" aria-label="Xóa mã số thuế">Xóa mã số thuế</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(TaxLookupMessage))
+                        {
+                            <div class="portal-alert @(TaxLookupIsError ? "portal-alert-error" : TaxLookupIsWarning ? "portal-alert-warning" : "portal-alert-success")" style="margin-top:12px;">@TaxLookupMessage</div>
+                        }
+
+                        @if (TaxLookupResult.Count > 0)
+                        {
+                            <div class="table-shell" style="margin-top:16px; max-height:360px; overflow:auto;">
+                                <table class="portal-table dense">
+                                    <tbody>
+                                        @foreach (var item in TaxLookupResult)
+                                        {
+                                            <tr>
+                                                <td style="width:220px;">@item.Key</td>
+                                                <td>@item.Value</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+
+                        <div class="portal-modal-actions tax-lookup-actions" style="justify-content:flex-end; gap:12px; margin-top:16px;">
+                            @if (TaxLookupResult.Count > 0)
+                            {
+                                <button type="button" class="portal-primary-action" @onclick="ApplyTaxLookupResultAsync" disabled="@TaxLookupIsBusy">Dùng dữ liệu này</button>
+                            }
+                            <button type="button" class="portal-secondary-action" @onclick="CloseTaxLookupPopup">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            }
 
             <section class="workflow-grid">
                 <article class="workflow-card" style="display:none;">
@@ -540,6 +670,22 @@
     private string? StorageActionPopupMessage;
     private bool CanShowPaymentQrButton = true;
     private bool ShowLenhXuatPdfWarningDialog;
+    private bool ShowOrderInfoEditor;
+    private bool IsSavingOrderInfo;
+    private string SelectedCompanyTaxCode = string.Empty;
+    private string EditableCustomerName = string.Empty;
+    private string EditablePhoneNumber = string.Empty;
+    private string EditableIdentityNumber = string.Empty;
+    private string EditableVehicleNumber = string.Empty;
+    private string EditableCompanyName = string.Empty;
+    private string EditableCompanyAddress = string.Empty;
+    private bool IsTaxLookupPopupOpen;
+    private bool TaxLookupIsBusy;
+    private bool TaxLookupIsError;
+    private bool TaxLookupIsWarning;
+    private string TaxLookupInput = string.Empty;
+    private string? TaxLookupMessage;
+    private readonly List<TaxLookupRow> TaxLookupResult = new();
 
     private enum StorageActionPopupMode
     {
@@ -592,6 +738,7 @@
             }
 
             CurrentUserId = Order.UserId;
+            SyncOrderInfoEditorFromOrder();
             await InvokeAsync(StateHasChanged);
             _ = InvokeAsync(() => RunWorkflowAsync("auto-init"));
         }
@@ -712,6 +859,14 @@
         => Workflow?.ChiTietHouseBill is not null
            && Workflow.ChiTietHouseBill.Success
            && string.Equals(Workflow.ChiTietHouseBill.Data?.Trim(), "[]", StringComparison.Ordinal);
+
+    private bool CanShowOrderInfoUpdate
+        => Workflow?.LenhXuatKhoHangNhapKhauTemps is not null
+           && Workflow.LenhXuatKhoHangNhapKhauTemps.Success
+           && Workflow.LenhXuatKhoHangNhapKhauTemps.Data.Count == 0
+           && Workflow?.BienNhanThanhToanHangNhapKhauTemps is not null
+           && Workflow.BienNhanThanhToanHangNhapKhauTemps.Success
+           && Workflow.BienNhanThanhToanHangNhapKhauTemps.Data.Count == 0;
 
     private bool IsOverdueOrder
         => Order?.PickupDate.HasValue == true
@@ -1052,6 +1207,252 @@
     {
         await Task.CompletedTask;
     }
+
+    private async Task OpenTaxLookupPopup()
+    {
+        if (Order is null)
+        {
+            return;
+        }
+
+        ShowOrderInfoEditor = true;
+        TaxLookupInput = Order.TaxCode;
+        TaxLookupMessage = null;
+        TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
+        TaxLookupResult.Clear();
+        IsTaxLookupPopupOpen = true;
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(TaxLookupInput))
+            {
+                await SearchTaxLookupAsync();
+            }
+            else
+            {
+                TaxLookupMessage = "Vui lòng nhập mã số thuế trước khi tra cứu.";
+                TaxLookupIsError = true;
+                TaxLookupIsWarning = false;
+            }
+        }
+        catch
+        {
+            TaxLookupMessage = "Không thể mở tra cứu mã số thuế.";
+            TaxLookupIsError = true;
+        }
+    }
+
+    private async Task CloseTaxLookupPopup()
+    {
+        IsTaxLookupPopupOpen = false;
+        TaxLookupIsBusy = false;
+        TaxLookupMessage = null;
+        TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ReloadOrderInfoEditorAsync()
+    {
+        if (Order is null)
+        {
+            return;
+        }
+
+        SyncOrderInfoEditorFromOrder();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleOrderInfoEditor()
+    {
+        ShowOrderInfoEditor = !ShowOrderInfoEditor;
+    }
+
+    private void SyncOrderInfoEditorFromOrder()
+    {
+        if (Order is null)
+        {
+            return;
+        }
+
+        SelectedCompanyTaxCode = Order.TaxCode;
+        EditableCustomerName = Order.CustomerName;
+        EditablePhoneNumber = Order.PhoneNumber;
+        EditableIdentityNumber = Order.IdentityNumber;
+        EditableVehicleNumber = Order.VehicleNumber;
+        EditableCompanyName = Order.CompanyName;
+        EditableCompanyAddress = Order.CompanyAddress;
+    }
+
+    private async Task ClearTaxLookupAsync()
+    {
+        TaxLookupInput = string.Empty;
+        TaxLookupResult.Clear();
+        TaxLookupMessage = "Đã xoá dữ liệu tra cứu.";
+        TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
+
+        SelectedCompanyTaxCode = string.Empty;
+        EditableCompanyName = string.Empty;
+        EditableCompanyAddress = string.Empty;
+        Order!.TaxCode = string.Empty;
+        Order!.CompanyName = string.Empty;
+        Order!.CompanyAddress = string.Empty;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SearchTaxLookupAsync()
+    {
+        TaxLookupMessage = null;
+        TaxLookupIsError = false;
+        TaxLookupIsWarning = false;
+        TaxLookupResult.Clear();
+
+        var taxCode = TaxLookupInput.Trim();
+        if (string.IsNullOrWhiteSpace(taxCode))
+        {
+            TaxLookupMessage = "Vui lòng nhập mã số thuế.";
+            TaxLookupIsError = true;
+            return;
+        }
+
+        TaxLookupIsBusy = true;
+        try
+        {
+            var result = await OnlineOrderService.LookupCompanyByMaSoThueAsync(taxCode);
+            if (result is null)
+            {
+                TaxLookupMessage = "Không tìm thấy dữ liệu phù hợp cho mã số thuế này.";
+                TaxLookupIsError = true;
+                return;
+            }
+
+            TaxLookupResult.Add(new TaxLookupRow("Mã số thuế", result.MaSoThue, result.CreateDate));
+            TaxLookupResult.Add(new TaxLookupRow("Tên công ty", result.Ten, result.CreateDate));
+            TaxLookupResult.Add(new TaxLookupRow("Địa chỉ", result.DiaChi, result.CreateDate));
+
+            if (!string.IsNullOrWhiteSpace(result.Email))
+            {
+                TaxLookupResult.Add(new TaxLookupRow("Email", result.Email, result.CreateDate));
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.SoDienThoai))
+            {
+                TaxLookupResult.Add(new TaxLookupRow("Số điện thoại", result.SoDienThoai, result.CreateDate));
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.NguoiDaiDien))
+            {
+                TaxLookupResult.Add(new TaxLookupRow("Người đại diện", result.NguoiDaiDien, result.CreateDate));
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.ChucVuNguoiDaiDien))
+            {
+                TaxLookupResult.Add(new TaxLookupRow("Chức vụ người đại diện", result.ChucVuNguoiDaiDien, result.CreateDate));
+            }
+
+            TaxLookupResult.Add(new TaxLookupRow("Ngày cập nhật", FormatVietnameseDate(result.CreateDate), result.CreateDate));
+            TaxLookupMessage = "Nhấn Dùng dữ liệu này để áp dụng thông tin doanh nghiệp vào lệnh.";
+            TaxLookupIsWarning = true;
+        }
+        catch (Exception ex)
+        {
+            TaxLookupMessage = ex.Message;
+            TaxLookupIsError = true;
+        }
+        finally
+        {
+            TaxLookupIsBusy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveOrderInfoAsync()
+    {
+        if (Order is null)
+        {
+            return;
+        }
+
+        IsSavingOrderInfo = true;
+        try
+        {
+            Order.CustomerName = EditableCustomerName.Trim();
+            Order.PhoneNumber = EditablePhoneNumber.Trim();
+            Order.IdentityNumber = EditableIdentityNumber.Trim();
+            Order.VehicleNumber = EditableVehicleNumber.Trim();
+            Order.TaxCode = SelectedCompanyTaxCode.Trim();
+            Order.CompanyName = EditableCompanyName.Trim();
+            Order.CompanyAddress = EditableCompanyAddress.Trim();
+
+            await LegacyCustomerPortalService.UpdateOrderInfoAsync(Order);
+            ErrorMessage = null;
+            DownloadToastMessage = "Đã cập nhật thông tin lệnh online.";
+            DownloadToastIsError = false;
+            IsTaxLookupPopupOpen = false;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsSavingOrderInfo = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ApplyTaxLookupResultAsync()
+    {
+        var taxCode = GetTaxLookupValue("mã số thuế");
+        if (!string.IsNullOrWhiteSpace(taxCode))
+        {
+            SelectedCompanyTaxCode = taxCode;
+            Order!.TaxCode = taxCode;
+        }
+
+        var companyName = GetTaxLookupValue("tên công ty");
+        if (!string.IsNullOrWhiteSpace(companyName))
+        {
+            EditableCompanyName = companyName;
+            Order!.CompanyName = companyName;
+        }
+
+        var address = GetTaxLookupValue("địa chỉ");
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            EditableCompanyAddress = address;
+            Order!.CompanyAddress = address;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedCompanyTaxCode))
+        {
+            Order!.TaxCode = SelectedCompanyTaxCode;
+        }
+
+        await CloseTaxLookupPopup();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetTaxLookupValue(string key)
+    {
+        var item = TaxLookupResult.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+        return item?.Value ?? string.Empty;
+    }
+
+    private static string FormatVietnameseDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "-";
+        }
+
+        return value;
+    }
+
+    private sealed record TaxLookupRow(string Key, string Value, string UpdateDate);
 
     private async Task ExecuteStorageActionAsync()
     {

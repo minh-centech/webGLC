@@ -708,6 +708,40 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể cập nhật ngày lấy hàng cho lệnh online.");
     }
 
+    public async Task UpdateOrderInfoAsync(OnlineOrderRecord order)
+    {
+        if (!long.TryParse(order.Id, out var id))
+        {
+            throw new InvalidOperationException("Không xác định được ID lệnh để cập nhật thông tin.");
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            "api/LenhOnlines/Update",
+            new LenhOnlinesUpdateRequest
+            {
+                ID = id,
+                HoVaTen = order.CustomerName,
+                SoDienThoai = NullIfEmpty(order.PhoneNumber),
+                SoCMND = NullIfEmpty(order.IdentityNumber),
+                SoXe = NullIfEmpty(order.VehicleNumber),
+                MaSoThue = NullIfEmpty(order.TaxCode),
+                TenCongTy = NullIfEmpty(order.CompanyName),
+                DiaChi = NullIfEmpty(order.CompanyAddress),
+                Email = NullIfEmpty(order.CompanyEmail),
+                HouseBill = NullIfEmpty(order.HouseBill),
+                SoCont = NullIfEmpty(order.ContainerNumber),
+                SoToKhai = NullIfEmpty(order.DeclarationNumber),
+                TrangThai = order.StatusCode,
+                IDDanhMucKhachHangDoiLenh = order.UserId
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật thông tin lệnh online.");
+    }
+
     public async Task MarkOrderAsCompletedAsync(OnlineOrderRecord order, string? traceTag = null)
     {
         if (!long.TryParse(order.Id, out var id))

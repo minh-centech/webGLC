@@ -5,9 +5,11 @@
 @inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @using Microsoft.AspNetCore.Components
 @using System.Globalization
 @using System.Security.Claims
+@using Microsoft.JSInterop
 
 <PageTitle>Kiểm tra hàng nhập</PageTitle>
 
@@ -16,7 +18,7 @@
         <div>
             <p class="page-kicker">User Workspace</p>
             <h1>Kiểm tra hàng nhập</h1>
-            <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo HouseBill và Số tờ khai để theo dõi tiếp nhận và thông quan.</p>
+            <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo HouseBill, Số tờ khai, Ngày tờ khai và Mã số hải quan để theo dõi tiếp nhận và thông quan.</p>
             <p class="page-subtitle" style="color:darkred">Lưu ý: Hệ thống hiện chỉ hỗ trợ làm lệnh trực tuyến đối với các HouseBill đi kèm một tờ khai hải quan duy nhất.</p>
         </div>
     </header>
@@ -29,7 +31,7 @@
     <section class="workspace-card">
         <div class="section-heading">
             <h2>Tra cứu thông tin thông quan</h2>
-            <p>Nhập House Bill và Số tờ khai để lấy dữ liệu từ hải quan.</p>
+            <p>Nhập House Bill, Số tờ khai, Ngày tờ khai và Mã số hải quan để lấy dữ liệu từ hải quan.</p>
         </div>
 
         <div class="field-grid">
@@ -46,6 +48,26 @@
                        placeholder="Nhập Số tờ khai"
                        required />
             </div>
+            @* <div>
+                <label class="portal-label" for="declarationDate">Ngày tờ khai <span style="color:red">(*)</span></label>
+                <input id="declarationDate"
+                       class="portal-input"
+                       value="@DeclarationDateText"
+                       @oninput="OnDeclarationDateInput"
+                       @onchange="OnDeclarationDateInput"
+                       placeholder="dd/MM/yyyy"
+                       inputmode="numeric"
+                       required />
+            </div>
+            <div>
+                <label class="portal-label" for="customsCode">Mã số hải quan <span style="color:red">(*)</span></label>
+                <input id="customsCode"
+                       class="portal-input"
+                       @bind="CustomsCode"
+                       @bind:event="oninput"
+                       placeholder="Nhập Mã loại hình"
+                       required />
+            </div> *@
             <div class="search-actions-block">
                 <button type="button" class="portal-primary-action" @onclick="SearchAsync" disabled="@IsSearching">
                     @(IsSearching ? "Đang lấy dữ liệu! Vui lòng đợi trong ít phút..." : "Tra cứu dữ liệu")
@@ -271,6 +293,8 @@
     private string? LegacyDeclarationNumberFromQuery { get; set; }
     private string HouseBill { get; set; } = string.Empty;
     private string DeclarationNumber { get; set; } = string.Empty;
+    private DateTime? DeclarationDate { get; set; }
+    private string CustomsCode { get; set; } = string.Empty;
     private List<ImportCheckRecord> Results { get; set; } = [];
     private ThongQuanCheckResponse? ThongQuanResult { get; set; }
     private ChiTietHouseBillResponse? ChiTietResult { get; set; }
@@ -286,6 +310,7 @@
     private bool IsNoDataModalOpen;
     private bool IsDeclarationMismatchModalOpen;
     private bool HasDeclarationMismatch;
+    private bool _shouldInitDeclarationDatePicker = true;
     private bool HasExistingOnlineOrder => ExistingOnlineOrderId.HasValue;
     private bool CanShowExistingOnlineOrderButton
         => ExistingOnlineOrderId.HasValue
@@ -334,10 +359,23 @@
         CurrentUserId = long.TryParse(authState.User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_shouldInitDeclarationDatePicker)
+        {
+            return;
+        }
+
+        _shouldInitDeclarationDatePicker = false;
+        await JSRuntime.InvokeVoidAsync("orderDatePicker.initPickupDatePicker", "declarationDate");
+    }
+
     private async Task SearchAsync()
     {
         var normalizedHouseBill = HouseBill.Trim();
         var normalizedDeclarationNumber = DeclarationNumber.Trim();
+        //var normalizedDeclarationDate = DeclarationDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
+        //var normalizedCustomsCode = CustomsCode.Trim();
 
         SearchMessage = string.Empty;
         ErrorMessage = string.Empty;
@@ -377,6 +415,11 @@
             {
                 DeclarationNumber = normalizedDeclarationNumber;
             }
+
+            // if (!string.IsNullOrWhiteSpace(normalizedCustomsCode))
+            // {
+            //     CustomsCode = normalizedCustomsCode;
+            // }
 
             try
             {
@@ -628,7 +671,11 @@
     {
         var houseBill = string.IsNullOrWhiteSpace(HouseBill) ? "-" : HouseBill;
         var declarationNumber = string.IsNullOrWhiteSpace(DeclarationNumber) ? "-" : DeclarationNumber;
-        return $"House Bill: {houseBill} | Số tờ khai: {declarationNumber}";
+        var declarationDate = DeclarationDate.HasValue
+            ? DeclarationDate.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))
+            : "-";
+        var customsCode = string.IsNullOrWhiteSpace(CustomsCode) ? "-" : CustomsCode;
+        return $"House Bill: {houseBill} | Số tờ khai: {declarationNumber} | Ngày tờ khai: {declarationDate} | Mã số hải quan: {customsCode}";
     }
 
     private static string GetThongQuanClass(ThongQuanCheckResponse? result)
@@ -780,6 +827,26 @@
         => string.IsNullOrWhiteSpace(value)
             ? string.Empty
             : new string(value.Trim().Where(ch => !char.IsWhiteSpace(ch)).ToArray()).ToUpperInvariant();
+
+    private string DeclarationDateText
+        => DeclarationDate.HasValue
+            ? DeclarationDate.Value.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"))
+            : string.Empty;
+
+    private void OnDeclarationDateInput(ChangeEventArgs args)
+    {
+        var text = args.Value?.ToString()?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            DeclarationDate = null;
+            return;
+        }
+
+        if (DateTime.TryParseExact(text, "dd/MM/yyyy", CultureInfo.GetCultureInfo("vi-VN"), DateTimeStyles.None, out var parsedDate))
+        {
+            DeclarationDate = parsedDate.Date;
+        }
+    }
 
     private sealed record DetailRow(string Label, string Value);
 

@@ -2557,3 +2557,35 @@ select {
         transform: rotate(360deg);
     }
 }
+
+
+/* Style chung cho khung thẻ (nếu bạn chưa có) */
+
+/* Style cho phần link YouTube */
+.youtube-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Khoảng cách giữa icon và chữ */
+    color: #e0a96d; /* Màu chữ mặc định của bạn hoặc đổi thành #ff0000 tùy ý */
+    text-decoration: underline;
+    font-size: 16px;
+    margin-top: 10px;
+    transition: color 0.2s ease;
+}
+
+/* Định dạng Icon YouTube */
+.youtube-icon {
+    width: 24px;
+    height: 24px;
+    fill: #ff0000; /* Màu đỏ thương hiệu YouTube */
+    transition: transform 0.2s ease;
+}
+
+/* Hiệu ứng khi di chuột vào (Hover) */
+.youtube-link:hover {
+    color: #ff4545; /* Chữ đổi sang màu đỏ sáng hơn */
+}
+
+    .youtube-link:hover .youtube-icon {
+        transform: scale(1.1); /* Phóng to nhẹ icon khi hover */
+    }

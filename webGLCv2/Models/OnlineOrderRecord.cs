@@ -29,5 +29,7 @@ public sealed class OnlineOrderRecord
     //public bool HoanThanh { get; set; }
 
     public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
+    public int SoBienNhanDaThanhToan { get; set; }
+    public int SoBienNhanChuaThanhToan { get; set; }
 }
 

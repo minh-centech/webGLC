@@ -527,7 +527,7 @@ window.paymentQr = (function () {
     `).join("");
 
     details.innerHTML += `
-        <div class="portal-alert portal-alert-warning" style="margin-top:12px;">
+        <div class="portal-alert portal-alert-danger" style="margin-top:12px;">
             Vui lòng giữ nguyên mã giao dịch trong nội dung chuyển khoản. Nếu sai mã, hệ thống sẽ không thể xác thực giao dịch của bạn.
         </div>
     `;

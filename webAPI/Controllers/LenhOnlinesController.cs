@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Web.Http;
 using System.Web.Http.Cors;
 using GlobalVariables = webAPI.Code.GlobalVariables;
@@ -34,10 +36,15 @@ namespace webAPI.Controllers
                     request.Page <= 0 ? 1 : request.Page,
                     request.PageSize <= 0 ? 10 : request.PageSize);
 
+                var receiptCounts = LoadReceiptCounts(dt);
+
                 List<LenhOnlines> list = new List<LenhOnlines>();
                 int totalCount = 0;
                 foreach (DataRow dataRow in dt.Rows)
                 {
+                    var detailId = dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"] == DBNull.Value
+                        ? 0
+                        : coreCommon.coreCommon.longParse(dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"]);
                     totalCount = coreCommon.coreCommon.intParse(dataRow["TotalCount"]);
                     list.Add(new LenhOnlines
                     {
@@ -63,7 +70,13 @@ namespace webAPI.Controllers
                         IsHoanThanh = dataRow["IsHoanThanh"] == DBNull.Value ? null : dataRow["IsHoanThanh"],
                         CreateDate = dataRow["CreateDate"] == DBNull.Value ? null : dataRow["CreateDate"],
                         EditDate = dataRow["EditDate"] == DBNull.Value ? null : dataRow["EditDate"],
-                        IDctLenhNhapKhoHangNhapKhauChiTiet =dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"] == DBNull.Value ? null : dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"]
+                        IDctLenhNhapKhoHangNhapKhauChiTiet = dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"] == DBNull.Value ? null : dataRow["IDctLenhNhapKhoHangNhapKhauChiTiet"],
+                        SoBienNhanDaThanhToan = receiptCounts.TryGetValue(detailId, out var receiptCount)
+                            ? receiptCount.DaThanhToan
+                            : 0,
+                        SoBienNhanChuaThanhToan = receiptCounts.TryGetValue(detailId, out var receiptCount2)
+                            ? receiptCount2.ChuaThanhToan
+                            : 0
                     });
                 }
 
@@ -273,6 +286,59 @@ namespace webAPI.Controllers
         private string NormalizeText(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+
+        private Dictionary<long, (int DaThanhToan, int ChuaThanhToan)> LoadReceiptCounts(DataTable lenhOnlinesTable)
+        {
+            var detailIds = lenhOnlinesTable.AsEnumerable()
+                .Select(row => row["IDctLenhNhapKhoHangNhapKhauChiTiet"] == DBNull.Value
+                    ? 0L
+                    : coreCommon.coreCommon.longParse(row["IDctLenhNhapKhoHangNhapKhauChiTiet"]))
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            var result = new Dictionary<long, (int DaThanhToan, int ChuaThanhToan)>();
+            if (detailIds.Count == 0)
+            {
+                return result;
+            }
+
+            using (var sqlConnection = new SqlConnection(GlobalVariables.ConnectionString))
+            {
+                sqlConnection.Open();
+
+                var parameters = detailIds
+                    .Select((id, index) => new SqlParameter($"@id{index}", id))
+                    .ToArray();
+
+                var inClause = string.Join(", ", parameters.Select(parameter => parameter.ParameterName));
+                var sql = $@"
+select
+    IDctLenhNhapKhoHangNhapKhauChiTiet,
+    sum(case when DaThanhToan = 1 then 1 else 0 end) as SoBienNhanDaThanhToan,
+    sum(case when DaThanhToan = 0 then 1 else 0 end) as SoBienNhanChuaThanhToan
+from ctBienNhanThanhToanHangNhapKhauTemp
+where IDctLenhNhapKhoHangNhapKhauChiTiet in ({inClause})
+group by IDctLenhNhapKhoHangNhapKhauChiTiet";
+
+                using (var cmd = new SqlCommand(sql, sqlConnection))
+                {
+                    cmd.Parameters.AddRange(parameters);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var detailId = coreCommon.coreCommon.longParse(reader["IDctLenhNhapKhoHangNhapKhauChiTiet"]);
+                            result[detailId] = (
+                                coreCommon.coreCommon.intParse(reader["SoBienNhanDaThanhToan"]),
+                                coreCommon.coreCommon.intParse(reader["SoBienNhanChuaThanhToan"]));
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

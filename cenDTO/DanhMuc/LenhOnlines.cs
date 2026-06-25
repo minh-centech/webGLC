@@ -30,6 +30,8 @@ namespace cenDTO
         public object DuongDanFileHoaDon { get; set; }
 
         public object IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
+        public object SoBienNhanDaThanhToan { get; set; }
+        public object SoBienNhanChuaThanhToan { get; set; }
 
         public const string tableName = "tblLenhOnlines";
         public const string listProcedureName = "dbo.List_" + tableName;

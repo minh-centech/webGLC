@@ -1290,14 +1290,14 @@
                                         </span>
                                     </div>
                                 }
-                                <div class="portal-alert portal-alert-warning" style="margin-top:12px;">
+                                <div class="portal-alert portal-alert-danger" style="margin-top:12px;">
                                     Vui lòng giữ nguyên mã giao dịch trong nội dung chuyển khoản. Nếu sai mã, hệ thống sẽ không thể xác thực giao dịch của bạn.
                                 </div>
 
                             }
                             else if (PaymentQrDetails is not null && !PaymentQrDetails.Success && !string.IsNullOrWhiteSpace(PaymentQrDetails.ErrorMessage))
                             {
-                                <div class="portal-alert portal-alert-warning" style="margin-top:8px;">
+                                <div class="portal-alert portal-alert-danger" style="margin-top:8px;">
                                     @PaymentQrDetails.ErrorMessage
                                 </div>
                             }

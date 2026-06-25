@@ -1831,6 +1831,8 @@ public sealed class OnlineOrderService
             PickupDate = GetDateTime(item, "NgayLayHang"),
             DeclarationNumber = GetString(item, "SoToKhai"),
             IDctLenhNhapKhoHangNhapKhauChiTiet = GetLong(item, "IDctLenhNhapKhoHangNhapKhauChiTiet"),
+            SoBienNhanDaThanhToan = GetInt(item, "SoBienNhanDaThanhToan"),
+            SoBienNhanChuaThanhToan = GetInt(item, "SoBienNhanChuaThanhToan"),
             StatusCode = trangThai,
             Status = GetTrangThaiText(trangThai),
             IsHoanThanh = hoanThanh ==1

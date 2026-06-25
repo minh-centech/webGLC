@@ -75,6 +75,7 @@
                         <th>Mã ST/ Tên DN</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
+                        <th>Trạng thái thanh toán</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -82,7 +83,7 @@
                     @if (Orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="9">
+                            <td colspan="10">
                                 <div class="portal-empty-inline">
                                     Không tìm thấy lệnh trực tuyến nào trong khoảng thời gian đã chọn.
                                     <br />Vui lòng điều chỉnh bộ lọc để xem dữ liệu.
@@ -113,6 +114,11 @@
                                 </td>
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
+                                <td>
+                                    <span class="status-chip @GetPaymentStatusClass(order)">
+                                        @GetPaymentStatusLabel(order)
+                                    </span>
+                                </td>
                                 <td>
                                     <button type="button" class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
                                         Xem chi tiết
@@ -293,6 +299,46 @@
         }
 
         return "order-row-pending";
+    }
+
+    private static string GetPaymentStatusClass(OnlineOrderRecord order)
+    {
+        if (order.SoBienNhanDaThanhToan <= 0 && order.SoBienNhanChuaThanhToan <= 0)
+        {
+            return "warning";
+        }
+
+        if (order.SoBienNhanChuaThanhToan > 0)
+        {
+            return "danger";
+        }
+
+        if (order.SoBienNhanDaThanhToan > 0)
+        {
+            return "success";
+        }
+
+        return "neutral";
+    }
+
+    private static string GetPaymentStatusLabel(OnlineOrderRecord order)
+    {
+        if (order.SoBienNhanDaThanhToan <= 0 && order.SoBienNhanChuaThanhToan <= 0)
+        {
+            return "Chưa có biên nhận";
+        }
+
+        if (order.SoBienNhanChuaThanhToan > 0)
+        {
+            return "Chưa thanh toán";
+        }
+
+        if (order.SoBienNhanDaThanhToan > 0)
+        {
+            return "Đã thanh toán";
+        }
+
+        return "Không xác định";
     }
 
     private void ViewDetail(string orderId)

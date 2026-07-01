@@ -3,6 +3,8 @@ using System.Net.Mail;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using webGLCv2.Models;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace webGLCv2.Services;
 
@@ -22,6 +24,19 @@ public sealed class EmailHelper
     {
         _options = options.Value;
         _logger = logger;
+    }
+
+    private static void BypassSslCertificateValidation()
+    {
+        ServicePointManager.ServerCertificateValidationCallback =
+            delegate (
+                object sender,
+                X509Certificate certificate,
+                X509Chain chain,
+                SslPolicyErrors sslPolicyErrors)
+            {
+                return true;
+            };
     }
 
     public async Task SendEmailAsync(string toEmail, string templateId)
@@ -66,6 +81,14 @@ public sealed class EmailHelper
             EnableSsl = _options.SSL,
             Credentials = new NetworkCredential(_options.Username, _options.Password)
         };
+        //BypassSslCertificateValidation();
+
+        //using var client = new SmtpClient(_options.Host, _options.Port)
+        //{
+        //    EnableSsl = _options.SSL,
+        //    Credentials = new NetworkCredential(_options.Username, _options.Password),
+        //    Timeout = 60000
+        //};
 
         try
         {

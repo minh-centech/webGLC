@@ -1118,14 +1118,20 @@
                                 !
                             </div>
 
-                            <div style="
+                           <div style="
                                 flex:1;
                                 font-size:0.95rem;
-                                overflow:hidden;
-                                text-overflow:ellipsis;">
-
+                                white-space:normal;
+                                word-break:break-word;
+                                overflow-wrap:break-word;
+                                line-height:1.6;
+                            ">
                                 <strong>Lưu ý:</strong>
-                                Thay đổi ngày hệ thống sẽ tự động cập nhật lại bảng giá dịch vụ theo thời điểm mới.
+                                Thay đổi ngày, hệ thống sẽ tự động cập nhật lại bảng giá dịch vụ theo thời điểm mới. Vui lòng kiểm tra và xác nhận thông tin
+                                <strong>
+                                    @(StorageActionMode == StorageActionPopupMode.Extend ? "Ngày gia hạn" : "Ngày lấy hàng")
+                                </strong>
+                                chính xác trước khi nhấn nút <strong>Thanh toán QRCode</strong>.
                             </div>
 
                         </div>

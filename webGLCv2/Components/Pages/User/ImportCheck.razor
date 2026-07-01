@@ -19,7 +19,11 @@
             <p class="page-kicker">User Workspace</p>
             <h1>Kiểm tra hàng nhập</h1>
             <p class="page-subtitle">Tra cứu tình trạng hàng nhập theo HouseBill, Số tờ khai, Ngày tờ khai và Mã số hải quan để theo dõi tiếp nhận và thông quan.</p>
-            <p class="page-subtitle" style="color:darkred">Lưu ý: Hệ thống hiện chỉ hỗ trợ làm lệnh trực tuyến đối với các HouseBill đi kèm một tờ khai hải quan duy nhất.</p>
+            <div style="margin:10px 0;padding:10px 15px;border-left:4px solid #dc3545;background:#fff5f5;color:#b22222;font-size:14px;">
+                <div><strong>Lưu ý:</strong></div>
+                <div style="margin-left:15px;">• Hệ thống hiện chỉ hỗ trợ làm lệnh trực tuyến đối với các HouseBill đi kèm một tờ khai hải quan duy nhất.</div>
+                <div style="margin-left:15px;">• Tờ khai luồng đỏ và các lô hàng cần phải kẹp chì hải quan <strong>KHÔNG</strong> đổi lệnh online. Vui lòng xuất trình chứng từ qua Hải quan giám sát kho GLC rồi đổi lệnh tại quầy.</div>
+            </div>
         </div>
     </header>
 
@@ -103,6 +107,12 @@
                         <span class="status-chip @GetThongQuanClass(ThongQuanResult)">
                             @GetThongQuanLabel(ThongQuanResult)
                         </span>
+                        @if (CanShowCreateOnlineOrderButton)
+                        {
+                            <div style="margin-top:10px;padding:8px 12px;border-left:4px solid #dc3545;background:#fff5f5;color:#b22222;font-size:14px;line-height:1.6;">
+                                <strong>Lưu ý:</strong> Vui lòng <strong>kiểm tra kỹ toàn bộ thông tin House Bill bên dưới</strong>. Nếu thông tin <strong>chính xác</strong>, hãy nhấn <strong>"Tạo lệnh online"</strong> để tiếp tục. Nếu phát hiện bất kỳ sai sót nào, <strong>không thực hiện tạo lệnh online</strong> và vui lòng liên hệ bộ phận đổi lệnh tại quầy để được hỗ trợ.
+                            </div>
+                        }
                         @if (ThongQuanResult is not null && !string.IsNullOrWhiteSpace(ThongQuanResult.Message))
                         {
                             <div class="portal-alert portal-alert-warning" style="margin-top: 12px;">

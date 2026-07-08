@@ -439,6 +439,9 @@ public sealed class BienNhanThanhToanHangNhapKhauTempListItem
     [JsonPropertyName("So")]
     public string So { get; set; } = string.Empty;
 
+    [JsonPropertyName("SoVanDon")]
+    public string SoVanDon { get; set; } = "-";
+
     [JsonPropertyName("NgayLap")]
     public DateTime? NgayLap { get; set; }
 

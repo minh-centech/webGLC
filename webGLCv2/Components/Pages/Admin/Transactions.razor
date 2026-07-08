@@ -93,6 +93,7 @@
                 <thead>
                     <tr>
                         <th>Số biên nhận</th>
+                        <th>Số vận đơn</th>
                         <th>Tên khách hàng</th>
                         <th>Ngày lập</th>
                         <th style="width:320px; min-width:320px; max-width:320px;">Nội dung thanh toán</th>
@@ -130,6 +131,9 @@
                                             @(item.DaThanhToan ? "Đã thanh toán" : "Chưa thanh toán")
                                         </span>
                                     </div>
+                                </td>
+                                <td>
+                                    <div class="cell-title">@item.SoVanDon</div>
                                 </td>
                                 <td>@(string.IsNullOrWhiteSpace(item.TenDanhMucKhachHangDoiLenh) ? "-" : item.TenDanhMucKhachHangDoiLenh)</td>
                                 <td>@FormatDateTime(item.NgayLap)</td>

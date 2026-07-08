@@ -58,9 +58,12 @@ begin
 			and (@IDDanhMucKhachHangDoiLenh is null or lo.IDDanhMucKhachHangDoiLenh = @IDDanhMucKhachHangDoiLenh)
 			and (@TuNgay is null or convert(date, lo.NgayLamLenh) >= convert(date, @TuNgay))
 			and (@DenNgay is null or convert(date, lo.NgayLamLenh) <= convert(date, @DenNgay))
-			and (@HouseBill is null or lo.HouseBill like N'%' + @HouseBill + N'%')
-			and (@SoCont is null or lo.SoCont like N'%' + @SoCont + N'%')
-			and (@MaSoThue is null or lo.MaSoThue like N'%' + @MaSoThue + N'%')
+			--and (@HouseBill is null or lo.HouseBill like N'%' + @HouseBill + N'%')
+			--and (@SoCont is null or lo.SoCont like N'%' + @SoCont + N'%')
+			--and (@MaSoThue is null or lo.MaSoThue like N'%' + @MaSoThue + N'%')
+			AND (ISNULL(@HouseBill, '') = '' OR lo.HouseBill = @HouseBill)
+			AND (ISNULL(@SoCont, '') = '' OR lo.SoCont = @SoCont)
+			AND (ISNULL(@MaSoThue, '') = '' OR lo.MaSoThue = @MaSoThue)
 	)
 	select
 		ID,

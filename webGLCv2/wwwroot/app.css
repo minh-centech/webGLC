@@ -818,6 +818,16 @@ select {
     padding: 0 15px; /* Đảm bảo khoảng cách hai bên chữ đẹp mắt */
 }
 
+.portal-secondary-action.small {
+    display: inline-flex;
+    padding: 6px 12px !important;
+    cursor: pointer;
+    font-weight: 500;
+    border: none;
+    border-radius: 12px;
+}
+
+
 .portal-password-action {
     background: linear-gradient(135deg, var(--portal-primary) 0%, #4bb56a 100%);
     border-color: transparent;

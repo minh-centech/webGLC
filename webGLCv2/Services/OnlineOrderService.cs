@@ -515,6 +515,8 @@ public sealed class OnlineOrderService
         }
 
         var item = root[0];
+        var editDate = GetString(item, "EditDate");
+        string formattedDate = DateTimeOffset.TryParse(editDate, out DateTimeOffset parsedDate) ? parsedDate.ToString("dd/MM/yyyy"): "-";
         return new CompanyTaxLookupResult
         {
             MaSoThue = GetString(item, "MaSoThue"),
@@ -525,7 +527,8 @@ public sealed class OnlineOrderService
             NguoiDaiDien = GetString(item, "NguoiDaiDien"),
             ChucVuNguoiDaiDien = GetString(item, "ChucVuNguoiDaiDien"),
             CreateDate = GetString(item, "CreateDate"),
-            NgungSuDung = GetBool(item, "NgungSuDung")
+            NgungSuDung = GetBool(item, "NgungSuDung"),
+            EditDate = formattedDate
         };
     }
 
@@ -872,7 +875,7 @@ public sealed class OnlineOrderService
         Console.WriteLine($"[ChiTietHouseBillNew] ParsedEnvelope={JsonSerializer.Serialize(result, JsonOptions)}");
         result.ParsedData = ParseChiTietHouseBillData(result.Data, houseBill, soCont);
         Console.WriteLine($"[ChiTietHouseBillNew] ParsedData={(result.ParsedData is null ? "null" : JsonSerializer.Serialize(result.ParsedData, JsonOptions))}");
-        
+
         if (result.Success && result.ParsedData is null && !string.Equals(result.Data?.Trim(), "[]", StringComparison.Ordinal))
         {
             result.Success = false;
@@ -1742,6 +1745,7 @@ public sealed class OnlineOrderService
         public string ChucVuNguoiDaiDien { get; set; } = string.Empty;
         public string CreateDate { get; set; } = string.Empty;
         public bool NgungSuDung { get; set; } = false;
+        public string EditDate { get; set; } = string.Empty;
 
     }
 
@@ -1806,7 +1810,7 @@ public sealed class OnlineOrderService
         var soThuTuLenh = GetLong(item, "SoThuTuLenh");
         var trangThai = GetInt(item, "TrangThai");
         var hoanThanh = GetInt(item, "IsHoanThanh");
-      
+
         return new OnlineOrderRecord
         {
             Id = id.ToString(),
@@ -1835,14 +1839,15 @@ public sealed class OnlineOrderService
             SoBienNhanChuaThanhToan = GetInt(item, "SoBienNhanChuaThanhToan"),
             StatusCode = trangThai,
             Status = GetTrangThaiText(trangThai),
-            IsHoanThanh = hoanThanh ==1
+            IsHoanThanh = hoanThanh == 1
         };
     }
 
     private static string GetOrderCode(long soThuTuLenh, long fallbackId)
     {
         var value = soThuTuLenh > 0 ? soThuTuLenh : fallbackId;
-        return $"LO-{value:000000000}";
+        //return $"LO-{value:000000000}";
+        return $"LO-{value:0}";
     }
 
     // Cau hinh map trang thai LenhOnlines tu database:

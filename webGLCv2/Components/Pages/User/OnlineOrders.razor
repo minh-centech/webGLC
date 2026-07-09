@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inject OnlineOrderService OnlineOrderService
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -118,10 +119,29 @@
                                         @GetPaymentStatusLabel(order)
                                     </span>
                                 </td>
-                                <td>
-                                    <button type="button" class="portal-secondary-action" @onclick="@(() => ViewDetail(order.Id))">
+                                <td >
+                                    <span style="display: inline-flex; align-items: center; gap: 8px; border: none;">
+                                        <button type="button"
+                                            class="portal-primary-action small" @onclick="@(() => ViewDetail(order.Id))">
                                         Xem chi tiết
                                     </button>
+
+                                    @{
+                                        if (GetPaymentStatusLabel(order) == "Chưa có biên nhận")
+                                        {
+                                            <button type="button" title="Xóa lệnh"
+                                                    class="portal-danger-action"
+                                                    style="display: inline-flex; align-items: center; gap: 6px; background-color: #dc2626; color: white; border: none; padding: 8px 10px; border-radius: 12px; cursor: pointer; font-weight: 500;"
+                                                    @onclick="() => DeleteLenhOnLine(order)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5Ref 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                                </svg>
+                                                Xóa
+                                            </button>
+                                        }
+                                    }
+                                    </span>
                                 </td>
                             </tr>
                         }
@@ -148,6 +168,33 @@
         </footer>
     </section>
 </section>
+
+@* --- POPUP CONFIRMATION  --- *@
+@if (isDeleteShowing)
+{
+    <div class="simple-popup-overlay">
+        <div class="simple-popup-card">
+            <h3 class="simple-popup-title">Xác nhận xóa</h3>
+            <p class="simple-popup-text">Bạn có chắc chắn muốn xóa lệnh: <strong>@idLenhOnline</strong>?</p>
+
+            <div class="simple-popup-actions">
+                <button type="button" class="btn-simple-cancel" @onclick="CloseDeleteModal" disabled="@isDeleting">
+                    Hủy
+                </button>
+                <button type="button" class="btn-simple-confirm" @onclick="ConfirmDeleteAsync" disabled="@isDeleting">
+                    @if (isDeleting)
+                    {
+                        <span>Đang xóa...</span>
+                    }
+                    else
+                    {
+                        <span>Đồng ý</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private string CurrentUserKey = "anonymous";
@@ -382,5 +429,76 @@
     private void ViewDetail(string orderId)
     {
         NavigationManager.NavigateTo($"/user/orders/{orderId}");
+    }
+
+    private bool isDeleteShowing = false;
+    private bool isDeleting = false;
+    private long idLenhOnline ;
+    private async Task DeleteLenhOnLine(OnlineOrderRecord order)
+    {
+        isDeleteShowing = true; // Mở popup
+        idLenhOnline = order.SequenceNumber;
+
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteShowing = false; // Đóng popup
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        isDeleting = true;
+
+        // Gọi API Xóa
+        try
+        {
+            isDeleting = true; // Kích hoạt loading
+            StateHasChanged();
+
+            var result = await LegacyCustomerPortalService.DeleteLenhOnline(idLenhOnline);
+
+            // 1. KIỂM TRA LỖI (Theo gói tin mẫu: Status == 1 là BỊ LỖI)
+            if (result != null && result.Status == 1)
+            {
+                // Bắn alert hiển thị lỗi từ SQL/Stored Procedure gửi về
+                await JSRuntime.InvokeVoidAsync("alert", "Lỗi từ hệ thống: " + result.ErrorMsg);
+
+                isDeleting = false; // Tắt trạng thái loading để người dùng có thể ấn lại hoặc ấn Hủy
+                return; // Dừng lại ở đây, KHÔNG đóng form confirm
+            }
+
+            // 2. XỬ LÝ KHI XÓA THÀNH CÔNG (Khi Status != 1, ví dụ bằng 0 hoặc thành công)
+            //await JS.InvokeVoidAsync("alert", "Xóa biên nhận và lệnh xuất kho tạm thành công!");
+
+            isDeleteShowing = false; // Đóng popup confirm
+            idLenhOnline = -1;     // Reset dữ liệu tạm
+
+            //Cập nhật lại dữ liệu
+            await LoadOrdersAsync();
+
+            // Cập nhật lại danh sách hiển thị trên UI của bạn tại đây nếu cần
+
+        }
+        catch (HttpRequestException httpEx)
+        {
+            string errorMsg = $"Lỗi kết nối máy chủ ({httpEx.StatusCode}). Vui lòng thử lại!";
+            await JSRuntime.InvokeVoidAsync("alert", errorMsg);
+            isDeleting = false; // Tắt loading khi lỗi mạng
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", $"Có lỗi xảy ra: {ex.Message}");
+            isDeleting = false; // Tắt loading khi lỗi code
+        }
+        finally
+        {
+            isDeleting = false;
+            isDeleteShowing = false; // Xóa xong tự đóng popup
+            await InvokeAsync(StateHasChanged);
+        }
+
     }
 }

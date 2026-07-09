@@ -149,7 +149,7 @@
             {
                 <div class="workspace-card" style="margin-top:18px; padding:18px;">
                     <div class="section-heading">
-                        <h2>Cập nhật thông tin lệnh</h2>
+                        <h2>Cho phép thay đổi các thông tin (Họ tên, Số ĐT, CCCD và cập nhật MST)</h2>
                         <p>@GetOrderInfoEditorSubtitle()</p>
                     </div>
 
@@ -179,7 +179,7 @@
                                     <div class="input-action-field">
                                         <input class="portal-input" value="@EditableTaxCode" readonly />
                                     </div>
-                                    <button type="button" class="portal-primary-action" @onclick="OpenTaxLookupPopup">Tra cứu MST</button>
+                                    <button type="button" class="portal-primary-action" @onclick="OpenTaxLookupPopup">Cập nhật MST</button>
                                 </div>
                             </div>
                             <div>
@@ -213,7 +213,7 @@
                     <div class="portal-modal-backdrop" @onclick="CloseTaxLookupPopup">
                         <div class="portal-modal" @onclick:stopPropagation="true" style="max-width:760px; width:min(100%, 760px);">
                             <h3>Tra cứu mã số thuế</h3>
-                            <p>Nhập mã số thuế, bấm tìm kiếm và hệ thống sẽ tự động điền thông tin doanh nghiệp.</p>
+                            <p>Nhập mã số thuế, bấm Tra cứu để lấy thông tin mới nhất của doanh nghiệp.</p>
 
                             <div class="field-grid">
                                 <div class="field-card wide">
@@ -992,7 +992,7 @@
                                                             {
                                                                 <button type="button" title="Xóa biên nhận"
                                                                         class="portal-danger-action"
-                                                                        style="display: inline-flex; align-items: center; gap: 6px; background-color: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;"
+                                                                        style="display: inline-flex; align-items: center; gap: 6px; background-color: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 12px; cursor: pointer; font-weight: 500;"
                                                                         @onclick="() => DeleteReceiptAsync(item)">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
                                                                         <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5Ref 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
@@ -3426,6 +3426,7 @@
             {
                 TaxLookupResult.Add(new TaxLookupRow("Số điện thoại", result.SoDienThoai, result.CreateDate));
             }
+            TaxLookupResult.Add(new TaxLookupRow("Ngày cập nhật", result.EditDate, result.CreateDate));
 
             EditableTaxCode = result.MaSoThue;
             EditableCompanyName = result.Ten;

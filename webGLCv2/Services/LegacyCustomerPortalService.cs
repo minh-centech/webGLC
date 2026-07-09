@@ -742,6 +742,24 @@ public sealed class LegacyCustomerPortalService
         EnsureSuccess(envelope, "Không thể cập nhật thông tin lệnh online.");
     }
 
+    //Delete Lenhonline
+    public async Task<ApiEnvelope> DeleteLenhOnline(long idLenhOnline)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+           "api/LenhOnlines/Delete",
+           new 
+           {
+               ID = idLenhOnline,
+               
+           },
+           JsonOptions);
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể cập nhật thông tin lệnh online.");
+        return envelope;
+    }
+
     public async Task MarkOrderAsCompletedAsync(OnlineOrderRecord order, string? traceTag = null)
     {
         if (!long.TryParse(order.Id, out var id))

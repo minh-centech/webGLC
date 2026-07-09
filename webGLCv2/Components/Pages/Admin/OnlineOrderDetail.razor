@@ -126,7 +126,7 @@
                 <div class="workspace-card" style="margin-top:18px; padding:18px;">
                     <div class="section-heading">
                         <h2>Cập nhật thông tin lệnh</h2>
-                        <p>Chọn mã số thuế để tra cứu và tự điền tên công ty, địa chỉ DN trước khi lưu.</p>
+                        <p>Cho phép thay đổi các thông tin (Họ tên, Số ĐT, CCCD và cập nhật MST).</p>
                     </div>
 
                     <div class="field-grid">
@@ -136,7 +136,7 @@
                                 <div class="input-action-field">
                                     <input class="portal-input" value="@SelectedCompanyTaxCode" readonly />
                                 </div>
-                                <button type="button" class="portal-secondary-action" @onclick="OpenTaxLookupPopup">Tra cứu MST</button>
+                                <button type="button" class="portal-secondary-action" @onclick="OpenTaxLookupPopup">Cập nhật MST</button>
                             </div>
                         </div>
                         <div>
@@ -1332,6 +1332,7 @@
             TaxLookupResult.Add(new TaxLookupRow("Mã số thuế", result.MaSoThue, result.CreateDate));
             TaxLookupResult.Add(new TaxLookupRow("Tên công ty", result.Ten, result.CreateDate));
             TaxLookupResult.Add(new TaxLookupRow("Địa chỉ", result.DiaChi, result.CreateDate));
+
 
             if (!string.IsNullOrWhiteSpace(result.Email))
             {

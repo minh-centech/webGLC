@@ -2131,6 +2131,25 @@ public sealed class OnlineOrderService
             }
         ];
     }
+    //Xoá biên nhận và lệnh xuất kho khi chưa thanh toán
+    public async Task<ApiEnvelope?> DeleteLenhXuatKhoAndBienNhanTemp(long idBienNhanTemp, long idLenhXuatTemp)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/DeleteLenhXuatAndBienNhanTemp"),
+            new
+            {
+                IDBienNhanTemp = idBienNhanTemp,
+                IDLenhXuatTemp = idLenhXuatTemp,
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Lỗi không xoá được item.");
+
+        return envelope;
+    }
 }
 
 

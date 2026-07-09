@@ -10,6 +10,7 @@
 @using System.Globalization
 @using System.Security.Claims
 @using System.Threading
+@inject IJSRuntime JS
 
 <PageTitle>Chi tiết lệnh online</PageTitle>
 
@@ -178,7 +179,7 @@
                                     <div class="input-action-field">
                                         <input class="portal-input" value="@EditableTaxCode" readonly />
                                     </div>
-                                    <button type="button" class="portal-secondary-action" @onclick="OpenTaxLookupPopup">Tra cứu MST</button>
+                                    <button type="button" class="portal-primary-action" @onclick="OpenTaxLookupPopup">Tra cứu MST</button>
                                 </div>
                             </div>
                             <div>
@@ -984,6 +985,23 @@
                                                                 </button>
                                                             </span>
                                                         }
+                                                        @* Chỉ hiện nút Xóa nếu danh sách chỉ có đúng 1 item và chưa thanh toán *@
+                                                        @{
+                                                            var currentReceipts = GetOrderedReceiptPayments();
+                                                            if (currentReceipts != null && currentReceipts.Count() == 1 && !item.DaThanhToan)
+                                                            {
+                                                                <button type="button" title="Xóa biên nhận"
+                                                                        class="portal-danger-action"
+                                                                        style="display: inline-flex; align-items: center; gap: 6px; background-color: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;"
+                                                                        @onclick="() => DeleteReceiptAsync(item)">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="flex-shrink: 0;">
+                                                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5Ref 0v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                                                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                                                    </svg>
+                                                                    Xóa
+                                                                </button>
+                                                            }
+                                                        }
 
                                                         @* @if (CanDownloadElectronicInvoice(item))
                                                         {
@@ -1034,6 +1052,19 @@
             <div>
                 <div style="font-size:1.05rem; font-weight:700;">Đang truy vấn thông tin</div>
                 <div style="opacity:.85;">Vui lòng chờ trong giây lát, hệ thống đang lấy dữ liệu House Bill và phí lưu kho.</div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (IsDownloadingPdf)
+{
+    <div style="position:fixed; inset:0; z-index:2500; background:rgba(8, 15, 30, 0.72); backdrop-filter: blur(2px); display:flex; align-items:center; justify-content:center; padding:24px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:14px; color:#fff; text-align:center; max-width:320px;">
+            <div class="spinner-border text-light" role="status" aria-label="Đang truy vấn thông tin"></div>
+            <div>
+                <div style="font-size:1.05rem; font-weight:700;">Đang tải pdf</div>
+                <div style="opacity:.85;">Vui lòng chờ trong giây lát.</div>
             </div>
         </div>
     </div>
@@ -1532,9 +1563,39 @@
     </div>
 }
 
+@* --- POPUP CONFIRMATION  --- *@
+@if (isDeleteShowing)
+{
+    <div class="simple-popup-overlay">
+        <div class="simple-popup-card">
+            <h3 class="simple-popup-title">Xác nhận xóa</h3>
+            <p class="simple-popup-text">Bạn có chắc chắn muốn xóa biên nhận <strong>@itemToDelete?.So</strong>?</p>
+            
+            <div class="simple-popup-actions">
+                <button type="button" class="btn-simple-cancel" @onclick="CloseDeleteModal" disabled="@isDeleting">
+                    Hủy
+                </button>
+                <button type="button" class="btn-simple-confirm" @onclick="ConfirmDeleteAsync" disabled="@isDeleting">
+                    @if (isDeleting)
+                    {
+                        <span>Đang xóa...</span>
+                    }
+                    else
+                    {
+                        <span>Đồng ý</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public long OrderId { get; set; }
+
+    // Tạo CancellationTokenSource theo vòng đời của Component
+    private readonly CancellationTokenSource _cts = new();
 
     private long CurrentUserId;
     private OnlineOrderRecord? Order;
@@ -1709,15 +1770,15 @@
         try
         {
             Console.WriteLine($"[{traceTag}] OnlineOrderDetail.RunWorkflowAsync start. OrderId={OrderId}, HouseBill={Order.HouseBill}, Container={Order.ContainerNumber}");
-                Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
-                    idLenhOnline: OrderId,
-                    idDanhMucKhachHangDoiLenh: CurrentUserId,
-                    houseBill: Order.HouseBill,
-                    soCont: Order.ContainerNumber,
-                    idCtLenhNhapKhoHangNhapKhauChiTiet: Order.IDctLenhNhapKhoHangNhapKhauChiTiet,
-                    pickupDate: Order.PickupDate,
-                    pickupDateStr: Order.PickupDate?.ToString("yyyy/MM/dd"),
-                    traceTag: traceTag);
+            Workflow = await OnlineOrderService.RunOrderWorkflowAsync(
+                idLenhOnline: OrderId,
+                idDanhMucKhachHangDoiLenh: CurrentUserId,
+                houseBill: Order.HouseBill,
+                soCont: Order.ContainerNumber,
+                idCtLenhNhapKhoHangNhapKhauChiTiet: Order.IDctLenhNhapKhoHangNhapKhauChiTiet,
+                pickupDate: Order.PickupDate,
+                pickupDateStr: Order.PickupDate?.ToString("yyyy/MM/dd"),
+                traceTag: traceTag);
 
             if (Workflow is not null)
             {
@@ -2099,12 +2160,19 @@
         return temp.NgayGiaHan.Value != temp.NgayLap.Value;
     }
 
-    private void OpenStorageActionPopup(StorageActionPopupMode mode)
+    private async void OpenStorageActionPopup(StorageActionPopupMode mode)
     {
         if (Order is null)
         {
             return;
         }
+
+        //Bảo trì chức năng gia hạn
+        // if(mode == StorageActionPopupMode.Extend)
+        // {
+        //     await JS.InvokeVoidAsync("alert", "Hệ thống đang bảo trì chức năng gia hạn, Vui lòng thử lại sau!");
+        //     return;
+        // }
 
         StorageActionMode = mode;
         PaymentInfo = null;
@@ -2622,6 +2690,7 @@
         await StopReceiptPollingAsync();
     }
 
+    private bool IsDownloadingPdf = false;
     private async Task DownloadLenhXuatPdfAsync(LenhXuatKhoHangNhapKhauTempListItem? item)
     {
         if (item is null || string.IsNullOrWhiteSpace(item.So))
@@ -2637,17 +2706,21 @@
         }
 
         SetActiveReceiptAction(item.So, "lenhxuat-download");
+
         try
         {
+            IsDownloadingPdf = true;
             var file = await OnlineOrderService.DownloadLenhXuatKhoHangNhapKhauTempPdfAsync(item.So);
             await DownloadPdfToBrowserAsync(file);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[DownloadLenhXuatPdf] {ex.Message}");
+            await JS.InvokeVoidAsync("alert", "Lỗi khi tải tệp pdf! Vui lòng liên hệ quản trị viên");
         }
         finally
         {
+            IsDownloadingPdf = false;
             _ = ClearActiveReceiptActionAfterDelayAsync(item.So, "lenhxuat-download", 1200);
         }
     }
@@ -2679,15 +2752,18 @@
         SetActiveReceiptAction(item.So, "download");
         try
         {
+            IsDownloadingPdf = true;
             var file = await OnlineOrderService.DownloadBienNhanThanhToanHangNhapKhauTempPdfAsync(item.So);
             await DownloadPdfToBrowserAsync(file);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[DownloadBienNhanPdf] {ex.Message}");
+            await JS.InvokeVoidAsync("alert", "Lỗi khi tải tệp pdf! Vui lòng liên hệ quản trị viên");
         }
         finally
         {
+            IsDownloadingPdf = false;
             _ = ClearActiveReceiptActionAfterDelayAsync(item.So, "download", 1200);
         }
     }
@@ -3162,7 +3238,7 @@
 
     private static string FormatDateTimeFull(DateTime? value)
         => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm", CultureInfo.GetCultureInfo("vi-VN")) : string.Empty;
-    
+
     private static string FormatYesNo(bool value)
         => value ? "Có" : "Không";
 
@@ -3429,6 +3505,96 @@
             ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return long.TryParse(claimValue, out var parsedId) ? parsedId : 0;
+    }
+
+    private bool isDeleteShowing = false;
+    private bool isDeleting = false;
+    private BienNhanThanhToanHangNhapKhauTempListItem itemToDelete;
+    private long IdLenhXuatKho ;
+    private long IdBienNhanThanhToan;
+
+    private async Task DeleteReceiptAsync(BienNhanThanhToanHangNhapKhauTempListItem item)
+    {
+        //var result = await OnlineOrderService.LookupCompanyByMaSoThueAsync(taxCode);
+        if (item == null
+            || Workflow?.LenhXuatKhoHangNhapKhauTemps?.Data == null
+            || Workflow.LenhXuatKhoHangNhapKhauTemps.Data.Count == 0){
+            await JS.InvokeVoidAsync("alert", "Lỗi! Lệnh xuất kho và biên nhận thanh toán không được trống");
+            return;
+        }
+        itemToDelete = item;
+        IdBienNhanThanhToan = item.ID;
+        IdLenhXuatKho = Workflow!.LenhXuatKhoHangNhapKhauTemps!.Data[0].ID;
+        isDeleteShowing = true; // Mở popup
+        //await JS.InvokeVoidAsync("alert", IdBienNhanThanhToan+"| id xuat kho: "+ IdLenhXuatKho);
+    }
+
+    private void CloseDeleteModal()
+    {
+        isDeleteShowing = false; // Đóng popup
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        isDeleting = true;
+
+        // Gọi API Xóa
+        try
+        {
+            isDeleting = true; // Kích hoạt loading
+            StateHasChanged();
+
+            var result = await OnlineOrderService.DeleteLenhXuatKhoAndBienNhanTemp(IdBienNhanThanhToan, IdLenhXuatKho);
+
+            // 1. KIỂM TRA LỖI (Theo gói tin mẫu: Status == 1 là BỊ LỖI)
+            if (result != null && result.Status == 1)
+            {
+                // Bắn alert hiển thị lỗi từ SQL/Stored Procedure gửi về
+                await JS.InvokeVoidAsync("alert", "Lỗi từ hệ thống: " + result.ErrorMsg);
+
+                isDeleting = false; // Tắt trạng thái loading để người dùng có thể ấn lại hoặc ấn Hủy
+                return; // Dừng lại ở đây, KHÔNG đóng form confirm
+            }
+
+            // 2. XỬ LÝ KHI XÓA THÀNH CÔNG (Khi Status != 1, ví dụ bằng 0 hoặc thành công)
+            //await JS.InvokeVoidAsync("alert", "Xóa biên nhận và lệnh xuất kho tạm thành công!");
+
+            isDeleteShowing = false; // Đóng popup confirm
+            itemToDelete = null;     // Reset dữ liệu tạm
+
+            //Cập nhật lại dữ liệu
+            await RunWorkflowAsync("auto-init");
+
+            // Cập nhật lại danh sách hiển thị trên UI của bạn tại đây nếu cần
+
+        }
+        catch (HttpRequestException httpEx)
+        {
+            string errorMsg = $"Lỗi kết nối máy chủ ({httpEx.StatusCode}). Vui lòng thử lại!";
+            await JS.InvokeVoidAsync("alert", errorMsg);
+            isDeleting = false; // Tắt loading khi lỗi mạng
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+            await JS.InvokeVoidAsync("alert", $"Có lỗi xảy ra: {ex.Message}");
+            isDeleting = false; // Tắt loading khi lỗi code
+        }
+        finally
+        {
+            isDeleting = false;
+            isDeleteShowing = false; // Xóa xong tự đóng popup
+            await InvokeAsync(StateHasChanged);
+        }
+
+    }
+
+   public void Dispose()
+    {
+        // Kích hoạt lệnh hủy toàn bộ các tác vụ async đang đợi Token này
+        _cts.Cancel();
+        _cts.Dispose();
     }
 }
 

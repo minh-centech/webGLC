@@ -2589,3 +2589,71 @@ select {
     .youtube-link:hover .youtube-icon {
         transform: scale(1.1); /* Phóng to nhẹ icon khi hover */
     }
+
+/*Css cho popup xoa bien nhan*/
+/* Lớp nền đen mờ bao phủ TOÀN MÀN HÌNH (nhờ position: fixed) */
+.simple-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5); /* Nền tối */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999; /* Đảm bảo nổi lên trên tất cả mọi thứ, kể cả sidebar hay header */
+}
+
+/* Hộp thoại nhỏ gọn ở giữa */
+.simple-popup-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 320px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.simple-popup-title {
+    margin-top: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.simple-popup-text {
+    font-size: 0.95rem;
+    color: #666;
+    margin: 15px 0 20px 0;
+}
+
+/* Khu vực nút bấm */
+.simple-popup-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-simple-cancel {
+    background: #ececec;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-simple-confirm {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

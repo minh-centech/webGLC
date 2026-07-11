@@ -816,7 +816,7 @@
                                             Gia hạn
                                         </span>
 
-                                    </button>
+                                    </button> 
                                 }
                             </div>
                         </div>
@@ -1092,7 +1092,8 @@
                         <div style="position:relative;">
                             <i class="fa-solid fa-calendar-days" aria-hidden="true"
                                style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#6b7280; pointer-events:none;"></i>
-                            <input class="portal-input"
+                           
+                               <input class="portal-input" disabled="@isEnableInput"
                                    id="storageActionDateInput"
                                    value="@StorageActionDateText"
                                    @oninput="OnStorageActionDateInput"
@@ -1597,6 +1598,8 @@
     // Tạo CancellationTokenSource theo vòng đời của Component
     private readonly CancellationTokenSource _cts = new();
 
+    private bool isEnableInput = false;
+
     private long CurrentUserId;
     private OnlineOrderRecord? Order;
     private OnlineOrderWorkflowResult? Workflow;
@@ -2063,8 +2066,18 @@
 
     private bool CanShowExtendActionByReceiptPayments()
     {
-        var firstReceipt = GetOrderedReceiptPayments().FirstOrDefault();
-        return firstReceipt?.DaThanhToan == true;
+        // Kiem tra 1 item thanh toan
+        // var firstReceipt = GetOrderedReceiptPayments().FirstOrDefault();
+        // return firstReceipt?.DaThanhToan == true;
+        // V2 cho tat ca ca item deu phai thanh toan
+        var receipts = GetOrderedReceiptPayments().ToList();
+
+        if (receipts.Count == 0)
+        {
+            return false;
+        }
+
+        return receipts.All(item => item.DaThanhToan);
     }
 
     private LenhXuatKhoHangNhapKhauTempListItem? GetLenhXuatKhoTemp()
@@ -2209,6 +2222,8 @@
         ShowPaymentConfirmDialog = false;
         ShowLenhXuatPdfWarningDialog = false;
         ShowReceiptPdfWarningDialog = false;
+
+        isEnableInput = false;
     }
 
     private async Task OnStorageActionDateInput(ChangeEventArgs args)
@@ -2284,9 +2299,13 @@
                 CanShowPaymentQrButton = true;
             }
 
+            
+
             WorkflowMessage = StorageActionMode == StorageActionPopupMode.Extend
                 ? "Đã tải dữ liệu phí gia hạn và phí lưu kho."
                 : "Đã tải dữ liệu thành công.";
+
+      
         }
         catch (Exception ex)
         {
@@ -2439,7 +2458,8 @@
 
         try
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+            //Thời gian cập nhật lại list số biên nhận
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
             Console.WriteLine($"{GetReceiptPollingLogPrefix()} loop started, interval=2s.");
 
             while (await timer.WaitForNextTickAsync(cancellationToken))
@@ -2678,6 +2698,7 @@
         SelectedReceiptPaymentQrBase64 = null;
         SelectedReceiptPaymentQrDetails = null;
         ReceiptPaymentPopupMessage = null;
+        
         ClearActiveReceiptAction("payment");
         _ = UpdateReceiptPollingStateAsync();
         await InvokeAsync(StateHasChanged);
@@ -2940,6 +2961,7 @@
         }
 
         ShowPaymentConfirmDialog = true;
+       
         await InvokeAsync(StateHasChanged);
     }
 
@@ -2955,6 +2977,9 @@
             return;
         }
 
+        isEnableInput = true;
+        //Tắt nút thanh toán
+        CanShowPaymentQrButton = false;
         ShowPaymentConfirmDialog = false;
         SyncStorageActionDateFromText();
         await InvokeAsync(StateHasChanged);

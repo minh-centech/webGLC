@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "ThuongVu")]
 @inject OnlineOrderService OnlineOrderService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Thương vụ - Xác nhận lệnh xuất kho</PageTitle>
 
@@ -20,61 +21,264 @@
             <p>Nhập số phiếu lệnh xuất kho để truy vấn thông tin.</p>
         </div>
 
-        <form @onsubmit="HandleSearchSubmitAsync" @onsubmit:preventDefault="true">
-            <div class="order-filter-panel">
-                <div class="order-filter-grid">
-                    <div class="order-filter-field">
-                        <label class="portal-label" for="receipt-no-input">Số phiếu lệnh xuất kho</label>
-                        <input id="receipt-no-input"
-                               class="portal-input order-filter-input"
-                               @bind="SoLenhXuatKho"
-                               @bind:event="oninput"
-                               placeholder="Nhập số biên nhận..." />
-                    </div>
-                    <div class="order-filter-actions">
-                        <button type="submit" class="portal-primary-action order-filter-button" disabled="@IsSearching">
-                            @(IsSearching ? "Đang tìm..." : "Tìm kiếm")
-                        </button>
-                    </div>
+        <form class="thuongvu-xacnhan" @onsubmit="HandleSearchSubmitAsync" @onsubmit:preventDefault="true">
+            <div class="order-filter-grid">
+
+                <div class="order-filter-field">
+                    <label class="portal-label" for="receipt-no-input">
+                        Số phiếu lệnh xuất kho
+                    </label>
+
+                    <input id="receipt-no-input"
+                           class="portal-input order-filter-input"
+                           @bind="SoLenhXuatKho"
+                           @bind:event="oninput"
+                           @onkeydown="OnInputKeyDown"
+                           placeholder="Nhập số lệnh xuất kho..." />
                 </div>
+
+                <div class="order-filter-actions">
+                    <button type="button"
+                            class="clear-button"
+                            @onclick="ClearSearch">
+                        Xóa
+                    </button>
+
+                    <button type="submit"
+                            class="portal-primary-action order-filter-button"
+                            disabled="@IsSearching">
+                        @(IsSearching ? "Đang tìm..." : "Tìm kiếm")
+                    </button>
+
+                    @if (LenhXuatKhoDetail?.ID is not null)
+                    {
+                        @if (LenhXuatKhoDetail.PheDuyet == true)
+                        {
+                            <span class="approve-badge">
+                                <i class="bi bi-check-circle-fill"></i>
+                                Đã phê duyệt
+                            </span>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="approve-button"
+                                    @onclick="ApproveAsync">
+                                <i class="bi bi-check-lg"></i>
+                                Phê duyệt
+                            </button>
+                        }
+                    }
+
+                </div>
+
             </div>
         </form>
 
         @if (!string.IsNullOrWhiteSpace(StatusMessage))
         {
-            <div class="portal-alert @(IsError ? "portal-alert-error" : "portal-alert-success")">@StatusMessage</div>
+            <div style="margin-top:10px" class="portal-alert @(IsError ? "portal-alert-error" : "portal-alert-success")">@StatusMessage</div>
         }
 
-        @if (SearchResults.Count > 0)
+        @if (LenhXuatKhoDetail?.ID is not null)
         {
-            <div class="table-shell" style="margin-top:18px;">
+            <div class="detail-card" style="margin-top:20px;">
+
+                <div class="section-heading">
+                    <h2>Thông tin lệnh xuất kho</h2>
+                </div>
+
                 <table class="portal-table dense">
-                    <thead>
-                        <tr>
-                            <th>Số biên nhận</th>
-                            <th>Số vận đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Ngày lập</th>
-                            <th class="text-end">Số tiền</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
                     <tbody>
-                        @foreach (var item in SearchResults)
-                        {
-                            <tr>
-                                <td>@item.So</td>
-                                <td>@item.SoVanDon</td>
-                                <td>@(string.IsNullOrWhiteSpace(item.TenDanhMucKhachHangDoiLenh) ? "-" : item.TenDanhMucKhachHangDoiLenh)</td>
-                                <td>@FormatDateTime(item.NgayLap)</td>
-                                <td class="text-end">@FormatMoney(item.TongTien) VNĐ</td>
-                                <td>
-                                    <span class="status-chip @(item.DaThanhToan ? "success" : "warning")">
-                                        @(item.DaThanhToan ? "Đã thanh toán" : "Chưa thanh toán")
-                                    </span>
-                                </td>
-                            </tr>
-                        }
+
+                        <tr class="table-group">
+                            <th colspan="2">Thông tin lệnh</th>
+                        </tr>
+
+                        <tr>
+                            <th style="width:280px;">Số lệnh xuất kho</th>
+                            <td>@LenhXuatKhoDetail.So</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày lập</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayLap)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày gia hạn</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayGiaHan)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày gia hạn cuối</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayGiaHanCuoi)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Trạng thái</th>
+                            <td>
+                                <span class="status-chip @(LenhXuatKhoDetail.PheDuyet == true ? "success" : "warning")">
+                                    @(LenhXuatKhoDetail.PheDuyet == true ? "Đã phê duyệt" : "Chờ phê duyệt")
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Người phê duyệt</th>
+                            <td>@(LenhXuatKhoDetail.NguoiPheDuyet ?? "-")</td>
+                        </tr>
+
+
+                        <tr class="table-group">
+                            <th colspan="2">Thông tin khách hàng</th>
+                        </tr>
+
+                        <tr>
+                            <th>Tên khách hàng</th>
+                            <td>@(LenhXuatKhoDetail.TenDanhMucKhachHang ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Tên chủ hàng</th>
+                            <td>@(LenhXuatKhoDetail.TenChuHang ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Địa chỉ</th>
+                            <td>@(LenhXuatKhoDetail.DiaChi ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Mã số thuế</th>
+                            <td>@(LenhXuatKhoDetail.MaSoThue ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Người nhận hàng</th>
+                            <td>@(LenhXuatKhoDetail.HoTenNguoiNhanHang ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Số CMND/CCCD</th>
+                            <td>@(LenhXuatKhoDetail.SoCMND ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Số điện thoại</th>
+                            <td>@(LenhXuatKhoDetail.SoDienThoaiNguoiNhanHang ?? "-")</td>
+                        </tr>
+
+
+                        <tr class="table-group">
+                            <th colspan="2">Thông tin lô hàng</th>
+                        </tr>
+
+                        <tr>
+                            <th>Số vận đơn</th>
+                            <td>@(LenhXuatKhoDetail.SoVanDon ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Master Bill</th>
+                            <td>@(LenhXuatKhoDetail.MasterBill ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Container</th>
+                            <td>@(LenhXuatKhoDetail.SoContainer ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Seal</th>
+                            <td>@(LenhXuatKhoDetail.SoSeal ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Số tờ khai</th>
+                            <td>@(LenhXuatKhoDetail.SoToKhai ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>EDO</th>
+                            <td>@(LenhXuatKhoDetail.EDO ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Tên tàu</th>
+                            <td>@(LenhXuatKhoDetail.TenTau ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày tàu đến</th>
+                            <td>@(LenhXuatKhoDetail.NgayTauDen ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày nhập kho</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayNhapKho)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Số lượng quá kho</th>
+                            <td>@(LenhXuatKhoDetail.SoLuongQuaKho)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Số lượng quá tải</th>
+                            <td>@(LenhXuatKhoDetail.SoLuongQuaTai)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Hàng nguy hiểm</th>
+                            <td>@(LenhXuatKhoDetail.HangNguyHiem == true ? "Có" : "Không")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngoài giờ</th>
+                            <td>@(LenhXuatKhoDetail.NgoaiGio == true ? "Có" : "Không")</td>
+                        </tr>
+
+
+                        <tr class="table-group">
+                            <th colspan="2">Thông tin xuất kho</th>
+                        </tr>
+
+                        <tr>
+                            <th>Số lượng kiện xuất</th>
+                            <td>@(LenhXuatKhoDetail.SoLuongKienXuat)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Khối lượng xuất (Kg)</th>
+                            <td>@(LenhXuatKhoDetail.KhoiLuongXuat)</td>
+                        </tr>
+
+                        <tr>
+                            <th>CBM xuất</th>
+                            <td>@(LenhXuatKhoDetail.CBMXuat)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Số hóa đơn</th>
+                            <td>@(LenhXuatKhoDetail.SoHoaDon ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày hóa đơn</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayHoaDon)</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ghi chú</th>
+                            <td>@(LenhXuatKhoDetail.GhiChu ?? "-")</td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày tạo</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.CreateDate)</td>
+                        </tr>
+
                     </tbody>
                 </table>
             </div>
@@ -94,47 +298,58 @@
     private bool HasSearched { get; set; }
     private bool IsError { get; set; }
     private string? StatusMessage { get; set; }
-    private List<BienNhanThanhToanHangNhapKhauTempListItem> SearchResults { get; set; } = new();
+    private LenhXuatKhoHangNhapKhauDetail? LenhXuatKhoDetail { get; set; }
+
+    private async Task OnInputKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchAsync();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        SoLenhXuatKho = string.Empty;
+        LenhXuatKhoDetail = null;
+        StatusMessage = null;
+        IsError = false;
+        HasSearched = false;
+    }
 
     private async Task SearchAsync()
     {
         HasSearched = true;
         IsError = false;
         StatusMessage = null;
-        SearchResults.Clear();
+        LenhXuatKhoDetail = null;
 
         if (string.IsNullOrWhiteSpace(SoLenhXuatKho))
         {
             IsError = true;
-            StatusMessage = "Vui lòng nhập số biên nhận.";
+            StatusMessage = "Vui lòng nhập số lệnh xuất kho online.";
             return;
         }
 
         IsSearching = true;
         try
         {
-            var result = await OnlineOrderService.GetBienNhanThanhToanHangNhapKhauTempListAdminAsync(
-                null,
-                null,
-                null,
-                SoLenhXuatKho.Trim());
+            LenhXuatKhoDetail = await OnlineOrderService.LenhXuatKhoDetailAsync(SoLenhXuatKho.Trim());
 
-            SearchResults = result.Data;
-
-            if (SearchResults.Count == 0)
+            if (LenhXuatKhoDetail is null)
             {
                 IsError = true;
-                StatusMessage = $"Không tìm thấy biên nhận {SoLenhXuatKho.Trim()}.";
+                StatusMessage = $"Không tìm thấy thông tin lệnh xuất kho online: {SoLenhXuatKho.Trim()}.";
             }
             else
             {
-                StatusMessage = $"Tìm thấy {SearchResults.Count} biên nhận.";
+                StatusMessage = $"Thông tin chi tiết lệnh xuất kho online:";
             }
         }
         catch (Exception ex)
         {
             IsError = true;
-            StatusMessage = $"Không thể tìm biên nhận: {ex.Message}";
+            StatusMessage = $"Đã có lỗi: {ex.Message}";
         }
         finally
         {
@@ -145,8 +360,32 @@
     private Task HandleSearchSubmitAsync()
         => SearchAsync();
 
+    private async Task ApproveAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            string currUserEmail =
+            authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            ?? authState.User.Identity?.Name
+            ?? string.Empty;
+            await OnlineOrderService.ApproveLenhXuatKho(SoLenhXuatKho, "", currUserEmail);
+            IsError = false;
+            StatusMessage = $"Đã phê duyệt lệnh thành công";
+            // Load lại dữ liệu
+            await SearchAsync();
+
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Đã có lỗi khi phê duyệt: {ex.Message}";
+        }
+
+    }
+
     private static string FormatDateTime(DateTime? value)
-        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm") : "-";
+         => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm") : "-";
 
     private static string FormatMoney(decimal value)
         => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));

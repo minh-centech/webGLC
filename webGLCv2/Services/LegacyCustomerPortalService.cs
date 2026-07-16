@@ -114,6 +114,41 @@ public sealed class LegacyCustomerPortalService
                ?? new List<ConfigHDDTListItem>();
     }
 
+    //Insert User mới
+    public async Task<ApiEnvelope> InsertKhachHangDoiLenhAsync(
+    string email,
+    string ten,
+    string loaiTaiKhoan,
+    string? soDienThoai = null)
+    {
+        if (string.IsNullOrWhiteSpace(soDienThoai))
+        {
+            soDienThoai = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+        }
+
+        var response = await _httpClient.PostAsJsonAsync(
+            "/api/DanhMucKhachHangDoiLenh/Insert",
+            new
+            {
+                LoaiTaiKhoan = loaiTaiKhoan,
+                IsActive = true,
+                IsLockAccount = false,
+                Email = email,
+                Ten = ten,
+                SoDienThoai = soDienThoai,
+                Password = "123654789",
+                PasswordConfirm = "123654789",
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Không thể thêm khách hàng đổi lệnh.");
+
+        return envelope!;
+    }
+
     public async Task<long> CreateConfigHDDTAsync(ConfigHDDTEditModel model)
     {
         var response = await _httpClient.PostAsJsonAsync(

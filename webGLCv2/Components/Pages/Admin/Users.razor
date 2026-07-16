@@ -98,7 +98,12 @@
                                     <div class="cell-subtitle">@account.Email</div>
                                 </td>
                                 <td>
-                                    <span class="status-chip @(account.AccountType == 0 ? "danger" : account.AccountType == 2 ? "success" : "neutral")">@account.AccountTypeText</span>
+                                    <span class="status-chip @(account.AccountType == 0 ? "danger"
+                                                                    : account.AccountType == 2 ? "success"
+                                                                    : account.AccountType == 3 ? "warning"
+                                                                    : "neutral")">
+                                        @account.AccountTypeText
+                                    </span>
                                 </td>
                                 <td>
                                     <div class="cell-title">@account.Phone</div>

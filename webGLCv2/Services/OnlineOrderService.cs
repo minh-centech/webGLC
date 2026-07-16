@@ -2199,6 +2199,55 @@ public sealed class OnlineOrderService
 
         return envelope;
     }
+
+    //Lây chi tiết lệnh xuất kho
+    public async Task<LenhXuatKhoHangNhapKhauDetail> LenhXuatKhoDetailAsync(string soLenhXuat)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "/api/ctLenhXuatKhoHangNhapKhau/ListLenhXuatBySo",
+            new
+            {
+                IDDanhMucDonVi = 1,
+                SoLenhXuat = soLenhXuat
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Lỗi khi lấy thông tin chi tiết lệnh xuất kho.");
+
+        if (string.IsNullOrWhiteSpace(envelope!.Data))
+        {
+            throw new InvalidOperationException("Lỗi! Không lấy được dữ liệu.");
+        }
+
+        return JsonSerializer.Deserialize<LenhXuatKhoHangNhapKhauDetail>(
+            envelope.Data,
+            JsonOptions)
+            ?? throw new InvalidOperationException("Không thể đọc dữ liệu từ API.");
+    }
+
+    //Phe duyet lenh xuat kho
+    public async Task<ApiEnvelope?> ApproveLenhXuatKho(string soLenhXuat, string ghiChu ,string nguoiPheDuyet)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            "/api/ctLenhXuatKhoHangNhapKhau/PheDuyet",
+            new LenhXuatKhoHangNhapKhauPheDuyet
+            {
+                GhiChu= ghiChu,
+                NguoiPheDuyet= nguoiPheDuyet,
+                SoLenhXuat = soLenhXuat
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
+        EnsureSuccess(envelope, "Lỗi khi phê duyệt lệnh xuất kho online.");
+
+        return envelope;
+    }
 }
 
 

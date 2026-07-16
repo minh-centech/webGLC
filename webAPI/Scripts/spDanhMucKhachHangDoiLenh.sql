@@ -127,9 +127,9 @@ begin
 	set @Ten = dbo.ChuanHoaChuoi(@Ten);
 	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
 
-	if @LoaiTaiKhoan not in (0, 1, 2)
+	if @LoaiTaiKhoan not in (0, 1, 2, 3)
 	begin
-		raiserror(N'LoaiTaiKhoan chỉ nhận các giá trị 0-admin, 1-cá nhân, 2-doanh nghiệp!', 16, 1);
+		raiserror(N'LoaiTaiKhoan chỉ nhận các giá trị 0-admin, 1-cá nhân, 2-doanh nghiệp, 3 - thương vụ!', 16, 1);
 		return;
 	end;
 
@@ -263,9 +263,9 @@ begin
 	set @Ten = dbo.ChuanHoaChuoi(@Ten);
 	set @SoDienThoai = dbo.ChuanHoaChuoi(@SoDienThoai);
 
-	if @LoaiTaiKhoan not in (0, 1, 2)
+	if @LoaiTaiKhoan not in (0, 1, 2, 3)
 	begin
-		raiserror(N'LoaiTaiKhoan chỉ nhận các giá trị 0-admin, 1-cá nhân, 2-doanh nghiệp!', 16, 1);
+		raiserror(N'LoaiTaiKhoan chỉ nhận các giá trị 0-admin, 1-cá nhân, 2-doanh nghiệp, 3-thương vụ!', 16, 1);
 		return;
 	end;
 

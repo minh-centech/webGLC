@@ -130,6 +130,7 @@ namespace webAPI.Controllers
                 drDanhMucKhachHangDoiLenh["IDDanhMucLoaiDoiTuong"] = GlobalVariables.IDDanhMucKhachHangDoiLenh;
                 drDanhMucKhachHangDoiLenh["LoaiTaiKhoan"] = objInsert.LoaiTaiKhoan;
                 drDanhMucKhachHangDoiLenh["IsActive"] = objInsert.IsActive;
+                drDanhMucKhachHangDoiLenh["IsLockAccount"] = false;
                 drDanhMucKhachHangDoiLenh["Email"] = objInsert.Email;
                 drDanhMucKhachHangDoiLenh["Ten"] = objInsert.Ten;
                 drDanhMucKhachHangDoiLenh["SoDienThoai"] = objInsert.SoDienThoai;

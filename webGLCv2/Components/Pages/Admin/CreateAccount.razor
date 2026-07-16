@@ -1,0 +1,145 @@
+@page "/admin/users/create"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin")]
+@inject LegacyCustomerPortalService LegacyCustomerPortalService
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Thêm tài khoản</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">Admin Workspace</p>
+            <h1>Thêm tài khoản</h1>
+            <p class="page-subtitle">Tạo mới tài khoản đổi lệnh bằng email, tên, loại tài khoản và số điện thoại tùy chọn.</p>
+        </div>
+        <a class="portal-secondary-action" href="/admin/users">Quay lại danh sách</a>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+    {
+        <div class="portal-alert @(FeedbackIsError ? "portal-alert-error" : "portal-alert-success")">@FeedbackMessage</div>
+    }
+
+    <section class="workspace-card">
+        <EditForm Model="@Model" OnValidSubmit="HandleSubmitAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="order-filter-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                <div class="order-filter-field">
+                    <label class="portal-label">Email</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="Model.Email" />
+                 
+                    @* <ValidationMessage For="@(() => Model.Email)" /> *@
+                </div>
+
+                <div class="order-filter-field">
+                    <label class="portal-label">Tên</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="Model.Ten" />
+                    @* <ValidationMessage For="@(() => Model.Ten)" /> *@
+                </div>
+
+                <div class="order-filter-field">
+                    <label class="portal-label">Loại tài khoản</label>
+                    <InputSelect class="portal-input order-filter-input" @bind-Value="Model.LoaiTaiKhoan">
+                        <option value="3">Thương vụ</option>
+                        <option value="0">Quản trị</option>
+                        @* <option value="1">1 - CA_NHAN</option>
+                        <option value="2">2 - DOANH_NGHIEP</option> *@
+                        
+                    </InputSelect>
+                </div>
+
+                <div class="order-filter-field">
+                    <label class="portal-label">Số điện thoại</label>
+                    <InputText class="portal-input order-filter-input" @bind-Value="Model.SoDienThoai" />
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px;">
+                <button type="submit" class="portal-primary-action" disabled="@IsSaving">
+                    @(IsSaving ? "Đang thêm..." : "Thêm mới")
+                </button>
+                <button type="button" class="portal-secondary-action" @onclick="ResetFormAsync">Làm mới</button>
+            </div>
+        </EditForm>
+    </section>
+</section>
+
+@code {
+
+    private readonly CreateAccountModel Model = new()
+    {
+        LoaiTaiKhoan = "3"
+    };
+
+    private string? FeedbackMessage;
+    private bool FeedbackIsError;
+    private bool IsSaving;
+
+    private async Task HandleSubmitAsync()
+    {
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+        IsSaving = true;
+
+        try
+        {
+           
+            await LegacyCustomerPortalService.InsertKhachHangDoiLenhAsync(
+                Model.Email.Trim(),
+                Model.Ten.Trim(),
+                Model.LoaiTaiKhoan,
+                string.IsNullOrWhiteSpace(Model.SoDienThoai) ? null : Model.SoDienThoai.Trim());
+
+            FeedbackMessage = "Đã thêm tài khoản mới thành công.";
+            Model.ResetKeepLoai();
+        }
+        catch (Exception ex)
+        {
+            FeedbackIsError = true;
+            FeedbackMessage = ex.Message;
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private Task ResetFormAsync()
+    {
+        Model.Reset();
+        FeedbackMessage = null;
+        FeedbackIsError = false;
+        return Task.CompletedTask;
+    }
+
+
+    private sealed class CreateAccountModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+        public string Email { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng nhập tên.")]
+        public string Ten { get; set; } = string.Empty;
+
+        public string LoaiTaiKhoan { get; set; } = "3";
+        public string? SoDienThoai { get; set; }
+
+        public void Reset()
+        {
+            Email = string.Empty;
+            Ten = string.Empty;
+            LoaiTaiKhoan = "1";
+            SoDienThoai = null;
+        }
+
+        public void ResetKeepLoai()
+        {
+            Email = string.Empty;
+            Ten = string.Empty;
+            SoDienThoai = null;
+        }
+    }
+}

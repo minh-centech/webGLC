@@ -17,23 +17,26 @@ public sealed class OnlineOrderService
         PropertyNameCaseInsensitive = true
     };
 
+    private readonly IHttpClientFactory _factory;
+
     private const string TraCuuToKhaiApiPath = "/api/TraCuuToKhai/TraCuuToKhai";
     private const string PhiLuuKhoApiPath = "/api/TinhCuoc/TinhCuoc";
-    private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
+    //private const string PhiLuuKhoQuaHanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/PhiLuuKhoQuaHan";
     private const string ChiTietHouseBillApiPath = "/api/ctLenhNhapKhoHangNhapKhau/ListChiTietSoVanDon";
     private const string ChiTietHouseBillValidApiPath = "/api/ctLenhNhapKhoHangNhapKhau/ListValidSoVanDonXuatKho";
 
-    private const string ThongTinThanhToanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ThongTinThanhToan";
+    //private const string ThongTinThanhToanApiPath = "https://mock.apidog.com/m1/1263694-1261439-default/ThongTinThanhToan";
     private const string MaSoThueLookupApiPath = "/api/DanhMucKhachHang/ListValidMaSoThue";
 
     private readonly HttpClient _httpClient;
     private readonly OnlineOrderWorkflowOptions _workflowOptions;
     private readonly List<ImportCheckRecord> _importChecks = CreateImportCheckSeedData();
 
-    public OnlineOrderService(HttpClient httpClient, IOptions<OnlineOrderWorkflowOptions> workflowOptions)
+    public OnlineOrderService(HttpClient httpClient, IOptions<OnlineOrderWorkflowOptions> workflowOptions, IHttpClientFactory factory)
     {
         _httpClient = httpClient;
         _workflowOptions = workflowOptions.Value;
+        _factory = factory;
     }
 
     public async Task<OnlineOrderPageResult> GetOrdersAsync(
@@ -46,7 +49,10 @@ public sealed class OnlineOrderService
         int page = 1,
         int pageSize = 10)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        // Dung service Legacy
+        var legacyClient = _factory.CreateClient("LegacyApi");
+
+        var response = await legacyClient.PostAsJsonAsync(
             "api/LenhOnlines/List",
             new
             {
@@ -120,7 +126,9 @@ public sealed class OnlineOrderService
         int page,
         int pageSize)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        var legacyClient = _factory.CreateClient("LegacyApi");
+
+        var response = await legacyClient.PostAsJsonAsync(
             "api/LenhOnlines/List",
             new
             {
@@ -160,7 +168,9 @@ public sealed class OnlineOrderService
     }
     public async Task<OnlineOrderRecord?> GetOrderByIdAsync(long idDanhMucKhachHangDoiLenh, long orderId)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        // Legacy
+        var legacyClient = _factory.CreateClient("LegacyApi");
+        var response = await legacyClient.PostAsJsonAsync(
             "api/LenhOnlines/List",
             new
             {
@@ -191,7 +201,10 @@ public sealed class OnlineOrderService
 
     public async Task<OnlineOrderRecord?> GetOrderByIdForAdminAsync(long orderId)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        // Legacy
+        var legacyClient = _factory.CreateClient("LegacyApi");
+
+        var response = await legacyClient.PostAsJsonAsync(
             "api/LenhOnlines/List",
             new
             {
@@ -248,7 +261,8 @@ public sealed class OnlineOrderService
             SoHieuPhuongTienVanTai = soHieuPhuongTienVanTai
         };
 
-        var requestUrl = BuildWorkflowUrl(TraCuuToKhaiApiPath);
+        //var requestUrl = BuildWorkflowUrl(TraCuuToKhaiApiPath);
+        var requestUrl = TraCuuToKhaiApiPath;
 
         Console.WriteLine($"[TraCuuToKhai] POST {requestUrl}");
         Console.WriteLine($"[TraCuuToKhai] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
@@ -493,7 +507,8 @@ public sealed class OnlineOrderService
         }
 
         var response = await _httpClient.PostAsJsonAsync(
-           BuildWorkflowUrl(MaSoThueLookupApiPath),
+           //BuildWorkflowUrl(MaSoThueLookupApiPath),
+           MaSoThueLookupApiPath,
             new { MaSoThue = normalizedMaSoThue },
             JsonOptions);
 
@@ -516,7 +531,7 @@ public sealed class OnlineOrderService
 
         var item = root[0];
         var editDate = GetString(item, "EditDate");
-        string formattedDate = DateTimeOffset.TryParse(editDate, out DateTimeOffset parsedDate) ? parsedDate.ToString("dd/MM/yyyy"): "-";
+        string formattedDate = DateTimeOffset.TryParse(editDate, out DateTimeOffset parsedDate) ? parsedDate.ToString("dd/MM/yyyy") : "-";
         return new CompanyTaxLookupResult
         {
             MaSoThue = GetString(item, "MaSoThue"),
@@ -541,7 +556,8 @@ public sealed class OnlineOrderService
         }
 
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(MaSoThueLookupApiPath),
+            //BuildWorkflowUrl(MaSoThueLookupApiPath),
+            MaSoThueLookupApiPath,
             new { MaSoThue = normalizedMaSoThue },
             JsonOptions);
 
@@ -582,7 +598,8 @@ public sealed class OnlineOrderService
         }
 
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(MaSoThueLookupApiPath),
+            //BuildWorkflowUrl(MaSoThueLookupApiPath),
+            MaSoThueLookupApiPath,
             new { MaSoThue = normalizedMaSoThue },
             JsonOptions);
 
@@ -623,7 +640,9 @@ public sealed class OnlineOrderService
             IsUpdate = isUpdate
         };
 
-        var requestUrl = BuildWorkflowUrl("/api/DanhMucKhachHang/UpsertDanhMucKhachHang");
+        //var requestUrl = BuildWorkflowUrl("/api/DanhMucKhachHang/UpsertDanhMucKhachHang");
+        var requestUrl = "/api/DanhMucKhachHang/UpsertDanhMucKhachHang";
+
         Console.WriteLine($"[UpsertDanhMucKhachHang] POST {requestUrl}");
         Console.WriteLine($"[UpsertDanhMucKhachHang] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
 
@@ -688,7 +707,8 @@ public sealed class OnlineOrderService
             };
 
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(PhiLuuKhoApiPath),
+            //BuildWorkflowUrl(PhiLuuKhoApiPath),
+            PhiLuuKhoApiPath,
             payload,
             JsonOptions);
 
@@ -769,33 +789,34 @@ public sealed class OnlineOrderService
         };
     }
 
-    public async Task<PhiLuuKhoQuaHanResponse> GetPhiLuuKhoQuaHanAsync(string houseBill, string soCont)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(PhiLuuKhoQuaHanApiPath),
-            new
-            {
-                HouseBill = houseBill,
-                SoCont = soCont
-            },
-            JsonOptions);
+    //public async Task<PhiLuuKhoQuaHanResponse> GetPhiLuuKhoQuaHanAsync(string houseBill, string soCont)
+    //{
+    //    var response = await _httpClient.PostAsJsonAsync(
+    //        BuildWorkflowUrl(PhiLuuKhoQuaHanApiPath),
+    //        new
+    //        {
+    //            HouseBill = houseBill,
+    //            SoCont = soCont
+    //        },
+    //        JsonOptions);
 
-        response.EnsureSuccessStatusCode();
+    //    response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<PhiLuuKhoQuaHanResponse>(JsonOptions)
-            ?? new PhiLuuKhoQuaHanResponse
-            {
-                Success = false,
-                Message = "Khong the doc ket qua tinh phi luu kho qua han."
-            };
-    }
+    //    return await response.Content.ReadFromJsonAsync<PhiLuuKhoQuaHanResponse>(JsonOptions)
+    //        ?? new PhiLuuKhoQuaHanResponse
+    //        {
+    //            Success = false,
+    //            Message = "Khong the doc ket qua tinh phi luu kho qua han."
+    //        };
+    //}
 
     public async Task<ChiTietHouseBillResponse> GetChiTietHouseBillValidAsync(string houseBill, string soCont = "")
     {
         Console.WriteLine($"[ChiTietHouseBill] Request houseBill={houseBill}, soCont={soCont}");
 
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(ChiTietHouseBillValidApiPath),
+            // BuildWorkflowUrl(ChiTietHouseBillValidApiPath),
+            ChiTietHouseBillValidApiPath,
             new { SoVanDon = houseBill },
             JsonOptions);
 
@@ -843,7 +864,8 @@ public sealed class OnlineOrderService
         Console.WriteLine($"[ChiTietHouseBillNew] Request houseBill={houseBill}, soCont={soCont}");
 
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(ChiTietHouseBillApiPath),
+           //BuildWorkflowUrl(ChiTietHouseBillApiPath),
+           ChiTietHouseBillApiPath,
             new { SoVanDon = houseBill },
             JsonOptions);
 
@@ -854,6 +876,14 @@ public sealed class OnlineOrderService
         Console.WriteLine($"[ChiTietHouseBillNew] ResponseBody={responseBody}");
 
         var envelope = JsonSerializer.Deserialize<ApiEnvelope>(responseBody, JsonOptions);
+        if (envelope.Status == 1)
+        {
+            return new ChiTietHouseBillResponse
+            {
+                Success = false,
+                Message = envelope.ErrorMsg
+            };
+        }
         if (envelope is null)
         {
             return new ChiTietHouseBillResponse
@@ -887,26 +917,26 @@ public sealed class OnlineOrderService
         return result;
     }
 
-    public async Task<ThongTinThanhToanResponse> GetThongTinThanhToanAsync(string houseBill, string soCont)
-    {
-        var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl(ThongTinThanhToanApiPath),
-            new
-            {
-                HouseBill = houseBill,
-                SoCont = soCont
-            },
-            JsonOptions);
+    //public async Task<ThongTinThanhToanResponse> GetThongTinThanhToanAsync(string houseBill, string soCont)
+    //{
+    //    var response = await _httpClient.PostAsJsonAsync(
+    //        BuildWorkflowUrl(ThongTinThanhToanApiPath),
+    //        new
+    //        {
+    //            HouseBill = houseBill,
+    //            SoCont = soCont
+    //        },
+    //        JsonOptions);
 
-        response.EnsureSuccessStatusCode();
+    //    response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<ThongTinThanhToanResponse>(JsonOptions)
-            ?? new ThongTinThanhToanResponse
-            {
-                Success = false,
-                Message = "Khong the doc thong tin thanh toan."
-            };
-    }
+    //    return await response.Content.ReadFromJsonAsync<ThongTinThanhToanResponse>(JsonOptions)
+    //        ?? new ThongTinThanhToanResponse
+    //        {
+    //            Success = false,
+    //            Message = "Khong the doc thong tin thanh toan."
+    //        };
+    //}
 
     public async Task<LenhXuatKhoHangNhapKhauTempListResponse> GetLenhXuatKhoHangNhapKhauTempListAsync(
         long idDanhMucKhachHangDoiLenh,
@@ -915,7 +945,8 @@ public sealed class OnlineOrderService
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/ListTemp"),
+                //BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/ListTemp"),
+                "/api/ctLenhXuatKhoHangNhapKhauTemp/ListTemp",
                 new
                 {
                     IDDanhMucKhachHangDoLenh = idDanhMucKhachHangDoiLenh,
@@ -956,7 +987,8 @@ public sealed class OnlineOrderService
                 IDctLenhNhapKhoHangNhapKhauChiTiet = idctLenhNhapKhoHangNhapKhauChiTiet,
                 IDDanhMucKhachHangDoLenh = idDanhMucKhachHangDoiLenh
             };
-            var requestUrl = BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTemp");
+            //var requestUrl = BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTemp");
+            var requestUrl = "/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTemp";
             Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/ListTemp] POST {requestUrl}");
             Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/ListTemp] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
 
@@ -1002,7 +1034,8 @@ public sealed class OnlineOrderService
                 SoBienNhan = NullIfEmpty(soBienNhan)
             };
 
-            var requestUrl = BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTempAdmin");
+            //var requestUrl = BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTempAdmin");
+            var requestUrl = "/api/ctBienNhanThanhToanHangNhapKhauTemp/ListTempAdmin";
             Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/ListTempAdmin] POST {requestUrl}");
             Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/ListTempAdmin] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
 
@@ -1080,7 +1113,8 @@ public sealed class OnlineOrderService
             TinNhanRaw = normalizedTinNhanRaw
         };
 
-        var requestUrl = $"{BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto")}?t={Uri.EscapeDataString(normalizedT)}&checksum={Uri.EscapeDataString(normalizedChecksum)}";
+        //var requestUrl = $"{BuildWorkflowUrl("/api/ctBienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto")}?t={Uri.EscapeDataString(normalizedT)}&checksum={Uri.EscapeDataString(normalizedChecksum)}";
+        var requestUrl = $"/api/ctBienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto?t={Uri.EscapeDataString(normalizedT)}&checksum={Uri.EscapeDataString(normalizedChecksum)}";
         Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto] POST {requestUrl}");
         Console.WriteLine($"[BienNhanThanhToanHangNhapKhauTemp/CheckThanhToanAuto] Request={JsonSerializer.Serialize(requestPayload, JsonOptions)}");
 
@@ -1134,7 +1168,8 @@ public sealed class OnlineOrderService
         Console.WriteLine($"[LenhXuatKhoHangNhapKhauTempInsertData request] {JsonSerializer.Serialize(request, JsonOptions)}");
 
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/Insert"),
+            //BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/Insert"),
+            "/api/ctLenhXuatKhoHangNhapKhauTemp/Insert",
             request,
             JsonOptions);
 
@@ -1195,11 +1230,12 @@ public sealed class OnlineOrderService
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.Response={JsonSerializer.Serialize(result.ChiTietHouseBill, JsonOptions)}");
         Console.WriteLine($"{tracePrefix}ChiTietHouseBill.IsHoanThanh={result.ChiTietHouseBill?.ParsedData?.IsHoanThanh}");
 
-        if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
-        {
-            Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
-            result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
-        }
+        //fix: Bo phi luu kho qua han
+        //if (IsOverduePickupDate(pickupDate, result.ChiTietHouseBill?.ParsedData?.IsHoanThanh ?? false))
+        //{
+        //    Console.WriteLine($"{tracePrefix}Calling PhiLuuKhoQuaHan...");
+        //    result.PhiLuuKhoQuaHan = await GetPhiLuuKhoQuaHanAsync(houseBill, soCont);
+        //}
 
         var chiTietResult = result.ChiTietHouseBill;
         var chiTiet = chiTietResult?.ParsedData;
@@ -1289,7 +1325,10 @@ public sealed class OnlineOrderService
         Console.WriteLine($"{tracePrefix}UpsertChiTiet.IsHoanThanh={chiTiet.IsHoanThanh}");
         Console.WriteLine($"{tracePrefix}UpsertChiTiet.Payload={JsonSerializer.Serialize(payload, JsonOptions)}");
 
-        var response = await _httpClient.PostAsJsonAsync("api/LenhOnlines/UpsertChiTiet", payload, JsonOptions);
+        // Legacy
+        var legacyClient = _factory.CreateClient("LegacyApi");
+
+        var response = await legacyClient.PostAsJsonAsync("api/LenhOnlines/UpsertChiTiet", payload, JsonOptions);
         Console.WriteLine($"{tracePrefix}UpsertChiTiet.POST api/LenhOnlines/UpsertChiTiet => {(int)response.StatusCode} {response.ReasonPhrase}");
         response.EnsureSuccessStatusCode();
 
@@ -1561,7 +1600,10 @@ public sealed class OnlineOrderService
             IDDanhMucKhachHangDoiLenh = idDanhMucKhachHangDoiLenh
         };
 
-        var response = await _httpClient.PostAsJsonAsync("api/LenhOnlines/Insert", payload, JsonOptions);
+        // Legacy
+        var legacyClient = _factory.CreateClient("LegacyApi");
+
+        var response = await legacyClient.PostAsJsonAsync("api/LenhOnlines/Insert", payload, JsonOptions);
         response.EnsureSuccessStatusCode();
 
         var envelope = await response.Content.ReadFromJsonAsync<ApiEnvelope>(JsonOptions);
@@ -1788,21 +1830,21 @@ public sealed class OnlineOrderService
         public bool IsUpdate { get; set; }
     }
 
-    private string BuildWorkflowUrl(string relativePath)
-    {
-        // Nếu relativePath đã là URL tuyệt đối (bắt đầu bằng http:// hoặc https://)
-        if (relativePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            relativePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return relativePath;
-        }
-        if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
-        {
-            throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
-        }
+    //private string BuildWorkflowUrl(string relativePath)
+    //{
+    //    // Nếu relativePath đã là URL tuyệt đối (bắt đầu bằng http:// hoặc https://)
+    //    if (relativePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+    //        relativePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    //    {
+    //        return relativePath;
+    //    }
+    //    if (string.IsNullOrWhiteSpace(_workflowOptions.BaseUrl))
+    //    {
+    //        throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
+    //    }
 
-        return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
-    }
+    //    return $"{_workflowOptions.BaseUrl.TrimEnd('/')}/{relativePath.TrimStart('/')}";
+    //}
 
     private static OnlineOrderRecord MapOnlineOrder(JsonElement item)
     {
@@ -1985,7 +2027,8 @@ public sealed class OnlineOrderService
             throw new InvalidOperationException("So khong duoc de trong.");
         }
 
-        var url = $"{BuildWorkflowUrl(relativePath)}?{queryName}={Uri.EscapeDataString(so.Trim())}";
+        //var url = $"{BuildWorkflowUrl(relativePath)}?{queryName}={Uri.EscapeDataString(so.Trim())}";
+        var url = $"{(relativePath)}?{queryName}={Uri.EscapeDataString(so.Trim())}";
         Console.WriteLine($"[DownloadTempPdf] GET {url}");
         using var response = await _httpClient.GetAsync(url);
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -2140,7 +2183,8 @@ public sealed class OnlineOrderService
     public async Task<ApiEnvelope?> DeleteLenhXuatKhoAndBienNhanTemp(long idBienNhanTemp, long idLenhXuatTemp)
     {
         var response = await _httpClient.PostAsJsonAsync(
-            BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/DeleteLenhXuatAndBienNhanTemp"),
+            //BuildWorkflowUrl("/api/ctLenhXuatKhoHangNhapKhauTemp/DeleteLenhXuatAndBienNhanTemp"),
+            "/api/ctLenhXuatKhoHangNhapKhauTemp/DeleteLenhXuatAndBienNhanTemp",
             new
             {
                 IDBienNhanTemp = idBienNhanTemp,

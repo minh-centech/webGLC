@@ -38,6 +38,7 @@ public sealed class LegacyCustomerPortalService
         using var document = JsonDocument.Parse(envelope!.Data);
         var root = document.RootElement;
         var accountType = GetInt(root, "LoaiTaiKhoan");
+        var roleCode = GetString(root, "Ma");
         var emailValue = GetString(root, "Email");
         var displayName = GetString(root, "Ten");
 
@@ -48,7 +49,7 @@ public sealed class LegacyCustomerPortalService
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? email : displayName,
             AccountType = accountType,
             AccountTypeName = GetAccountTypeName(accountType),
-            RoleName = accountType == 0 ? "Admin" : "User"
+            RoleName = GetRoleName(roleCode, accountType)
         };
     }
 
@@ -947,8 +948,33 @@ public sealed class LegacyCustomerPortalService
             0 => "Admin",
             1 => "Cá nhân",
             2 => "Doanh nghiệp",
-            _ => "Tài khoản"
+            3 => "Thương vụ",
+            _ => "Chưa xác định"
         };
+
+    private static string GetRoleName(string? roleCode, int accountType)
+    {
+        var normalizedRoleCode = (roleCode ?? string.Empty).Trim();
+
+        if (!string.IsNullOrWhiteSpace(normalizedRoleCode))
+        {
+            return normalizedRoleCode.ToUpperInvariant() switch
+            {
+                "ADMIN" => "Admin",
+                "THUONG_VU" => "ThuongVu",
+                "THUONGVU" => "ThuongVu",
+                "THUONG-VU" => "ThuongVu",
+                _ => normalizedRoleCode
+            };
+        }
+
+        return accountType switch
+        {
+            0 => "Admin",
+            3 => "ThuongVu",
+            _ => "User"
+        };
+    }
 
     private DocumentFileItem BuildDocument(string name, string relativePath, string fieldKey, string uploadFolder)
     {

@@ -56,7 +56,7 @@ BEGIN
         CONSTRAINT [DF_DanhMucKhachHangDoiLenh_LoaiTaiKhoan] DEFAULT (1);
         
     ALTER TABLE [dbo].[DanhMucKhachHangDoiLenh] 
-    ADD CONSTRAINT [CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan] CHECK ([LoaiTaiKhoan] IN (0, 1, 2));
+    ADD CONSTRAINT [CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan] CHECK ([LoaiTaiKhoan] IN (0, 1, 2, 3));
 END
 GO
 

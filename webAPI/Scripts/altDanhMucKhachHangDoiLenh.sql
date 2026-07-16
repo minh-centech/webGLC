@@ -20,12 +20,21 @@ if not exists (
     where parent_object_id = object_id(N'dbo.DanhMucKhachHangDoiLenh')
       and name = N'CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan'
 )
-begin
-    alter table dbo.DanhMucKhachHangDoiLenh
-    add constraint CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan
-    check (LoaiTaiKhoan in (0, 1, 2));
-end
-go
+
+BEGIN
+    -- 1. Xóa ràng buộc cũ nếu nó đang tồn tại
+    IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan')
+    BEGIN
+        ALTER TABLE dbo.DanhMucKhachHangDoiLenh
+        DROP CONSTRAINT CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan;
+    END
+
+    -- 2. Tạo lại ràng buộc mới đã bổ sung thêm số 3
+    ALTER TABLE dbo.DanhMucKhachHangDoiLenh
+    ADD CONSTRAINT CK_DanhMucKhachHangDoiLenh_LoaiTaiKhoan
+    CHECK (LoaiTaiKhoan IN (0, 1, 2, 3));
+END
+GO
 
 if col_length('dbo.DanhMucKhachHangDoiLenh', 'IsActive') is null
 begin

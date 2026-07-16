@@ -118,6 +118,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
+    <Content Include="Scripts\insert_taikhoan_thuongvu.sql" />
     <Content Include="Scripts\reset_pass.sql" />
     <Content Include="Scripts\spLenhOnlines.sql" />
     <Content Include="Scripts\altLenhOnlines.sql" />
@@ -152,6 +153,7 @@
     <Compile Include="Models\DanhMucKhachHangDoiLenhSavePersonalProfileRequest.cs" />
     <Compile Include="Models\TaiLieuModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Content Include="Scripts\altDanhMucLoaiTaiKhoanKhachHangDoiLenh.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -53,6 +53,8 @@ builder.Services.AddHttpClient("LegacyApi", (serviceProvider, client) =>
 
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromMinutes(5);
+    Console.WriteLine($"Legacy BaseAddress = {client.BaseAddress}");
+
 });
 
 builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>
@@ -64,11 +66,29 @@ builder.Services.AddScoped<LegacyCustomerPortalService>(serviceProvider =>
 
 builder.Services.AddScoped<MaSoThueHelper>();
 
+// Cấu hình Named Client mới cho OnlineOrderService
+builder.Services.AddHttpClient("OnlineServiceApi", (serviceProvider, client) =>
+{
+    // Lấy config từ OnlineOrderWorkflowOptions
+    var workflowOptions = serviceProvider.GetRequiredService<IOptions<OnlineOrderWorkflowOptions>>().Value;
+
+    if (string.IsNullOrWhiteSpace(workflowOptions.BaseUrl))
+    {
+        throw new InvalidOperationException("Missing configuration: OnlineOrderWorkflow:BaseUrl");
+    }
+
+    client.BaseAddress = new Uri(workflowOptions.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromMinutes(5); // Có thể tùy chỉnh timeout riêng ở đây
+    Console.WriteLine($"Online BaseAddress = {client.BaseAddress}");
+});
+
 builder.Services.AddScoped<OnlineOrderService>(serviceProvider =>
 {
     var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-    var workflowOptions = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OnlineOrderWorkflowOptions>>();
-    return new OnlineOrderService(httpClientFactory.CreateClient("LegacyApi"), workflowOptions);
+    //var workflowOptions = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OnlineOrderWorkflowOptions>>();
+    var workflowOptions = serviceProvider.GetRequiredService<IOptions<OnlineOrderWorkflowOptions>>();
+    // Gán BaseAddress của HttpClient bằng BaseUrl từ appsettings.json
+    return new OnlineOrderService(httpClientFactory.CreateClient("OnlineServiceApi"), workflowOptions, httpClientFactory);
 });
 
 builder.Services.AddScoped<EmailHelper>();

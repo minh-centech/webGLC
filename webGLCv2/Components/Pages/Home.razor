@@ -16,7 +16,11 @@
     {
         var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authenticationState.User;
-        var target = user.IsInRole("Admin") ? "/admin/users" : "/user/import-check";
+        var target = user.IsInRole("Admin")
+            ? "/admin/users"
+            : user.IsInRole("ThuongVu")
+                ? "/thuong-vu/xacnhan-xuatkho"
+                : "/user/import-check";
         NavigationManager.NavigateTo(target, forceLoad: false);
     }
 }

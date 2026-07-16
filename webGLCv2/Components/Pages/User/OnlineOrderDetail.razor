@@ -1804,6 +1804,7 @@
                 {
                     try
                     {
+                        //Lamnt fix bo khong cap nhat lai
                         await LegacyCustomerPortalService.MarkOrderAsCompletedAsync(Order, traceTag);
                         Order.IsHoanThanh = true;
                         if (Workflow.ChiTietHouseBill.ParsedData is not null)
@@ -2102,6 +2103,10 @@
     private ChiTietHouseBillData? GetChiTietHouseBillForPayment()
     {
         var fromApi = GetChiTietHouseBillFromApi();
+        if(fromApi is null)
+        {
+            return null;
+        }
         if (fromApi is not null)
         {
             return fromApi;

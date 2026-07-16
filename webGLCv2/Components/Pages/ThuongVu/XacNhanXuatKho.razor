@@ -1,0 +1,153 @@
+@page "/thuong-vu/xacnhan-xuatkho"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "ThuongVu")]
+@inject OnlineOrderService OnlineOrderService
+
+<PageTitle>Thương vụ - Xác nhận lệnh xuất kho</PageTitle>
+
+<section class="page-shell">
+    <header class="page-header">
+        <div>
+            <p class="page-kicker">ThuongVu Workspace</p>
+            <h1>Xác nhận lệnh xuất kho</h1>
+            <p class="page-subtitle">Vui lòng nhập số phiếu lệnh xuất kho để tác nghiệp.</p>
+        </div>
+    </header>
+
+    <section class="workspace-card">
+        <div class="section-heading">
+            <h2>Tìm kiếm theo số phiếu lệnh xuất kho</h2>
+            <p>Nhập số phiếu lệnh xuất kho để truy vấn thông tin.</p>
+        </div>
+
+        <form @onsubmit="HandleSearchSubmitAsync" @onsubmit:preventDefault="true">
+            <div class="order-filter-panel">
+                <div class="order-filter-grid">
+                    <div class="order-filter-field">
+                        <label class="portal-label" for="receipt-no-input">Số phiếu lệnh xuất kho</label>
+                        <input id="receipt-no-input"
+                               class="portal-input order-filter-input"
+                               @bind="SoLenhXuatKho"
+                               @bind:event="oninput"
+                               placeholder="Nhập số biên nhận..." />
+                    </div>
+                    <div class="order-filter-actions">
+                        <button type="submit" class="portal-primary-action order-filter-button" disabled="@IsSearching">
+                            @(IsSearching ? "Đang tìm..." : "Tìm kiếm")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <div class="portal-alert @(IsError ? "portal-alert-error" : "portal-alert-success")">@StatusMessage</div>
+        }
+
+        @if (SearchResults.Count > 0)
+        {
+            <div class="table-shell" style="margin-top:18px;">
+                <table class="portal-table dense">
+                    <thead>
+                        <tr>
+                            <th>Số biên nhận</th>
+                            <th>Số vận đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày lập</th>
+                            <th class="text-end">Số tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in SearchResults)
+                        {
+                            <tr>
+                                <td>@item.So</td>
+                                <td>@item.SoVanDon</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.TenDanhMucKhachHangDoiLenh) ? "-" : item.TenDanhMucKhachHangDoiLenh)</td>
+                                <td>@FormatDateTime(item.NgayLap)</td>
+                                <td class="text-end">@FormatMoney(item.TongTien) VNĐ</td>
+                                <td>
+                                    <span class="status-chip @(item.DaThanhToan ? "success" : "warning")">
+                                        @(item.DaThanhToan ? "Đã thanh toán" : "Chưa thanh toán")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (HasSearched && string.IsNullOrWhiteSpace(StatusMessage))
+        {
+            <div class="portal-empty-inline" style="margin-top:18px; padding: 12px; background-color: #fdf2f2; border: 1px solid #f5c2c2; border-radius: 4px; color: #de3b3b; font-weight: 500;">
+                ⚠️ Không tìm thấy biên nhận phù hợp.
+            </div>
+        }
+    </section>
+</section>
+
+@code {
+    private string SoLenhXuatKho { get; set; } = string.Empty;
+    private bool IsSearching { get; set; }
+    private bool HasSearched { get; set; }
+    private bool IsError { get; set; }
+    private string? StatusMessage { get; set; }
+    private List<BienNhanThanhToanHangNhapKhauTempListItem> SearchResults { get; set; } = new();
+
+    private async Task SearchAsync()
+    {
+        HasSearched = true;
+        IsError = false;
+        StatusMessage = null;
+        SearchResults.Clear();
+
+        if (string.IsNullOrWhiteSpace(SoLenhXuatKho))
+        {
+            IsError = true;
+            StatusMessage = "Vui lòng nhập số biên nhận.";
+            return;
+        }
+
+        IsSearching = true;
+        try
+        {
+            var result = await OnlineOrderService.GetBienNhanThanhToanHangNhapKhauTempListAdminAsync(
+                null,
+                null,
+                null,
+                SoLenhXuatKho.Trim());
+
+            SearchResults = result.Data;
+
+            if (SearchResults.Count == 0)
+            {
+                IsError = true;
+                StatusMessage = $"Không tìm thấy biên nhận {SoLenhXuatKho.Trim()}.";
+            }
+            else
+            {
+                StatusMessage = $"Tìm thấy {SearchResults.Count} biên nhận.";
+            }
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Không thể tìm biên nhận: {ex.Message}";
+        }
+        finally
+        {
+            IsSearching = false;
+        }
+    }
+
+    private Task HandleSearchSubmitAsync()
+        => SearchAsync();
+
+    private static string FormatDateTime(DateTime? value)
+        => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm") : "-";
+
+    private static string FormatMoney(decimal value)
+        => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}

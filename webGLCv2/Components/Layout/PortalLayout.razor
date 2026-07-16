@@ -6,8 +6,9 @@
         @{
             var user = authContext.User;
             var isAdmin = user.IsInRole("Admin");
+            var isThuongVu = user.IsInRole("ThuongVu");
             var displayName = user.FindFirst("display_name")?.Value ?? user.Identity?.Name ?? "GLC user";
-            var accountTypeName = user.FindFirst("account_type_name")?.Value ?? (isAdmin ? "Admin" : "Người sử dụng");
+            var accountTypeName = user.FindFirst("account_type_name")?.Value ?? (isAdmin ? "Admin" : isThuongVu ? "Thương vụ" : "Người sử dụng");
         }
 
         <div class="portal-shell">
@@ -30,6 +31,11 @@
                         <a class="@GetNavClass("/admin/transactions")" href="/admin/transactions">Quản lý giao dịch</a>
                         <a class="@GetNavClass("/admin/users")" href="/admin/users">Quản lý người dùng</a>
                         <a class="@GetNavClass("/admin/config-hddt")" href="/admin/config-hddt">Cấu hình hóa đơn điện tử</a>
+                    }
+                    else if (isThuongVu)
+                    {
+                        <a class="@GetNavClass("/thuong-vu/xacnhan-xuatkho")" href="/thuong-vu/xacnhan-xuatkho">Tra cứu biên nhận</a>
+                        <a class="@GetNavClass("/user/profile")" href="/user/profile">Quản lý thông tin</a>
                     }
                     else
                     {

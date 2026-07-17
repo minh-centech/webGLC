@@ -92,33 +92,13 @@
                     <tbody>
 
                         <tr class="table-group">
-                            <th colspan="2">Thông tin lệnh</th>
-                        </tr>
-
-                        <tr>
-                            <th style="width:280px;">Số lệnh xuất kho</th>
-                            <td>@LenhXuatKhoDetail.So</td>
-                        </tr>
-
-                        <tr>
-                            <th>Ngày lập</th>
-                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayLap)</td>
-                        </tr>
-
-                        <tr>
-                            <th>Ngày gia hạn</th>
-                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayGiaHan)</td>
-                        </tr>
-
-                        <tr>
-                            <th>Ngày gia hạn cuối</th>
-                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayGiaHanCuoi)</td>
+                            <th colspan="2">Thông tin chi tiết lệnh xuất kho @LenhXuatKhoDetail.So</th>
                         </tr>
 
                         <tr>
                             <th>Trạng thái</th>
                             <td>
-                                <span class="status-chip @(LenhXuatKhoDetail.PheDuyet == true ? "success" : "warning")">
+                                <span class="status-chip @(LenhXuatKhoDetail.PheDuyet == true ? "success" : "danger")">
                                     @(LenhXuatKhoDetail.PheDuyet == true ? "Đã phê duyệt" : "Chờ phê duyệt")
                                 </span>
                             </td>
@@ -126,57 +106,32 @@
 
                         <tr>
                             <th>Người phê duyệt</th>
-                            <td>@(LenhXuatKhoDetail.NguoiPheDuyet ?? "-")</td>
-                        </tr>
-
-
-                        <tr class="table-group">
-                            <th colspan="2">Thông tin khách hàng</th>
+                            <td> <span class="status-chip warning">@(LenhXuatKhoDetail.NguoiPheDuyet ?? "-")</span></td>
                         </tr>
 
                         <tr>
-                            <th>Tên khách hàng</th>
-                            <td>@(LenhXuatKhoDetail.TenDanhMucKhachHang ?? "-")</td>
+                            <th>Ngày lập</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayLap)</td>
                         </tr>
-
+                
                         <tr>
-                            <th>Tên chủ hàng</th>
-                            <td>@(LenhXuatKhoDetail.TenChuHang ?? "-")</td>
+                            <th>Ngày gia hạn cuối</th>
+                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayGiaHanCuoi)</td>
                         </tr>
-
-                        <tr>
-                            <th>Địa chỉ</th>
-                            <td>@(LenhXuatKhoDetail.DiaChi ?? "-")</td>
-                        </tr>
-
+                        
                         <tr>
                             <th>Mã số thuế</th>
                             <td>@(LenhXuatKhoDetail.MaSoThue ?? "-")</td>
                         </tr>
 
                         <tr>
-                            <th>Người nhận hàng</th>
-                            <td>@(LenhXuatKhoDetail.HoTenNguoiNhanHang ?? "-")</td>
+                            <th>Tên khách hàng</th>
+                            <td>@(LenhXuatKhoDetail.TenDanhMucKhachHang ?? "-")</td>
                         </tr>
-
+                        
                         <tr>
-                            <th>Số CMND/CCCD</th>
-                            <td>@(LenhXuatKhoDetail.SoCMND ?? "-")</td>
-                        </tr>
-
-                        <tr>
-                            <th>Số điện thoại</th>
-                            <td>@(LenhXuatKhoDetail.SoDienThoaiNguoiNhanHang ?? "-")</td>
-                        </tr>
-
-
-                        <tr class="table-group">
-                            <th colspan="2">Thông tin lô hàng</th>
-                        </tr>
-
-                        <tr>
-                            <th>Số vận đơn</th>
-                            <td>@(LenhXuatKhoDetail.SoVanDon ?? "-")</td>
+                            <th>EDO</th>
+                            <td>@(LenhXuatKhoDetail.EDO ?? "-")</td>
                         </tr>
 
                         <tr>
@@ -185,63 +140,13 @@
                         </tr>
 
                         <tr>
-                            <th>Container</th>
-                            <td>@(LenhXuatKhoDetail.SoContainer ?? "-")</td>
-                        </tr>
-
-                        <tr>
-                            <th>Seal</th>
-                            <td>@(LenhXuatKhoDetail.SoSeal ?? "-")</td>
-                        </tr>
-
-                        <tr>
                             <th>Số tờ khai</th>
                             <td>@(LenhXuatKhoDetail.SoToKhai ?? "-")</td>
                         </tr>
 
                         <tr>
-                            <th>EDO</th>
-                            <td>@(LenhXuatKhoDetail.EDO ?? "-")</td>
-                        </tr>
-
-                        <tr>
-                            <th>Tên tàu</th>
-                            <td>@(LenhXuatKhoDetail.TenTau ?? "-")</td>
-                        </tr>
-
-                        <tr>
-                            <th>Ngày tàu đến</th>
-                            <td>@(LenhXuatKhoDetail.NgayTauDen ?? "-")</td>
-                        </tr>
-
-                        <tr>
-                            <th>Ngày nhập kho</th>
-                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayNhapKho)</td>
-                        </tr>
-
-                        <tr>
-                            <th>Số lượng quá kho</th>
-                            <td>@(LenhXuatKhoDetail.SoLuongQuaKho)</td>
-                        </tr>
-
-                        <tr>
-                            <th>Số lượng quá tải</th>
-                            <td>@(LenhXuatKhoDetail.SoLuongQuaTai)</td>
-                        </tr>
-
-                        <tr>
-                            <th>Hàng nguy hiểm</th>
-                            <td>@(LenhXuatKhoDetail.HangNguyHiem == true ? "Có" : "Không")</td>
-                        </tr>
-
-                        <tr>
-                            <th>Ngoài giờ</th>
-                            <td>@(LenhXuatKhoDetail.NgoaiGio == true ? "Có" : "Không")</td>
-                        </tr>
-
-
-                        <tr class="table-group">
-                            <th colspan="2">Thông tin xuất kho</th>
+                            <th>Số vận đơn</th>
+                            <td>@(LenhXuatKhoDetail.SoVanDon ?? "-")</td>
                         </tr>
 
                         <tr>
@@ -260,23 +165,23 @@
                         </tr>
 
                         <tr>
-                            <th>Số hóa đơn</th>
-                            <td>@(LenhXuatKhoDetail.SoHoaDon ?? "-")</td>
+                            <th>Số Container</th>
+                            <td>@(LenhXuatKhoDetail.SoContainer ?? "-")</td>
                         </tr>
 
                         <tr>
-                            <th>Ngày hóa đơn</th>
-                            <td>@FormatDateTime(LenhXuatKhoDetail.NgayHoaDon)</td>
+                            <th>Số lượng quá khổ</th>
+                            <td>@(LenhXuatKhoDetail.SoLuongQuaKho)</td>
                         </tr>
 
                         <tr>
-                            <th>Ghi chú</th>
-                            <td>@(LenhXuatKhoDetail.GhiChu ?? "-")</td>
+                            <th>Số lượng quá tải</th>
+                            <td>@(LenhXuatKhoDetail.SoLuongQuaTai)</td>
                         </tr>
 
                         <tr>
-                            <th>Ngày tạo</th>
-                            <td>@FormatDateTime(LenhXuatKhoDetail.CreateDate)</td>
+                            <th>Hàng nguy hiểm</th>
+                            <td>@(LenhXuatKhoDetail.HangNguyHiem == true ? "Có" : "Không")</td>
                         </tr>
 
                     </tbody>
@@ -385,7 +290,7 @@
     }
 
     private static string FormatDateTime(DateTime? value)
-         => value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm") : "-";
+         => value.HasValue ? value.Value.ToString("dd/MM/yyyy") : "-";
 
     private static string FormatMoney(decimal value)
         => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));

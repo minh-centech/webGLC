@@ -2765,3 +2765,34 @@ button:disabled {
     background: #f3f4f6;
     border-color: #9ca3af;
 }
+
+/* Styling chung cho nút trạng thái */
+.lenhonline .status-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 20px; /* Bo tròn góc kiểu Pill mềm mại */
+    border: 1px solid transparent;
+}
+
+.lenhonline .status-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.lenhonline .status-btn--paid {
+    background-color: #ffffff; /* Nền trắng tinh */
+    color: #0ae57e; /* Icon / Dấu tích xanh lá đậm */
+    border: 1.5px solid #10b981; /* Viền xanh tươi nổi bật */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Đổ bóng nhẹ cho nút nổi lên */
+}
+
+/* ĐỎ ĐẬM - Chưa thanh toán */
+.lenhonline .status-btn--unpaid {
+    background-color: #ffffff; /* Nền đỏ đậm đà hơn (cũ: #fce8e6) */
+    color: #9b2c2c; /* Chữ đỏ đậm nổi bật (cũ: #c5221f) */
+    border-color: #feb2b2; /* Viền rõ ràng hơn */
+}

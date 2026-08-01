@@ -4,12 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 
 namespace cenBUS
 {
     public class LenhOnlinesBUS
     {
-        public static DataTable List(string connectionString, object id, object idDanhMucKhachHangDoiLenh, object tuNgay, object denNgay, object houseBill, object soCont, object maSoThue, object page, object pageSize)
+        public static DataTable List(string connectionString, object id, object idDanhMucKhachHangDoiLenh, object tuNgay, object denNgay, object houseBill, object soCont, object maSoThue, object page, object pageSize, int trangThaiThanhToanBNG = -1)
         {
             try
             {
@@ -24,7 +25,8 @@ namespace cenBUS
                     new SqlParameter("@SoCont", soCont ?? DBNull.Value),
                     new SqlParameter("@MaSoThue", maSoThue ?? DBNull.Value),
                     new SqlParameter("@Page", page ?? DBNull.Value),
-                    new SqlParameter("@PageSize", pageSize ?? DBNull.Value)
+                    new SqlParameter("@PageSize", pageSize ?? DBNull.Value),
+                    new SqlParameter("@TrangThaiThanhToanBNG", trangThaiThanhToanBNG )
                 };
 
                 return dao.tableList(sqlParameters, LenhOnlines.listProcedureName, LenhOnlines.tableName);
@@ -32,6 +34,36 @@ namespace cenBUS
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
+            }
+        }
+
+        public static DataTable ExportExcel(string connectionString, string tuNgay, string denNgay, int trangThaiThanhToanBNG = 1)
+        {
+            try
+            {
+                ConnectionDAO dao = new ConnectionDAO(connectionString);
+
+                // Chuyển đổi chuỗi ngày dạng string thành DateTime?
+                DateTime? dtTuNgay = string.IsNullOrWhiteSpace(tuNgay)
+                ? (DateTime?)null
+                : DateTime.ParseExact(tuNgay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                DateTime? dtDenNgay = string.IsNullOrWhiteSpace(denNgay)
+                    ? (DateTime?)null
+                    : DateTime.ParseExact(denNgay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                SqlParameter[] sqlParameters = new SqlParameter[]
+                {
+                    new SqlParameter("@TuNgay", (object)dtTuNgay ?? DBNull.Value),
+                    new SqlParameter("@DenNgay", (object)dtDenNgay ?? DBNull.Value),
+                    new SqlParameter("@TrangThaiThanhToanBNG", trangThaiThanhToanBNG)
+                };
+
+                return dao.tableList(sqlParameters, LenhOnlines.exportExelProcedureName, LenhOnlines.tableName);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Lỗi xuất dữ liệu Excel: " + ex.Message);
             }
         }
 

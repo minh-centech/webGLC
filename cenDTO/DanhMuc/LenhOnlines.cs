@@ -33,11 +33,14 @@ namespace cenDTO
         public object SoBienNhanDaThanhToan { get; set; }
         public object SoBienNhanChuaThanhToan { get; set; }
 
+        public object BienNhanThanhToanGoc { get; set; }
+        
         public const string tableName = "tblLenhOnlines";
         public const string listProcedureName = "dbo.List_" + tableName;
         public const string insertProcedureName = "dbo.Insert_" + tableName;
         public const string updateProcedureName = "dbo.Update_" + tableName;
         public const string deleteProcedureName = "dbo.Delete_" + tableName;
+        public const string exportExelProcedureName = "dbo.ExportExcel_" + tableName;
     }
 
     public class LenhOnlinesFilterRequest
@@ -49,6 +52,7 @@ namespace cenDTO
         public string HouseBill { get; set; }
         public string SoCont { get; set; }
         public string MaSoThue { get; set; }
+        public int TrangThaiThanhToanBienNhanGoc { get; set; } = -1;
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }
@@ -77,5 +81,13 @@ namespace cenDTO
     public class LenhOnlinesDeleteRequest
     {
         public long ID { get; set; }
+    }
+
+    public class LenhOnlinesExportExcelRequest
+    {
+        public string TuNgay { get; set; }
+        public string DenNgay { get; set; }
+        public int TrangThaiThanhToanBNG { get; set; } = 1;
+        
     }
 }

@@ -54,11 +54,33 @@
                                placeholder="dd/MM/yyyy"
                                @oninput="OnToDateInput" />
                     </div>
+                    <div class="order-filter-field">
+                        <label class="portal-label">Lọc biên nhận gốc</label>
+                        <select class="portal-input order-filter-input"
+                                id="admin-orders-receipt-status-select"
+                                value="@ReceiptStatusFilter"
+                                @onchange="OnReceiptStatusChange">
+                            <option value="-1">Tất cả</option>
+                            <option value="1">Đã thanh toán</option>
+                            <option value="0">Chưa thanh toán</option>
+                        </select>
+                    </div>
                     <div class="order-filter-actions">
                         <button type="submit" class="portal-primary-action order-filter-button">
                             <i class="icon-search"></i> Tìm kiếm
                         </button>
                     </div>
+                    <!-- Nút Tải Excel (type="button" để KHÔNG submit form) -->
+                    <button type="button"
+                            class="portal-secondary-action order-filter-button btn-export-excel"
+                            style="background-color: #0078d4; color: #ffffff; border: 1px solid #005a9e; padding: 8px 16px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: background-color 0.2s;"
+                            @onclick="ExportExcelAsync">
+                        <!-- Icon Excel chuẩn định dạng SVG inline -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21.17 3.25Q21.5 3.25 21.76 3.5 22 3.74 22 4.08V19.92Q22 20.26 21.76 20.5 21.5 20.75 21.17 20.75H7.83Q7.5 20.75 7.26 20.5 7 20.26 7 19.92V17H2.83Q2.5 17 2.26 16.76 2 16.5 2 16.17V7.83Q2 7.5 2.26 7.26 2.5 7 2.83 7H7V4.08Q7 3.74 7.26 3.5 7.5 3.25 7.83 3.25ZM7 15.5V8.5H3.5V15.5ZM13.82 12 16.89 7.75H14.81L12.82 10.63 10.82 7.75H8.74L11.82 12 8.74 16.25H10.82L12.82 13.37 14.81 16.25H16.89ZM20.5 19.25V4.75H8.5V19.25Z" />
+                        </svg>
+                        Tải Thống kê Lệnh Đã thanh toán
+                    </button>
                 </div>
             </div>
         </form>
@@ -75,7 +97,8 @@
                         <th>Mã ST/ Tên DN</th>
                         <th>Số hiệu Cont</th>
                         <th>Số tờ khai</th>
-                        <th>Trạng thái thanh toán</th>
+                        <th>Biên nhận gốc</th>
+                        <th>Thanh toán toàn bộ</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -114,6 +137,28 @@
                                 </td>
                                 <td>@order.ContainerNumber</td>
                                 <td>@order.DeclarationNumber</td>
+                                <td class="lenhonline">
+                                    @if (order.BienNhanThanhToanGoc == 1)
+                                    {
+                                        <!-- Tích xanh - Đã thanh toán -->
+                                        <span class="status-btn status-btn--paid">
+                                            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <!-- Đỏ - Chưa thanh toán -->
+                                        <span class="status-btn status-btn--unpaid">
+                                            <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </span>
+                                    }
+                                    
+                                </td>
                                 <td>
                                     <span class="status-chip @GetPaymentStatusClass(order)">
                                         @GetPaymentStatusLabel(order)
@@ -151,6 +196,26 @@
 </section>
 
 @code {
+
+    // Biến lưu trữ trạng thái đang chọn (Mặc định là "All")
+    private int ReceiptStatusFilter { get; set; } = -1;
+
+    // Xử lý sự kiện thay đổi với int.TryParse
+    private void OnReceiptStatusChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int selectedStatus))
+        {
+            ReceiptStatusFilter = selectedStatus;
+        }
+        else
+        {
+            ReceiptStatusFilter = -1; // Trả về mặc định nếu ép kiểu thất bại
+        }
+
+        // TODO: Gọi hàm lọc dữ liệu của bạn tại đây
+        // Ví dụ: FilterOrders();
+    }
+
     private DateTime FromDate = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private DateTime ToDate = new(DateTime.Today.Year, DateTime.Today.Month, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month));
     private string FromDateText = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).ToString("dd/MM/yyyy");
@@ -236,7 +301,7 @@
             ContainerNumberFilter,
             TaxCodeFilter,
             CurrentPage,
-            PageSize);
+            PageSize, ReceiptStatusFilter);
 
         Orders = result.Items.ToList();
         TotalCount = result.TotalCount;
@@ -253,6 +318,55 @@
     {
         ToDateText = args.Value?.ToString() ?? string.Empty;
         _shouldInitDatePickers = true;
+    }
+
+
+    //Tai file
+    private string ConvertToSqlDate(string dateText)
+    {
+        if (string.IsNullOrWhiteSpace(dateText)) return null;
+
+        // Chuyển chuỗi "dd/MM/yyyy" thành DateTime rồi ép sang "yyyy-MM-dd"
+        if (DateTime.TryParseExact(dateText.Trim(), "dd/MM/yyyy",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var parsedDate))
+        {
+            return parsedDate.ToString("yyyy-MM-dd");
+        }
+
+        return null; // Trả về null nếu người dùng nhập sai định dạng ngày
+    }
+
+    private bool isExporting = false;
+
+    private async Task ExportExcelAsync()
+    {
+        if (isExporting) return;
+
+        try
+        {
+            isExporting = true;
+            // 1. Chuyển đổi chuỗi ngày từ ô Input sang dạng yyyy-MM-dd
+            string tuNgayFormatted = ConvertToSqlDate(FromDateText);
+            string denNgayFormatted = ConvertToSqlDate(ToDateText);
+            // 1. Gọi hàm DownloadExcelAsync để lấy mảng byte file
+            byte[] fileBytes = await OnlineOrderService.DownloadExcelAsync(tuNgayFormatted, denNgayFormatted, 1);
+
+            // 2. Tên file khi tải về
+            string fileName = $"ThongKe_LenhOnline_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+            // 3. Gọi JavaScript trigger trình duyệt tải file về
+            await JSRuntime.InvokeVoidAsync("excelHelper.downloadFileFromStream", fileName, fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        }
+        catch (Exception ex)
+        {
+            // Xử lý thông báo lỗi (VD: Toast / Alert)
+            Console.WriteLine($"Lỗi tải Excel: {ex.Message}");
+        }
+        finally
+        {
+            isExporting = false;
+        }
     }
 
     private void SyncDatesFromText()
@@ -300,6 +414,8 @@
 
         return "order-row-pending";
     }
+
+    //Trạng thái thanh toán biên nhận gốc
 
     private static string GetPaymentStatusClass(OnlineOrderRecord order)
     {

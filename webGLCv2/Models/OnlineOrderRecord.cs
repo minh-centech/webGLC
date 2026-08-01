@@ -31,5 +31,8 @@ public sealed class OnlineOrderRecord
     public long IDctLenhNhapKhoHangNhapKhauChiTiet { get; set; }
     public int SoBienNhanDaThanhToan { get; set; }
     public int SoBienNhanChuaThanhToan { get; set; }
+
+    public int BienNhanThanhToanGoc { get; set; }
+    
 }
 

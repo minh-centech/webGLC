@@ -105,7 +105,7 @@ public sealed class OnlineOrderService
         string? soCont = null,
         string? maSoThue = null,
         int page = 1,
-        int pageSize = 10)
+        int pageSize = 10, int ReceiptStatusFilter = -1)
         => GetOrdersInternalAsync(
             null,
             tuNgay,
@@ -114,7 +114,7 @@ public sealed class OnlineOrderService
             soCont,
             maSoThue,
             page,
-            pageSize);
+            pageSize, ReceiptStatusFilter);
 
     private async Task<OnlineOrderPageResult> GetOrdersInternalAsync(
         long? idDanhMucKhachHangDoiLenh,
@@ -124,7 +124,7 @@ public sealed class OnlineOrderService
         string? soCont,
         string? maSoThue,
         int page,
-        int pageSize)
+        int pageSize, int ReceiptStatusFilter = -1)
     {
         var legacyClient = _factory.CreateClient("LegacyApi");
 
@@ -139,7 +139,8 @@ public sealed class OnlineOrderService
                 SoCont = NullIfEmpty(soCont),
                 MaSoThue = NullIfEmpty(maSoThue),
                 Page = page,
-                PageSize = pageSize
+                PageSize = pageSize,
+                TrangThaiThanhToanBienNhanGoc = ReceiptStatusFilter
             },
             JsonOptions);
 
@@ -1879,6 +1880,7 @@ public sealed class OnlineOrderService
             IDctLenhNhapKhoHangNhapKhauChiTiet = GetLong(item, "IDctLenhNhapKhoHangNhapKhauChiTiet"),
             SoBienNhanDaThanhToan = GetInt(item, "SoBienNhanDaThanhToan"),
             SoBienNhanChuaThanhToan = GetInt(item, "SoBienNhanChuaThanhToan"),
+            BienNhanThanhToanGoc = GetInt(item, "BienNhanThanhToanGoc"),
             StatusCode = trangThai,
             Status = GetTrangThaiText(trangThai),
             IsHoanThanh = hoanThanh == 1
@@ -2229,14 +2231,14 @@ public sealed class OnlineOrderService
     }
 
     //Phe duyet lenh xuat kho
-    public async Task<ApiEnvelope?> ApproveLenhXuatKho(string soLenhXuat, string ghiChu ,string nguoiPheDuyet)
+    public async Task<ApiEnvelope?> ApproveLenhXuatKho(string soLenhXuat, string ghiChu, string nguoiPheDuyet)
     {
         var response = await _httpClient.PostAsJsonAsync(
             "/api/ctLenhXuatKhoHangNhapKhau/PheDuyet",
             new LenhXuatKhoHangNhapKhauPheDuyet
             {
-                GhiChu= ghiChu,
-                NguoiPheDuyet= nguoiPheDuyet,
+                GhiChu = ghiChu,
+                NguoiPheDuyet = nguoiPheDuyet,
                 SoLenhXuat = soLenhXuat
             },
             JsonOptions);
@@ -2247,6 +2249,27 @@ public sealed class OnlineOrderService
         EnsureSuccess(envelope, "Lỗi khi phê duyệt lệnh xuất kho online.");
 
         return envelope;
+    }
+
+    //Tải excel thong ke
+    public async Task<byte[]> DownloadExcelAsync(string tuNgay, string denNgay, int trangThaiThanhToanBNG = 1)
+    {
+        var legacyClient = _factory.CreateClient("LegacyApi");
+
+        var response = await legacyClient.PostAsJsonAsync(
+            "api/LenhOnlines/ExportExcel",
+            new
+            {
+                TuNgay = tuNgay,
+                DenNgay = denNgay,
+                TrangThaiThanhToanBNG = trangThaiThanhToanBNG,
+            },
+            JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        // Đọc luồng dữ liệu file trả về từ Legacy API dạng Byte Array
+        return await response.Content.ReadAsByteArrayAsync();
     }
 }
 
